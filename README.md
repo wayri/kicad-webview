@@ -1,4 +1,3 @@
-<p align="center"><img src="assets/brand/icon.svg" width="96" height="96" alt="KiCad WebView logo"></p>
 <h1 align="center">KiCad WebView</h1>
 <p align="center">Interactive electronics. Anywhere on the web.</p>
 <p align="center"><a href="https://wayri.github.io/kicad-webview/">Live demos</a> · <a href="https://wayri.github.io/kicad-webview/docs/">Documentation</a> · <a href="https://wayri.github.io/kicad-webview/docs/api/">API reference</a> · <a href="https://github.com/wayri/kicad-webview/releases">Releases</a></p>
@@ -93,7 +92,7 @@ This is a read-only interpretation of saved design data. It does not edit CAD fi
 
 ## License and support
 
-**[MPL 2.0](LICENSE)** permits commercial use and proprietary host applications. Distributed changes to covered files must remain available as source under MPL; keep notices and provide matching source for minified builds. [Licensing details](LICENSING.md) · [Third-party notices](THIRD-PARTY-NOTICES.md) · [Brand policy](TRADEMARKS.md)
+**[MPL 2.0](LICENSE)** permits commercial use and proprietary host applications. Distributed changes to covered files must remain available as source under MPL; keep notices and provide matching source for minified builds. [Licensing details](LICENSING.md) · [Third-party notices](THIRD-PARTY-NOTICES.md) · [Project name policy](TRADEMARKS.md)
 
 The software license does not grant rights to users' designs or automatically license the hardware examples. Their provenance remains separate. The project is independent of KiCad, Altium and the host platforms.
 

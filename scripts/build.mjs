@@ -81,8 +81,6 @@ for (const [source, target] of [
 copyFileSync(path.join(root, 'SOURCE-PROVENANCE.json'), path.join(output, 'SOURCE-PROVENANCE.json'));
 mkdirSync(path.join(output, 'licenses'), { recursive: true });
 copyFileSync(path.join(root, 'licenses/Pocket-KiView-Source-Available-1.0.txt'), path.join(output, 'licenses/Pocket-KiView-Source-Available-1.0.txt'));
-mkdirSync(path.join(output,'assets/brand'),{recursive:true});
-for(const name of ['icon.svg','icon.png','social-preview.svg','social-preview.png']) copyFileSync(path.join(root,'assets/brand',name),path.join(output,'assets/brand',name));
 console.log(`Built dist/kivi-viewer.js (${statSync(path.join(output, 'kivi-viewer.js')).size} bytes); no external JS imports.`);
 
 await import('./build-lite.mjs');

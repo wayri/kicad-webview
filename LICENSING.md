@@ -18,6 +18,6 @@ Minified JavaScript and bundled HTML are not the preferred form for editing the 
 
 ## Brand and contributions
 
-The code license does not grant rights to impersonate the project or imply endorsement. See [brand policy](TRADEMARKS.md). Contributors retain copyright and submit their contributions under MPL-2.0; no copyright assignment or proprietary relicensing permission is implied. See [contributing](CONTRIBUTING.md).
+The code license does not grant rights to impersonate the project or imply endorsement. See [project name policy](TRADEMARKS.md). Contributors retain copyright and submit their contributions under MPL-2.0; no copyright assignment or proprietary relicensing permission is implied. See [contributing](CONTRIBUTING.md).
 
 For integration, maintenance or support services, contact [support.kivi@sigharmonic.com](mailto:support.kivi@sigharmonic.com). Paid support is optional and does not change the open-source license. For explanatory guidance, see the [Mozilla MPL FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/).
