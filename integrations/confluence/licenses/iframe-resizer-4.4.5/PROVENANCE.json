@@ -1,0 +1,12 @@
+{
+  "package": "iframe-resizer",
+  "version": "4.4.5",
+  "declaredLicense": "MIT",
+  "notice": "The exact 4.4.5 npm package and upstream tag omit a standalone license file. Its package metadata declares MIT; README retains David J. Bradshaw copyright 2013–24. Supplemental MIT text below is retained from the immediately preceding upstream v4.4.4 release, explicitly identified rather than misrepresented as a file shipped in 4.4.5.",
+  "supplementalLicense": {
+    "url": "https://raw.githubusercontent.com/davidjbradshaw/iframe-resizer/v4.4.4/LICENSE",
+    "sha256": "d87495171ce8c68461183d63257690d066eaf8a7946c7999a3da51cbdb7c66b5"
+  },
+  "upstreamPackage": "https://www.npmjs.com/package/iframe-resizer/v/4.4.5",
+  "upstreamTag": "https://github.com/davidjbradshaw/iframe-resizer/tree/v4.4.5"
+}

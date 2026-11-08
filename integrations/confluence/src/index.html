@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KiCad WebView beta</title><link rel="stylesheet" href="./style.css">
+<div id="drawing" hidden></div>
+<form id="config" hidden>
+<h1>Interactive ECAD viewer</h1><p>Choose an approved, public HTTPS KiCad drawing/project, Gerber, Excellon or ZIP source supported by this library release. Private Confluence attachments are not supported by this beta.</p>
+<label>Public design URL<input name="source" type="url" maxlength="8192" required placeholder="https://files.example.com/project.zip"></label>
+<label>Theme<select name="theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+<label>Initial view<select name="view"><option value="">Automatic</option><option value="pcb">PCB layout</option><option value="schematic">Schematic</option><option value="3d">3D board</option></select></label>
+<label>Project file (optional)<input name="file" maxlength="1000"></label>
+<label>Repository revision (optional)<input name="ref" maxlength="1000"></label>
+<p>Source URLs and settings are stored in the Confluence page configuration. Do not enter secrets or signed/private URLs.</p><button type="submit">Save viewer</button><button id="cancel" type="button">Cancel</button>
+</form><p id="error" role="alert" hidden></p>
+<script src="./kicad-webview.min.js"></script><script type="module" src="./app.js"></script></html>

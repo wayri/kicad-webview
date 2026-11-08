@@ -1,0 +1,37 @@
+{
+  "entry": "3PD+IB.kicad_pcb",
+  "files": [
+    {
+      "path": "3PD+IB.kicad_pcb",
+      "url": "./3PD%2BIB.kicad_pcb"
+    },
+    {
+      "path": "3PD+IB.kicad_sch",
+      "url": "./3PD%2BIB.kicad_sch"
+    },
+    {
+      "path": "DCL_Sens.kicad_sch",
+      "url": "./DCL_Sens.kicad_sch"
+    },
+    {
+      "path": "HBD21094.kicad_sch",
+      "url": "./HBD21094.kicad_sch"
+    },
+    {
+      "path": "HBD21094B.kicad_sch",
+      "url": "./HBD21094B.kicad_sch"
+    },
+    {
+      "path": "HBD21094C.kicad_sch",
+      "url": "./HBD21094C.kicad_sch"
+    },
+    {
+      "path": "T_sens.kicad_sch",
+      "url": "./T_sens.kicad_sch"
+    },
+    {
+      "path": "outputFilter.kicad_sch",
+      "url": "./outputFilter.kicad_sch"
+    }
+  ]
+}

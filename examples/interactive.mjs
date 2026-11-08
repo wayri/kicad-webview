@@ -1,0 +1,41 @@
+/* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
+import {Viewer,DemoController} from '../src/index.mjs';
+import {drawTFT} from './tft-graphics.mjs';
+const viewer=new Viewer('#viewer',{theme:'dark'}),status=document.querySelector('#status'),events=document.querySelector('#events'),dial=document.querySelector('#dial'),value=document.querySelector('#value'),mode=document.querySelector('#mode'),run=document.querySelector('#run');
+let demo=null,screenId='screen-a',placement=null,running=false,phase=0,held=false,marker=null,frame=0,lastFrame=0,pulse=0,faceAbort=null,setupTicket=0;
+const log=[];function note(text){log.unshift(text);events.textContent=log.slice(0,6).join('\n');}
+function controls(enabled){document.querySelectorAll('[data-demo]').forEach(node=>node.disabled=!enabled);}
+function fail(error){status.textContent=error.message||String(error);note('ERROR · '+status.textContent);}
+function stopAnimation(){running=false;run.textContent='Run graphics';run.setAttribute('aria-pressed','false');cancelAnimationFrame(frame);frame=0;clearTimeout(pulse);}
+function draw(){
+ if(!demo?.active)return;const n=demo.getState('dial').value;dial.value=String(n);value.textContent=String(n);const state=demo.getState(screenId),w=state.width,h=state.height;
+ if(state.mode==='tft')demo.drawDisplay(screenId,ctx=>drawTFT(ctx,w,h,{value:n,phase,running,held,marker}));
+ else if(state.mode==='matrix'){const pixels=new Uint8Array(w*h);for(let x=0;x<w;x++){const y=Math.max(0,Math.min(h-1,Math.round(h/2+Math.sin(x*.35+phase)*n/100*(h/2-1))));pixels[y*w+x]=1;if(held)pixels[x]=1;}demo.setPixels(screenId,pixels,{format:'mono',foreground:held?'#ffda63':'#69e5ff',background:'#07151d'});}
+ else demo.drawDisplay(screenId,(ctx,canvas)=>{const lcd=state.mode==='lcd';ctx.fillStyle=lcd?'#c7dba2':'#06131a';ctx.fillRect(0,0,w,h);ctx.fillStyle=lcd?'#193725':'#79f5c5';ctx.font='bold '+(lcd?11:10)+'px monospace';ctx.fillText(lcd?'SCRIPTED LCD':'LIVE OLED',5,12);ctx.font=(lcd?10:9)+'px monospace';ctx.fillText((running?'RUN ':'HOLD')+'  DIAL '+String(n).padStart(3,'0'),5,25);ctx.strokeStyle=lcd?'#456c3d':'#1e514b';ctx.beginPath();ctx.moveTo(4,h-12);ctx.lineTo(w-4,h-12);ctx.stroke();ctx.strokeStyle=held?'#e7a43b':lcd?'#193725':'#79f5c5';ctx.lineWidth=1;ctx.beginPath();for(let x=4;x<w-4;x++){const y=h*.65+Math.sin(x*.12+phase)*n/100*h*.14;x===4?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();ctx.fillStyle=lcd?'#193725':'#b5d5df';ctx.font='8px monospace';ctx.fillText(held?'KEY PRESSED':'SPACE = KEY',5,h-3);if(marker){ctx.strokeStyle='#f27970';ctx.strokeRect(marker.x*w-2,(1-marker.y)*h-2,4,4);}});
+ demo.setLED('lamp',{on:true,brightness:held?1:running ? .45+.5*(.5+.5*Math.sin(phase)) : .18,color:held?'#ffb74d':'#65ff84'});
+}
+function animate(now){frame=0;if(!running||!demo?.active)return;if(now-lastFrame>50){lastFrame=now;phase+=.12;try{draw();}catch(error){stopAnimation();fail(error);return;}}frame=requestAnimationFrame(animate);}
+function toggleRun(){if(!demo?.active)return;running=!running;run.textContent=running?'Pause graphics':'Run graphics';run.setAttribute('aria-pressed',String(running));if(running){lastFrame=0;frame=requestAnimationFrame(animate);}else{cancelAnimationFrame(frame);frame=0;draw();}}
+function frameControl(id,focus=true){if(!demo?.active)return;const face=demo.getFace(id),normal=face.normal||[0,0,1],size=Math.max(face.width,face.height,1),distance=size*2.3,up=face.up||(Math.abs(normal[2])>.85?[0,1,0]:[0,0,1]);viewer.setInspectorOpen(false);viewer.clearSelection();viewer.setCamera3D({position:face.center.map((n,i)=>n+normal[i]*distance),target:[...face.center],up});if(focus)demo.focus();}
+function screenOptions(place){const m=mode.value;return {...place,mode:m,width:m==='tft'?320:m==='matrix'?32:m==='lcd'?160:128,height:m==='tft'?240:m==='matrix'?16:m==='lcd'?80:64,onPress:event=>{marker=event.uv||null;note('display touch · graphics input');draw();}};}
+function rebuildScreen(){if(!demo?.active)return;demo.remove(screenId);demo.addDisplay(screenId,screenOptions(placement));draw();frameControl(screenId,false);}
+async function start(){const ticket=++setupTicket;faceAbort?.abort();faceAbort=null;stopAnimation();const old=demo;demo=null;old?.dispose();controls(false);held=false;marker=null;status.textContent='Attaching source-bound virtual controls…';
+ try{if(viewer.kind!=='pcb'||viewer.view!=='3d'){const ok=await viewer.load('./demo/project.json',{view:'3d'});if(!ok||ticket!==setupTicket)return;}
+  if(ticket!==setupTicket)return;demo=new DemoController(viewer);const parts=viewer.getParts(),part=reference=>{const found=parts.filter(p=>p.reference===reference);if(found.length!==1)throw new Error('Demo fixture needs unique '+reference+'.');return found[0].uuid;};
+  placement={anchor:{uuid:part('Q3'),face:'top'}};screenId='screen-a';demo.addDisplay(screenId,screenOptions(placement));
+  demo.addLED('lamp',{anchor:{uuid:part('D13')},color:'#65ff84',on:true,brightness:.18});
+  demo.addButton('key',{anchor:{uuid:part('D14'),face:'top'},label:'PUSH',onPress:()=>{held=true;note('key press');draw();},onRelease:event=>{held=false;note(event.cancelled?'key cancelled':'key release');draw();}});
+  demo.addKnob('dial',{anchor:{uuid:part('D15'),face:'top'},min:0,max:100,step:1,value:Number(dial.value),onChange:event=>{note('dial · '+event.value);draw();}});
+  demo.bindKey('Space',{id:'key',action:'press'});demo.bindKey('ArrowRight',{id:'dial',action:'increment',repeat:true});demo.bindKey('ArrowLeft',{id:'dial',action:'decrement',repeat:true});demo.bindKey('KeyP',{onDown:toggleRun});
+  demo.addEventListener('error',event=>fail(event.detail.error));demo.addEventListener('suspend',()=>{stopAnimation();controls(false);status.textContent='Demo suspended because the 3D scene changed. Restart to bind it explicitly.';});
+  controls(true);draw();frameControl(screenId,false);status.textContent='Ready · all graphics and controls are scripted virtual overlays.';note('demo ready · original inverter source unchanged');
+ }catch(error){fail(error);const failed=demo;demo=null;failed?.dispose();controls(false);}}
+document.querySelector('#start').onclick=()=>start();document.querySelector('#stop').onclick=()=>{++setupTicket;faceAbort?.abort();stopAnimation();const old=demo;demo=null;old?.dispose();controls(false);status.textContent='Demo stopped · ordinary read-only 3D viewing remains available.';};
+run.onclick=toggleRun;dial.oninput=()=>{try{demo?.setKnob('dial',Number(dial.value));}catch(error){fail(error);}};mode.onchange=()=>{try{rebuildScreen();}catch(error){fail(error);}};
+document.querySelector('#key').onclick=()=>{if(!demo?.active)return;const current=demo;current.press('key');clearTimeout(pulse);pulse=setTimeout(()=>{if(current===demo&&current.active)current.release('key');},180);};
+document.querySelector('#focus-keys').onclick=()=>{demo?.focus();status.textContent='Keyboard focused · Space, arrows and P control this viewer only.';};document.querySelector('#frame').onchange=event=>{try{frameControl(event.target.value==='screen'?screenId:event.target.value);}catch(error){fail(error);}};
+document.querySelector('#pick-face').onclick=async()=>{if(!demo?.active)return;const current=demo;faceAbort?.abort();faceAbort=new AbortController();status.textContent='Click a flat component face in the 3D view; Escape cancels.';
+ try{const face=await viewer.pickDemoFace({signal:faceAbort.signal});if(current!==demo||!current.active)return;const next=screenId==='screen-a'?'screen-b':'screen-a';current.addDisplay(next,screenOptions({face}));current.remove(screenId);screenId=next;placement={face};draw();frameControl(screenId,false);status.textContent='Display attached to selected face of '+(face.reference||face.uuid)+'.';note('selected native face · '+(face.reference||face.uuid));}catch(error){if(current===demo)error.name==='AbortError'?status.textContent='Face selection cancelled.':fail(error);}};
+document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;}else if(running&&demo?.active)frame=requestAnimationFrame(animate);});
+window.addEventListener('pagehide',()=>{++setupTicket;faceAbort?.abort();stopAnimation();demo?.dispose();viewer.dispose();},{once:true});
+controls(false);try{await viewer.load('./demo/project.json',{view:'3d'});await start();}catch(error){fail(error);}

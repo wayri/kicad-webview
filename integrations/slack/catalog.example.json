@@ -1,0 +1,18 @@
+{
+  "viewerPage": "https://viewer.example.com/embed.html",
+  "sourceHosts": [
+    "raw.githubusercontent.com"
+  ],
+  "entries": [
+    {
+      "id": "inverter-283f41b",
+      "title": "Three-phase inverter · 283f41b",
+      "public": true,
+      "url": "https://viewer.example.com/design/inverter-283f41b",
+      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/3PD%2BIB.kicad_pcb",
+      "options": {
+        "theme": "dark"
+      }
+    }
+  ]
+}

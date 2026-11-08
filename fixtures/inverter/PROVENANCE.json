@@ -1,0 +1,66 @@
+{
+  "repository": "https://github.com/wayri/3-Phase-inverter-board",
+  "revision": "283f41b65c193abcc7e63c8c919dacdbccc89829",
+  "author": "Yawar Badri (wayri)",
+  "classification": "Owner-provided public design; upstream has no license file",
+  "permission": "The author requested use of this design in the public library demo during this preparation session.",
+  "models": "No linked component model assets are included; unresolved footprints are labelled stand-ins.",
+  "files": [
+    {
+      "path": "3PD+IB.kicad_pcb",
+      "url": "./3PD%2BIB.kicad_pcb",
+      "bytes": 2131833,
+      "sha256": "09bc4def38e6d866ee38c2ba4f87c349945c3514a4f3b3195c14b89e530fa75d",
+      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/3PD%2BIB.kicad_pcb"
+    },
+    {
+      "path": "3PD+IB.kicad_sch",
+      "url": "./3PD%2BIB.kicad_sch",
+      "bytes": 203167,
+      "sha256": "6f9f45dfe7b94ca6adb43ef53ece0462e9eab8815d9899f412ead4ef2595c551",
+      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/3PD%2BIB.kicad_sch"
+    },
+    {
+      "path": "DCL_Sens.kicad_sch",
+      "url": "./DCL_Sens.kicad_sch",
+      "bytes": 32373,
+      "sha256": "b47938e4dc6ddab604a10f22b024d1d7adef53e4edfe08a92507dda5878bdd6a",
+      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/DCL_Sens.kicad_sch"
+    },
+    {
+      "path": "HBD21094.kicad_sch",
+      "url": "./HBD21094.kicad_sch",
+      "bytes": 30818,
+      "sha256": "158e846d9d16c73dd64b0ccccc9bb7b9578d16c2a02bf47c0e5733bbe0f850cf",
+      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/HBD21094.kicad_sch"
+    },
+    {
+      "path": "HBD21094B.kicad_sch",
+      "url": "./HBD21094B.kicad_sch",
+      "bytes": 30818,
+      "sha256": "4c429d9efa4861ffefff6cc16e20c635c7e1f117867482c884cd21554df83fd3",
+      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/HBD21094B.kicad_sch"
+    },
+    {
+      "path": "HBD21094C.kicad_sch",
+      "url": "./HBD21094C.kicad_sch",
+      "bytes": 30818,
+      "sha256": "183d86adaca2850b23a3fd0806693ca2d3222244976c80cedfdb4af2f0d81e41",
+      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/HBD21094C.kicad_sch"
+    },
+    {
+      "path": "T_sens.kicad_sch",
+      "url": "./T_sens.kicad_sch",
+      "bytes": 43957,
+      "sha256": "79f21b6ba851fa56c525736d63a436852b4e8e46d8919e37d130e205aebc4d03",
+      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/T_sens.kicad_sch"
+    },
+    {
+      "path": "outputFilter.kicad_sch",
+      "url": "./outputFilter.kicad_sch",
+      "bytes": 35632,
+      "sha256": "8bcf2bfbeefcb281a6617612e497423ecc7f3960576ba6080555d51003ec02e7",
+      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/outputFilter.kicad_sch"
+    }
+  ]
+}

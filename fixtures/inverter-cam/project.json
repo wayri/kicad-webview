@@ -1,0 +1,29 @@
+{
+  "entry": "3PD+IB-F_Cu.gtl",
+  "files": [
+    {
+      "path": "3PD+IB-B_Cu.gbl",
+      "url": "./3PD%2BIB-B_Cu.gbl"
+    },
+    {
+      "path": "3PD+IB-Edge_Cuts.gm1",
+      "url": "./3PD%2BIB-Edge_Cuts.gm1"
+    },
+    {
+      "path": "3PD+IB-F_Cu.gtl",
+      "url": "./3PD%2BIB-F_Cu.gtl"
+    },
+    {
+      "path": "3PD+IB-F_Silkscreen.gto",
+      "url": "./3PD%2BIB-F_Silkscreen.gto"
+    },
+    {
+      "path": "3PD+IB-NPTH.drl",
+      "url": "./3PD%2BIB-NPTH.drl"
+    },
+    {
+      "path": "3PD+IB-PTH.drl",
+      "url": "./3PD%2BIB-PTH.drl"
+    }
+  ]
+}

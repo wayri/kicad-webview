@@ -1,0 +1,63 @@
+{
+  "description": "Owner-provided inverter fabrication demo exported from unchanged saved source. No zone refill was requested; saved fill limitations persist.",
+  "source": "https://github.com/wayri/3-Phase-inverter-board/tree/283f41b65c193abcc7e63c8c919dacdbccc89829",
+  "boardSHA256": "09bc4def38e6d866ee38c2ba4f87c349945c3514a4f3b3195c14b89e530fa75d",
+  "tool": "KiCad 10.0.6",
+  "commands": [
+    [
+      "pcb",
+      "export",
+      "gerbers",
+      "--layers",
+      "F.Cu,B.Cu,Edge.Cuts,F.Silkscreen",
+      "--output",
+      "fixtures/inverter-cam/"
+    ],
+    [
+      "pcb",
+      "export",
+      "drill",
+      "--format",
+      "excellon",
+      "--excellon-zeros-format",
+      "decimal",
+      "--excellon-units",
+      "mm",
+      "--excellon-separate-th",
+      "--output",
+      "fixtures/inverter-cam/"
+    ]
+  ],
+  "files": [
+    {
+      "path": "3PD+IB-B_Cu.gbl",
+      "sha256": "cdd9fb7bc1587855290c842a78679f35fcab9ca9f43c9d5a0630eff5a5dbd190",
+      "bytes": 312369
+    },
+    {
+      "path": "3PD+IB-Edge_Cuts.gm1",
+      "sha256": "5bd92351f48472773788b79f6c8b51521e519807f6f3aa6839f1afebcdc87990",
+      "bytes": 5239
+    },
+    {
+      "path": "3PD+IB-F_Cu.gtl",
+      "sha256": "40fd1f19c9f6ccbf62daab33d951a8a106303fe5f53843b370020ad6ffc2d829",
+      "bytes": 450420
+    },
+    {
+      "path": "3PD+IB-F_Silkscreen.gto",
+      "sha256": "beefb4e847f7237eebd57ebadef4b5107bb4abc04ac01aba8ec6ac027b065758",
+      "bytes": 785594
+    },
+    {
+      "path": "3PD+IB-NPTH.drl",
+      "sha256": "4679fa3ab22cc57c4dd87ec789fb2dfebec6e2b1f146172be509dbb7ab6a3a15",
+      "bytes": 611
+    },
+    {
+      "path": "3PD+IB-PTH.drl",
+      "sha256": "0a832ffc7a71ad6b26204ff04035e86c752b7504c65764913bc4705706d7b3ca",
+      "bytes": 6211
+    }
+  ]
+}

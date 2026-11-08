@@ -1,0 +1,8 @@
+{
+  "sourceHosts": [
+    "raw.githubusercontent.com",
+    "api.github.com",
+    "github.com",
+    "files.example.com"
+  ]
+}

@@ -1,0 +1,111 @@
+kicad-web-view Source-Available License 1.0
+Effective date: 4 November 2026
+Identifier: LicenseRef-Kicad-Web-View-Source-Available-1.0
+Copyright (c) 2026 Yawar B (wayri). All rights reserved except as granted below.
+Licensing contact: support.kivi@sigharmonic.com
+
+1. Scope and ownership
+This license applies to the original kicad-web-view code, documentation, examples
+and included owner-authored SPIKE subset supplied under this license (the
+Software), to the extent Yawar B (wayri) holds the necessary rights. It does not
+license the rest of SPIKE. Separately licensed third-party material and valid
+earlier grants are governed by section 6. Copyright and other intellectual
+property remain with their rights holders. This is a source-available license,
+not an open-source license.
+
+2. Non-commercial permission
+You may obtain, install, run, inspect, modify and make backup copies of lawfully
+supplied Software without a license fee solely for non-commercial purposes,
+including non-commercial personal, educational, research and community use.
+Commercial use requires the explicit prior written permission described in
+section 3. The availability of source code does not grant commercial rights.
+
+You may redistribute the Software and your modifications solely for
+non-commercial purposes and without compensation if you include this complete
+license, preserve copyright and third-party notices, clearly identify your
+changes, and give recipients no fewer rights under this license. A recipient
+receives these permissions directly from the licensor. You cannot grant broader
+commercial rights on the licensor's behalf. This license does not require the
+disclosure of private repositories, credentials, designs or source not supplied
+with your copy.
+
+3. Commercial use requires explicit prior written permission
+Unless separately and explicitly authorized in writing by Yawar B (wayri), you
+must not use, modify, embed, host, provide, distribute or sublicense the Software
+for a commercial purpose.
+
+Commercial use means use directed toward commercial advantage, monetary
+compensation or the operation of a trade or business, whether or not users are
+charged for access. It includes:
+(a) internal use in a commercial business or organization;
+(b) paid engineering, consultancy, client work or other paid professional
+    services using the Software;
+(c) embedding or integrating the Software into a commercial product, website,
+    company portal, application, subscription, appliance or paid bundle;
+(d) paid hosted, managed, API or software-as-a-service access;
+(e) monetizing access to the Software through advertising or sponsorship;
+(f) selling, renting, leasing or otherwise supplying the Software, or a modified
+    or derivative version, for money or other consideration; and
+(g) authorizing another party to undertake any of those activities.
+
+Providing access without charge does not by itself make a commercial use
+non-commercial. Permission must be obtained before the commercial activity and
+must identify its authorized scope. A download, publication, inquiry or payment
+alone is not permission. Contact the licensing address above to request a
+separate written agreement; no price, exclusivity or entitlement is promised.
+
+4. Your designs and outputs
+You retain your rights in your own designs, data, comments, reports and other
+outputs. This license does not transfer ownership of those materials to the
+licensor or require you to license them under this license. It does not grant
+permission to use the Software commercially to create or deliver them; section
+3 still applies to that use. You remain responsible for third-party rights in
+your input files and outputs.
+
+5. Notices and branding
+Preserve legal notices and do not misrepresent authorship, your changes, or
+endorsement. No trademark license or right to use the project's branding as
+your own is granted. Accurate descriptive references and required attribution
+are permitted. Do not describe this license as MIT, OSI-approved or open source.
+
+6. Third-party rights, earlier grants and mandatory law
+Third-party components retain their own licenses, including any rights to use,
+modify, reverse engineer, redistribute or sell those components. This license
+does not narrow those rights or revoke valid earlier grants. Component-specific
+terms control those components where they differ. See THIRD-PARTY-NOTICES.md
+and the notices supplied with individual components.
+
+This license governs copies and material supplied under it. It does not
+retroactively change rights already lawfully granted under another license.
+The inherited Pocket KiView Source-Available License 1.0 is retained for
+provenance at licenses/Pocket-KiView-Source-Available-1.0.txt; its presence does
+not offer that earlier license for newly licensed material. Nothing here
+restricts rights that applicable law does not permit to be restricted.
+
+7. No warranty; engineering verification
+To the extent permitted by law, the Software is supplied AS IS, without express
+or implied warranties, including merchantability, fitness for a particular
+purpose and non-infringement. Independently check engineering results, exports
+and resolved designs. The Software does not certify electrical correctness,
+safety or manufacturing readiness. Keep backups.
+
+8. Liability and termination
+To the extent permitted by law, the licensor and contributors are not liable
+for indirect, incidental, special or consequential damages, lost profits, lost
+data or business interruption arising from the Software. This does not exclude
+liability or rights that cannot lawfully be excluded.
+
+Your permissions terminate for a material breach not cured within 30 days after
+written notice from the licensor. On termination, stop the unpermitted use and
+distribution and delete affected copies, except copies required by law and any
+third-party material you may retain under its own license. Compliant recipients'
+independent rights are not terminated by your breach. Existing compliant grants
+are not withdrawn merely by publishing different terms for future versions.
+
+9. Other terms and contributions
+Privacy, account use and user-content rules are addressed separately. They do
+not grant commercial permission. Contributions do not automatically transfer
+copyright or authorize relicensing; a separate contributor agreement is needed
+for that purpose. Any broader grant must be in a separate written agreement
+with the relevant rights holder. No obligation to provide future updates or
+support is promised by this license.

@@ -1,0 +1,35 @@
+{
+  "display_information": {
+    "name": "KiCad WebView beta",
+    "description": "Read-only interactive ECAD design previews"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "KiCad WebView",
+      "always_online": false
+    },
+    "unfurl_domains": [
+      "viewer.example.com"
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "links:read",
+        "links:write"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "request_url": "https://adapter.example.com/slack/events",
+      "bot_events": [
+        "link_shared",
+        "entity_details_requested"
+      ]
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false
+  }
+}

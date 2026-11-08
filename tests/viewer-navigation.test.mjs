@@ -1,0 +1,33 @@
+import {DemoController} from '../src/demo-controller.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {rotatedCamera3D,cameraShortcut,createViewerNavigation} from '../src/viewer-navigation.mjs';
+const near=(a,b)=>a.every((n,i)=>Math.abs(n-b[i])<1e-8),camera={position:[3,-15,8],target:[3,5,8],up:[0,0,1]};
+test('rotation preserves the inspected target/distance and inverse moves undo orbit, tilt and roll',()=>{
+ for(const [a,b]of [['left','right'],['up','down'],['clockwise','counterclockwise']]){const next=rotatedCamera3D(camera,a,30),restored=rotatedCamera3D(next,b,30);assert.deepEqual(next.target,camera.target);assert.ok(Math.abs(Math.hypot(...next.position.map((n,i)=>n-next.target[i]))-20)<1e-8);assert.ok(near(restored.position,camera.position));assert.ok(near(restored.up,camera.up));}
+ const top={position:[0,-.001,100],target:[0,0,0],up:[0,0,1]},turned=rotatedCamera3D(top,'left');assert.ok(Math.abs(turned.position[0])>20,'left/right remain useful at a top-view pole');assert.deepEqual(camera.position,[3,-15,8]);
+ for(const direction of ['left','up','clockwise']){let state=camera;for(let i=0;i<100;i++)state=rotatedCamera3D(state,direction);assert.ok(state.position.every(Number.isFinite));assert.ok(Math.abs(Math.hypot(...state.up)-1)<1e-8);}
+ for(const degree of [0,-1,NaN,Infinity,91])assert.throws(()=>rotatedCamera3D(camera,'left',degree));assert.throws(()=>rotatedCamera3D(camera,'invented'));assert.throws(()=>rotatedCamera3D({...camera,up:[0,-1,0]},'left'));
+});
+test('camera keys map only viewer-safe chords and ignore demo arrows, editable controls and page shortcuts',()=>{
+ const e=(code,extra={})=>({code,composedPath:()=>[],...extra});assert.deepEqual(cameraShortcut(e('Digit1')),{type:'view',value:'top'});assert.deepEqual(cameraShortcut(e('Numpad2')),{type:'view',value:'bottom'});assert.deepEqual(cameraShortcut(e('ArrowRight',{shiftKey:true})),{type:'rotate',value:'right'});assert.deepEqual(cameraShortcut(e('KeyQ',{shiftKey:true})),{type:'rotate',value:'counterclockwise'});assert.deepEqual(cameraShortcut(e('Equal',{shiftKey:true})),{type:'zoom',value:1.2});
+ for(const code of ['ArrowRight','ArrowLeft','Space','KeyP'])assert.equal(cameraShortcut(e(code)),null);
+ for(const extra of [{ctrlKey:true},{metaKey:true},{altKey:true},{isComposing:true},{defaultPrevented:true},{composedPath:()=>[{tagName:'INPUT'}]},{composedPath:()=>[{tagName:'BUTTON'}]},{composedPath:()=>[{isContentEditable:true}]},{composedPath:()=>[{getAttribute:()=> 'slider'}]}])assert.equal(cameraShortcut(e('Digit1',extra)),null);
+});
+class Node extends EventTarget{constructor(doc){super();this.ownerDocument=doc;this.children=[];this.attrs={};}append(...items){for(const item of items){item.parentNode=this;this.children.push(item);}}setAttribute(k,v){this.attrs[k]=String(v);}getAttribute(k){return this.attrs[k]??null;}removeAttribute(k){delete this.attrs[k];}remove(){this.removed=true;}focus(){this.focused=true;}}
+function fixture(){const doc={createElement:()=>new Node(doc)},root=new Node(doc),stage=new Node(doc),calls=[],errors=[],viewer=Object.assign(new EventTarget(),{host:{ownerDocument:doc},root,stage,view:'3d',renderer:{zoom:n=>calls.push(['zoom',n])},setCamera3D:n=>calls.push(['view',n]),rotate3D:n=>calls.push(['rotate',n]),fit:()=>calls.push(['fit'])});return {viewer,root,stage,calls,errors,nav:createViewerNavigation(viewer,e=>errors.push(e))};}
+function key(root,code,props={}){const e=new Event('keydown',{cancelable:true});Object.defineProperties(e,Object.fromEntries(Object.entries({code,composedPath:()=>[root],...props}).map(([k,v])=>[k,{value:v}])));root.dispatchEvent(e);return e;}
+test('navigation buttons and focused shortcuts stay instance-scoped, follow views and clean up listeners',()=>{
+ const a=fixture(),b=fixture();a.nav.update();assert.equal(a.nav.panel.hidden,false);assert.equal(a.nav.panel.parentNode,a.stage);const button=a.nav.panel.children[0].children[0];assert.match(button.getAttribute('aria-label'),/Top/);button.onclick();assert.deepEqual(a.calls,[['view','top']]);assert.equal(key(a.root,'ArrowRight',{shiftKey:true}).defaultPrevented,true);assert.deepEqual(a.calls.at(-1),['rotate','right']);assert.equal(b.calls.length,0);
+ a.viewer.view='pcb';a.nav.update();assert.equal(a.nav.panel.hidden,true);key(a.root,'Digit2');assert.equal(a.calls.length,2);a.viewer.view='3d';a.nav.update();a.nav.dispose();key(a.root,'Digit1');assert.equal(a.calls.length,2);assert.equal(button.onclick,null);assert.equal(a.root.getAttribute('tabindex'),null);assert.equal(a.errors.length,0);b.nav.dispose();
+});
+
+test('short embed leaves navigation below the wrapped 3D toolbar and disconnects resize observation',()=>{
+ const prior=globalThis.ResizeObserver,observers=[];globalThis.ResizeObserver=class{constructor(callback){this.callback=callback;this.nodes=[];this.disconnects=0;observers.push(this);}observe(node){this.nodes.push(node);}disconnect(){this.disconnects++;this.nodes=[];}};
+ try{const f=fixture(),tools={getBoundingClientRect:()=>({bottom:130})};f.nav.panel.style={};f.stage.getBoundingClientRect=()=>({top:50,height:134});f.viewer.renderer.host={shadowRoot:{querySelector:()=>tools}};f.nav.update();assert.equal(f.nav.panel.style.maxHeight,'38px');assert.equal(observers[0].nodes.length,2);tools.getBoundingClientRect=()=>({bottom:125});observers[0].callback();assert.equal(f.nav.panel.style.maxHeight,'43px');f.nav.dispose();assert.equal(observers[0].nodes.length,0);assert.ok(observers[0].disconnects>=2);}finally{if(prior===undefined)delete globalThis.ResizeObserver;else globalThis.ResizeObserver=prior;}
+});
+
+test('explicit demo bindings override camera keys without triggering both actions on the same root',()=>{
+ const f=fixture();Object.assign(f.viewer,{source:'saved board',path:'board.kicad_pcb',disposed:false});Object.assign(f.viewer.renderer,{setDemoInputHandler(){},createDemoSurface(){return {dispose(){},setLED(){}};}});
+ const demo=new DemoController(f.viewer);demo.addLED('lamp',{anchor:{uuid:'saved-part'}});const unbind=demo.bindKey('Digit1',{id:'lamp',action:'toggle'});
+ key(f.root,'Digit1');assert.equal(demo.getState('lamp').on,true);assert.equal(f.calls.length,0,'no simultaneous camera move');unbind();key(f.root,'Digit1');assert.deepEqual(f.calls,[['view','top']]);
+ let turns=0;demo.bindKey('ArrowRight',{shiftKey:true,preventDefault:false,onDown:()=>turns++});key(f.root,'ArrowRight',{shiftKey:true});assert.equal(turns,1);assert.equal(f.calls.length,1);demo.dispose();key(f.root,'ArrowRight',{shiftKey:true});assert.deepEqual(f.calls.at(-1),['rotate','right']);f.nav.dispose();
+});

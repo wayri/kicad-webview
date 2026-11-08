@@ -1,0 +1,31 @@
+# Copy to manifest.yml, register your own Forge app and replace the app ID.
+modules:
+  macro:
+    - key: kicad-webview-beta
+      resource: viewer
+      title: KiCad WebView beta
+      description: Read-only interactive electronics design viewer
+      category: embed
+      viewportSize: xlarge
+      config:
+        resource: viewer
+        title: Configure ECAD viewer
+        viewportSize: large
+        openOnInsert: true
+resources:
+  - key: viewer
+    path: static
+permissions:
+  content:
+    styles:
+      - unsafe-inline
+  external:
+    fetch:
+      client:
+        - address: https://raw.githubusercontent.com
+        - address: https://api.github.com
+        - address: https://files.example.com
+app:
+  id: ari:cloud:ecosystem::app/REPLACE_WITH_REGISTERED_APP_ID
+  runtime:
+    name: nodejs22.x

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Altium web viewer beta</title>
+<style>
+body{margin:24px;font:15px/1.5 system-ui;background:#f5f7fa;color:#253044}
+h1{font-size:24px}form{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+input,select,button{font:inherit;padding:7px}input{flex:1;min-width:200px}
+#drawing{height:65vh;min-height:300px;border:1px solid #a4b0bf;border-radius:8px;overflow:hidden}
+#message{overflow-wrap:anywhere}
+</style>
+<h1>Interactive Altium embed · beta</h1>
+<p>Enter a public project archive URL. Opening it lets Altium's online service process and display that design.</p>
+<form id="open">
+<input id="source" type="url" required placeholder="https://your-site.com/project.zip" aria-label="Public Altium project archive URL">
+<select id="view" aria-label="Initial view"><option value="schematic">Schematic</option><option value="pcb">PCB</option><option value="3d">3D</option></select>
+<button type="submit">Open with Altium 365</button>
+</form>
+<div id="drawing"></div><p id="message" role="status">No design has been sent.</p>
+<p>Use an archive you are authorized to share publicly. Private/local file upload is unavailable in this beta.</p>
+<script type="module" src="altium-example.mjs"></script>
+</html>

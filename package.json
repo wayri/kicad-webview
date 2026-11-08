@@ -1,0 +1,130 @@
+{
+  "name": "@wayrisignals/kicad-webview",
+  "version": "0.1.0-beta.2",
+  "description": "Interactive KiCad schematic, PCB and 3D viewer for the web, with Gerber, Excellon, linked views and offline HTML exports",
+  "type": "module",
+  "license": "MPL-2.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/kivi-viewer.js",
+      "default": "./dist/kivi-viewer.js"
+    },
+    "./integrations": "./integrations/shared/embed-url.mjs",
+    "./slack": "./integrations/slack/adapter.mjs",
+    "./lite": {
+      "types": "./types/lite.d.ts",
+      "import": "./dist/lite/kicad-webview-lite.js",
+      "default": "./dist/lite/kicad-webview-lite.js"
+    },
+    "./hierarchy": {
+      "types": "./types/hierarchy.d.ts",
+      "import": "./src/project-tree.mjs",
+      "default": "./src/project-tree.mjs"
+    }
+  },
+  "files": [
+    "dist/*.js",
+    "dist/*.mjs",
+    "dist/*.html",
+    "dist/*.md",
+    "dist/LICENSE",
+    "dist/*-LICENSE",
+    "dist/SOURCE-PROVENANCE.json",
+    "dist/licenses",
+    "dist/demo/3PD+IB.kicad_pcb",
+    "dist/demo/3PD+IB.kicad_sch",
+    "dist/demo/DCL_Sens.kicad_sch",
+    "dist/demo/HBD21094.kicad_sch",
+    "dist/demo/HBD21094B.kicad_sch",
+    "dist/demo/HBD21094C.kicad_sch",
+    "dist/demo/outputFilter.kicad_sch",
+    "dist/demo/project.json",
+    "dist/demo/PROVENANCE.json",
+    "dist/demo/README.md",
+    "dist/demo/T_sens.kicad_sch",
+    "src",
+    "engine",
+    "licenses",
+    "LICENSING.md",
+    "SOURCE-PROVENANCE.json",
+    "THIRD-PARTY-NOTICES.md",
+    "dist/manufacturing",
+    "integrations/README.md",
+    "integrations/shared/*.mjs",
+    "integrations/notion/README.md",
+    "integrations/slack/*.mjs",
+    "integrations/slack/manifest.example.json",
+    "integrations/slack/catalog.example.json",
+    "integrations/confluence/build.mjs",
+    "integrations/confluence/package.json",
+    "integrations/confluence/package-lock.json",
+    "integrations/confluence/manifest.example.yml",
+    "integrations/confluence/policy.json",
+    "integrations/confluence/src",
+    "integrations/confluence/licenses",
+    "docs/APP-INTEGRATIONS-BETA.md",
+    "docs/MANUFACTURING-BETA.md",
+    "integrations/confluence/validate-manifest.mjs",
+    "integrations/confluence/forge-local.mjs",
+    "integrations/confluence/BUILD-CHECKS.md",
+    "dist/analysis",
+    "docs/ANALYSIS.md",
+    "docs/ADVANCED-VIEWER.md",
+    "docs/NET-MODEL-PROVENANCE.md",
+    "types",
+    "dist/lite",
+    "docs/PUBLIC-API.md",
+    "docs/LIGHTWEIGHT.md",
+    "docs/CAROUSEL.md",
+    "docs/LINKED-VIEWS.md",
+    "docs/VIEW-LINKS.md",
+    "docs/INTERACTIVE-DEMO.md",
+    "docs/VIEW-NAVIGATION.md",
+    "docs/PROJECT-TREE.md",
+    "docs/PRESENTATION.md",
+    "assets/brand",
+    "TRADEMARKS.md",
+    "SECURITY.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:3d": "node scripts/build-3d.mjs",
+    "test": "node --test tests/*.test.mjs tests/*.test.cjs",
+    "preview": "node scripts/preview.cjs",
+    "build:lite": "node scripts/build-lite.mjs",
+    "package:static": "node scripts/package-static.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "three": "0.171.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wayri/kicad-webview.git"
+  },
+  "homepage": "https://wayri.github.io/kicad-webview/",
+  "unpkg": "./dist/kicad-webview.min.js",
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "provenance": false
+  },
+  "types": "./types/index.d.ts",
+  "bugs": {
+    "url": "https://github.com/wayri/kicad-webview/issues"
+  },
+  "keywords": [
+    "kicad",
+    "pcb",
+    "schematic",
+    "3d",
+    "gerber",
+    "excellon",
+    "webgl",
+    "viewer"
+  ]
+}

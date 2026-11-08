@@ -1,0 +1,11 @@
+.git/
+.cache/
+**/node_modules/
+**/.env
+**/.env.*
+**/.npmrc
+**/*.log
+**/*.kicad_prl
+integrations/confluence/static/
+integrations/confluence/manifest.yml
+integrations/slack/catalog.json

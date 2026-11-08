@@ -1,0 +1,22 @@
+# Free workspace beta only: idle cold starts can miss Slack event deadlines.
+# No paid plan is selected or provisioned by this template.
+services:
+  - type: web
+    name: kicad-webview-slack-beta
+    runtime: docker
+    dockerfilePath: ./integrations/slack/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /healthz
+    autoDeployTrigger: "off"
+    envVars:
+      - key: SLACK_SIGNING_SECRET
+        sync: false
+      - key: SLACK_TEAM_ID
+        sync: false
+      - key: SLACK_APP_ID
+        sync: false
+      - key: SLACK_BOT_TOKEN
+        sync: false
+      - key: VIEWER_CATALOG_JSON
+        sync: false
