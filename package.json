@@ -1,6 +1,6 @@
 {
   "name": "@wayrisignals/kicad-webview",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Interactive KiCad schematic, PCB and 3D viewer for the web, with Gerber, Excellon, linked views and offline HTML exports",
   "type": "module",
   "license": "MPL-2.0",

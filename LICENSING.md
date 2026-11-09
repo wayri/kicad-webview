@@ -6,7 +6,7 @@ KiCad WebView's owner-authored software is licensed under the **Mozilla Public L
 
 MPL applies at the source-file level. When distributing covered software, keep its license notices and make the covered source, including your modifications, available as required by MPL. Separate host-application files do not become MPL merely because they use this library. MPL does not require you to submit a pull request, and it does not prevent paid competing offerings.
 
-Minified JavaScript and bundled HTML are not the preferred form for editing the library. Tell recipients where to obtain the corresponding source. This release's matching source is [v0.1.0-beta.2](https://github.com/wayri/kicad-webview/tree/v0.1.0-beta.2); source archives are available from that tag. Keep the source link, LICENSE, THIRD-PARTY-NOTICES.md and dependency notices with distributed builds. If you modify a build, supply your matching modified covered source rather than pointing only to an unmodified upstream release. The build scripts carry this source offer in their banners and distribution metadata.
+Minified JavaScript and bundled HTML are not the preferred form for editing the library. Tell recipients where to obtain the corresponding source. This release's matching source is [v0.1.1](https://github.com/wayri/kicad-webview/tree/v0.1.1); source archives are available from that tag. Keep the source link, LICENSE, THIRD-PARTY-NOTICES.md and dependency notices with distributed builds. If you modify a build, supply your matching modified covered source rather than pointing only to an unmodified upstream release. The build scripts carry this source offer in their banners and distribution metadata.
 
 ## Scope and exceptions
 
