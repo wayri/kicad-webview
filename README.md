@@ -128,4 +128,6 @@ This is a read-only interpretation of saved design data. It does not edit CAD fi
 
 The software license does not grant rights to users' designs or automatically license the hardware examples. Their provenance remains separate. The project is independent of KiCad, Altium and the host platforms.
 
-For paid integration, maintenance or support, contact [support.kivi@sigharmonic.com](mailto:support.kivi@sigharmonic.com).
+KiCad WebView is **free to use, including commercially, under MPL-2.0**. No payment or individual commercial-use approval is required.
+
+Need help embedding or customizing KiCad WebView? Optional paid implementation, maintenance, and support are available at [support.kivi@sigharmonic.com](mailto:support.kivi@sigharmonic.com). You do not need to buy these services to use or integrate the library.
