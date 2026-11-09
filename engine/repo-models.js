@@ -81,7 +81,7 @@
       const reference = children(footprint, "property").find(item => value(item[1]) === "Reference");
       const legacyReference = children(footprint, "fp_text").find(item => value(item[1]) === "reference");
       const ref = String(value(reference?.[2]) || value(legacyReference?.[2]) || `REF${footprintIndex + 1}`);
-      const id = scalar(footprint, "uuid") || `component-${ref}`;
+      const id = scalar(footprint, "uuid") || scalar(footprint, "tstamp") || `component-${ref}`;
       const at = child(footprint, "at"), x = number(at?.[1], NaN), y = number(at?.[2], NaN);
       const angle = number(at?.[3], 0), layer = String(scalar(footprint, "layer") || "F.Cu");
       if (![x, y, angle].every(Number.isFinite) || !["F.Cu", "B.Cu"].includes(layer)) {
