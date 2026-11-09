@@ -33,7 +33,7 @@ const svg = tree.toSVG();                // no scripts, external fonts or linked
 const data = tree.getHierarchy();        // independent copy; no source-file contents
 ~~~
 
-The browser hosting the component needs no Node runtime or service. Source modules can also be self-hosted directly; keep their relative src/ and engine/ imports intact. The public npm beta remains unpublished/paused, so package imports describe the prepared API rather than a verified registry release.
+The browser hosting the component needs no Node runtime or service. Source modules can also be self-hosted directly; keep their relative src/ and engine/ imports intact. For npm, install @wayrisignals/kicad-webview@beta; the independent hierarchy API is also exported from @wayrisignals/kicad-webview/hierarchy.
 
 ## Sources and root selection
 

@@ -14,7 +14,35 @@ Everything needed for native KiCad viewing runs in the browser. Visitors need no
 - [Read the user guide](https://wayri.github.io/kicad-webview/docs/user-guide/) or [API reference](https://wayri.github.io/kicad-webview/docs/api/).
 - [Download a release](https://github.com/wayri/kicad-webview/releases), or build this checkout.
 
-This source release is **0.1.0-beta.2**, licensed under MPL-2.0. The website's immutable **0.1.0-beta.1** download retains its earlier supplied license; its reference docs identify that version. The website's separately maintained demos may show later capabilities. The npm package name is reserved in package metadata; no npm publication is claimed here.
+The npm beta is **0.1.0-beta.3**, licensed under MPL-2.0. Install the explicit beta tag or pin a version. The website’s immutable beta.2 SDK remains available, while its separately maintained demonstrations may use additional host adapters. Archived beta.1 downloads retain their earlier license.
+
+## Install from npm or use a CDN
+
+~~~sh
+npm install @wayrisignals/kicad-webview@beta
+~~~
+
+~~~js
+import { Viewer } from '@wayrisignals/kicad-webview';
+const viewer = new Viewer('#board', { theme:'dark', inspectOnSelect:false });
+await viewer.load('/designs/project.zip', { view:'3d' });
+~~~
+
+For direct browser use, pin the version and load the classic script. No npm installation, Node.js server or build step is needed:
+
+~~~html
+<div id="board" style="height:70dvh;min-height:360px"></div>
+<script src="https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@0.1.0-beta.3/dist/kicad-webview.min.js"></script>
+<script>
+  const viewer = new KiCadWebView.Viewer('#board', { theme:'dark' });
+  viewer.load('/designs/project.zip', { view:'3d' }).catch(console.error);
+  window.addEventListener('pagehide', () => viewer.dispose(), { once:true });
+</script>
+~~~
+
+The self-contained ES module is available at [jsDelivr](https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@0.1.0-beta.3/dist/kivi-viewer.js) or [UNPKG](https://unpkg.com/@wayrisignals/kicad-webview@0.1.0-beta.3/dist/kivi-viewer.js). The classic script is available from either CDN at the matching path. Self-host the package contents for offline use and keep its license and notices. The npm artifact contains the viewer, matching covered source, types, documentation and source-parameterized iframe entry; legacy board fixtures and fixture-backed example pages are excluded. Current [IRCA and credited public-board demonstrations](https://wayri.github.io/kicad-webview/) remain on the website.
+
+The [linked hierarchy demo](https://wayri.github.io/assets/demos/hierarchy.html) combines this library’s selection and 3D focus APIs with a source-bound website sheet adapter. See the [integration guide](https://wayri.github.io/kicad-webview/docs/examples/#link-the-hierarchy-pcb-and-3d-assembly) for that host integration.
 
 ## A viewer in a few lines
 
