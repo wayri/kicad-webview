@@ -37,17 +37,18 @@ function awaitOperation(promise, signal) {
 
 /** Read-only, independently mounted schematic / PCB / 3D viewer. */
 export class KiCadViewer extends EventTarget {
-  constructor(target, { theme = 'light', loadAsset, assetPaths = [], inspectOnSelect = true } = {}) {
+  constructor(target, { theme = 'light', loadAsset, assetPaths = [], inspectOnSelect = true, appearance = 'realistic' } = {}) {
     super();
     const host = typeof target === 'string' ? document.querySelector(target) : target;
     if (!host?.append || !host?.ownerDocument) throw new TypeError('Choose a viewer container element.');
     if (owners.has(host)) throw new Error('This container already has a viewer.');
     if (!['light', 'dark'].includes(theme)) throw new TypeError('Theme must be light or dark.');
     if (typeof inspectOnSelect !== 'boolean') throw new TypeError('inspectOnSelect must be a boolean.');
+    if (!['realistic', 'layers', 'translucent'].includes(appearance)) throw new TypeError('Choose realistic, layers or translucent appearance.');
     this.inspectOnSelect = inspectOnSelect;
     this.host = host;
     this.theme = theme;
-    this.modelOptions = { loadAsset, assetPaths };
+    this.modelOptions = { loadAsset, assetPaths, appearance };
     this.root = host.ownerDocument.createElement('div');
     this.root.style.cssText = 'display:flex;flex-direction:column;width:100%;height:100%;min-height:0;overflow:hidden;position:relative;container-type:inline-size';
     this.stage = host.ownerDocument.createElement('div');
@@ -289,6 +290,7 @@ export class KiCadViewer extends EventTarget {
           ...this.modelOptions, ...projectModels,
           ...(this.modelOptions.loadAsset ? { loadAsset: this.modelOptions.loadAsset } : {}),
           boardPath: state.path, dark: this.theme === 'dark', embedded: true, externalInspector: true,
+          onAppearanceChange: value => { if (mounted()) this.modelOptions.appearance = value; },
           onDiagnostics: value => { notes = value; if (mounted()) { this.renderingNotes = notes; this.updateStatus(); } },
           onSelect: item => { if (mounted()) this.handleSelection({ item }, '3d'); },
         });
@@ -326,6 +328,21 @@ export class KiCadViewer extends EventTarget {
     if (!['low','balanced','high','presentation'].includes(quality)) throw new TypeError('Choose low, balanced, high or presentation rendering.');
     if (this.view !== '3d' || typeof this.renderer?.setQuality !== 'function') throw new Error('Rendering quality requires a loaded 3D view.');
     return this.renderer.setQuality(quality);
+  }
+
+  setAppearance(appearance) {
+    this.assertActive();
+    if (!['realistic', 'layers', 'translucent'].includes(appearance)) throw new TypeError('Choose realistic, layers or translucent appearance.');
+    if (this.view !== '3d' || typeof this.renderer?.setAppearance !== 'function') throw new Error('Appearance requires a loaded 3D view.');
+    return this.modelOptions.appearance = this.renderer.setAppearance(appearance);
+  }
+
+  getAppearance() { this.assertActive(); return this.view === '3d' ? this.renderer?.getAppearance?.() ?? null : null; }
+
+  getRenderStats() {
+    this.assertActive();
+    const stats = this.view === '3d' ? this.renderer?.getRenderStats?.() : null;
+    return stats == null ? null : structuredClone(stats);
   }
 
   /** Fit one named 3D presentation camera without replacing source or selection. */

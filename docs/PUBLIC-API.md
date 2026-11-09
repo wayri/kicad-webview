@@ -26,6 +26,12 @@ Lifecycle: mount one viewer per container; independent containers have independe
 
 Use static self-hosted assets with an explicit mount height. Cross-origin source downloads require CORS; library credentials are omit by default, with explicit same-origin only. This API is not a cross-origin iframe command bridge. Do not send private/signed URLs through public embed links. Comments, authentication services, native CAD editing, native ERC/DRC/solver execution and extension review workflows are outside the library contract.
 
+## 3D appearance and statistics
+
+The `appearance` constructor option defaults to `realistic`; `setAppearance('realistic' | 'layers' | 'translucent')` changes the loaded 3D view and returns the active mode. `getAppearance()` returns that mode or null outside 3D. `getRenderStats()` returns a copied snapshot or null outside 3D, including appearance, draw calls, render count, loaded model and component counts, and model update counts and CPU time.
+
+Display → Appearance → Translucent makes the board and models translucent, shows copper in actual layer colors, and keeps fills faint. Saved XY positions are exact. Where stackup information is absent, internal copper elevations are illustrative and a diagnostic identifies this; transparent raster sorting can produce visual ordering artifacts. Layers remain independently hideable, and selecting then clearing a selection restores translucency. Model refreshes are batched progressively, and internal copper is constructed lazily.
+
 ## 3D net selection and presentations
 
 `selectNet(idOrUniqueName)` also works in 3D: saved copper is accented while unrelated surroundings are greyed. Selection survives layout/3D switches for the same drawing; loading another source clears it. `setCamera3D(preset)` accepts top, bottom, front, back, left, right and isometric while in 3D. It uses named board framing; `getCamera`/`setCamera` remain 2D-only. See [ViewerCarousel](CAROUSEL.md) for live project and 3D board presentations.

@@ -2,6 +2,8 @@
 export as namespace KiCadWebView;
 export declare const EMBED_API_VERSION: '1.0-beta';
 export type Theme = 'light' | 'dark';
+export type BoardAppearance = 'realistic' | 'layers' | 'translucent';
+export interface RenderStats { appearance: BoardAppearance; drawCalls: number; renderCount: number; loadedModelCount: number; componentCount: number; modelUpdates: { requestCount: number; flushCount: number; pending: boolean; cpuMilliseconds: number }; [key: string]: unknown; }
 export type Camera3DPreset = 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right' | 'isometric';
 export type DrawingView = 'pcb' | 'schematic' | '3d' | 'manufacturing';
 export interface ProjectFile { path: string; url: string; }
@@ -13,7 +15,7 @@ export interface LoadOptions {
   view?: DrawingView; file?: string; ref?: string; signal?: AbortSignal;
   baseURL?: string; credentials?: 'omit' | 'same-origin';
 }
-export interface ViewerOptions { theme?: Theme; inspectOnSelect?: boolean; assetPaths?: string[]; loadAsset?: (path: string) => unknown | Promise<unknown>; }
+export interface ViewerOptions { theme?: Theme; appearance?: BoardAppearance; inspectOnSelect?: boolean; assetPaths?: string[]; loadAsset?: (path: string) => unknown | Promise<unknown>; }
 export interface Part { id: string; uuid: string; reference: string; value: string; footprint: string; layer: string; schematicUuid?: string; }
 export interface SavedNet { id: string; name: string; layers: string[]; count: number; }
 export interface SheetLink { uuid: string; name: string; file: string; path: string | null; }
@@ -57,6 +59,7 @@ export declare class KiCadViewer extends EventTarget {
   setView(view: DrawingView, options?: {signal?: AbortSignal}): Promise<boolean>; fit(): void;
   /** Optional GPU-intensive studio presentation mode; returns the active quality after fallback. */
   setRenderQuality(quality: 'low'|'balanced'|'high'|'presentation'): 'low'|'balanced'|'high'|'presentation';
+  setAppearance(appearance: BoardAppearance): BoardAppearance; getAppearance(): BoardAppearance | null; getRenderStats(): RenderStats | null;
   getCamera(): Camera2D | null; setCamera(camera: Camera2D): void; pickDemoFace(options?: {signal?: AbortSignal}): Promise<SelectedDemoFace>; rotate3D(direction: 'left'|'right'|'up'|'down'|'clockwise'|'counterclockwise', degrees?: number): boolean; getCamera3D(): Camera3D | null; setCamera3D(preset: Camera3DPreset | Camera3D): boolean;
   getLayers(): string[]; setLayers(layers: string[]): void; setTheme(theme: Theme): void;
   setMeasuring(enabled: boolean): void;

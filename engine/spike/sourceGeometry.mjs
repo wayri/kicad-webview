@@ -15,14 +15,14 @@ export function drillLoopInsideBoard(loop,outer,holes=[]){
  for(const boundary of [outer,...holes])for(let i=0;i<loop.length;i++)for(let j=0;j<boundary.length;j++)if(intersects(loop[i],loop[(i+1)%loop.length],boundary[j],boundary[(j+1)%boundary.length]))return false;
  return true;
 }
-export function sourceZoneGeometry(ast,maxPolygons=1000,maxPoints=500000){
+export function sourceZoneGeometry(ast,maxPolygons=1000,maxPoints=500000,allowedLayers=['F.Cu','B.Cu']){
  const records=[],nets=new Map(children(ast,'net').map(node=>[value(node[1]),String(value(node[2])||'')]));let points=0,truncated=false,unfilled=0;
  for(const zone of children(ast,'zone')){
   const filled=children(zone,'filled_polygon'),polygons=filled.length?filled:children(zone,'polygon');if(!filled.length)unfilled++;
   const layerNode=child(zone,'layers'),layers=layerNode?layerNode.slice(1).map(value):[value(child(zone,'layer')?.[1])];
   for(const polygon of polygons){const pts=children(child(polygon,'pts')||[],'xy').map(node=>[Number(value(node[1])),Number(value(node[2]))]).filter(point=>point.every(Number.isFinite));
    if(pts.length<3)continue;
-   const ownLayer=value(child(polygon,'layer')?.[1]);for(const layer of ownLayer?[ownLayer]:layers){if(!['F.Cu','B.Cu'].includes(layer))continue;
+   const ownLayer=value(child(polygon,'layer')?.[1]);for(const layer of ownLayer?[ownLayer]:layers){if(!allowedLayers.includes(layer))continue;
     if(records.length>=maxPolygons||points+pts.length>maxPoints){truncated=true;continue;}points+=pts.length;
     records.push({points:pts,layer,filled:Boolean(filled.length),id:String(value(child(zone,'uuid')?.[1])||value(child(zone,'tstamp')?.[1])||'saved-zone-'+records.length),net:String(value(child(zone,'net_name')?.[1])||nets.get(value(child(zone,'net')?.[1]))||'')});
    }

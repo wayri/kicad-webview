@@ -11,3 +11,8 @@ The stage is excluded from picking and board fit, is front-sided so it does not 
 The demonstration turntable stops on pointer, wheel, keyboard, view changes, page hiding and disposal. Normal orbit/selection and scripted DemoController controls continue to use the same viewer.
 
 Browser checks covered quality switching, turntable control and narrow viewports; hardware support can vary.
+## Board appearance
+
+Display → Appearance → Translucent makes the board and models translucent, shows copper in actual layer colors, and keeps fills faint. Saved XY positions are exact. Where stackup information is absent, internal copper elevations are illustrative and a diagnostic identifies this; transparent raster sorting can produce visual ordering artifacts. Layers remain independently hideable, and selecting then clearing a selection restores translucency. Model refreshes are batched progressively, and internal copper is constructed lazily.
+
+Translucent picking, surface measurement and demo-face selection skip the substrate so visible saved geometry behind it stays reachable. Switch to an opaque appearance when measuring the board surface itself. Hidden layers remain excluded.

@@ -1,5 +1,6 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 /** Match saved geometry identities without treating net zero as a connected net. */
+export function hasSavedSelection(selection={}){return ['references','uuids','netNames'].some(key=>Array.isArray(selection[key])&&selection[key].some(value=>typeof value==='string'&&value.length>0))||(Array.isArray(selection.netCodes)&&selection.netCodes.some(value=>typeof value==='number'&&Number.isFinite(value)&&value!==0||typeof value==='string'&&value!==''&&value!=='0'));}
 export function selectionMatcher(selection = {}, board = {}) {
   const strings = values => new Set(Array.isArray(values) ? values.filter(v => typeof v === 'string' && v) : []);
   const references = strings(selection.references), uuids = strings(selection.uuids);

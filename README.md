@@ -1,7 +1,7 @@
 <h1 align="center">KiCad WebView</h1>
 <p align="center">Interactive electronics. Anywhere on the web.</p>
 <p align="center"><a href="https://wayri.github.io/kicad-webview/">Live demos</a> · <a href="https://wayri.github.io/kicad-webview/docs/">Documentation</a> · <a href="https://wayri.github.io/kicad-webview/docs/api/">API reference</a> · <a href="https://github.com/wayri/kicad-webview/releases">Releases</a></p>
-<p align="center"><a href="LICENSE"><img alt="License: MPL 2.0" src="https://img.shields.io/badge/license-MPL_2.0-42dbca"></a> <a href="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml"><img alt="Viewer checks" src="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml/badge.svg?branch=main"></a> <a href="https://github.com/wayri/kicad-webview/releases"><img alt="Beta" src="https://img.shields.io/badge/status-beta-7c91ff"></a> <a href="https://wayri.github.io/kicad-webview/docs/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue"></a></p>
+<p align="center"><a href="LICENSE"><img alt="License: MPL 2.0" src="https://img.shields.io/badge/license-MPL_2.0-42dbca"></a> <a href="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml"><img alt="Viewer checks" src="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml/badge.svg?branch=main"></a> <a href="https://github.com/wayri/kicad-webview/releases"><img alt="Release 0.1.0" src="https://img.shields.io/badge/version-0.1.0-42dbca"></a> <a href="https://wayri.github.io/kicad-webview/docs/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue"></a></p>
 
 Embed read-only **KiCad schematics, PCB layouts and interactive 3D boards** in websites, blogs and applications. Inspect parts, pads, nets and layers; link views; navigate complete projects; or bundle a design and viewer into one portable HTML file. Gerber and Excellon support brings fabrication files into the same viewer.
 
@@ -14,12 +14,12 @@ Everything needed for native KiCad viewing runs in the browser. Visitors need no
 - [Read the user guide](https://wayri.github.io/kicad-webview/docs/user-guide/) or [API reference](https://wayri.github.io/kicad-webview/docs/api/).
 - [Download a release](https://github.com/wayri/kicad-webview/releases), or build this checkout.
 
-The npm beta is **0.1.0-beta.3**, licensed under MPL-2.0. Install the explicit beta tag or pin a version. The website’s immutable beta.2 SDK remains available, while its separately maintained demonstrations may use additional host adapters. Archived beta.1 downloads retain their earlier license.
+The current release is **0.1.0**, licensed under MPL-2.0. Install the latest release or pin a version. The website’s immutable beta.2 SDK remains available, while its separately maintained demonstrations may use additional host adapters. Archived beta.1 downloads retain their earlier license.
 
 ## Install from npm or use a CDN
 
 ~~~sh
-npm install @wayrisignals/kicad-webview@beta
+npm install @wayrisignals/kicad-webview@0.1.0
 ~~~
 
 ~~~js
@@ -32,7 +32,7 @@ For direct browser use, pin the version and load the classic script. No npm inst
 
 ~~~html
 <div id="board" style="height:70dvh;min-height:360px"></div>
-<script src="https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@0.1.0-beta.3/dist/kicad-webview.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@0.1.0/dist/kicad-webview.min.js"></script>
 <script>
   const viewer = new KiCadWebView.Viewer('#board', { theme:'dark' });
   viewer.load('/designs/project.zip', { view:'3d' }).catch(console.error);
@@ -40,7 +40,7 @@ For direct browser use, pin the version and load the classic script. No npm inst
 </script>
 ~~~
 
-The self-contained ES module is available at [jsDelivr](https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@0.1.0-beta.3/dist/kivi-viewer.js) or [UNPKG](https://unpkg.com/@wayrisignals/kicad-webview@0.1.0-beta.3/dist/kivi-viewer.js). The classic script is available from either CDN at the matching path. Self-host the package contents for offline use and keep its license and notices. The npm artifact contains the viewer, matching covered source, types, documentation and source-parameterized iframe entry; legacy board fixtures and fixture-backed example pages are excluded. Current [IRCA and credited public-board demonstrations](https://wayri.github.io/kicad-webview/) remain on the website.
+The self-contained ES module is available at [jsDelivr](https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@0.1.0/dist/kivi-viewer.js) or [UNPKG](https://unpkg.com/@wayrisignals/kicad-webview@0.1.0/dist/kivi-viewer.js). The classic script is available from either CDN at the matching path. Self-host the package contents for offline use and keep its license and notices. The npm artifact contains the viewer, matching covered source, types, documentation and source-parameterized iframe entry; legacy board fixtures and fixture-backed example pages are excluded. Current [IRCA and credited public-board demonstrations](https://wayri.github.io/kicad-webview/) remain on the website.
 
 The [linked hierarchy demo](https://wayri.github.io/assets/demos/hierarchy.html) combines this library’s selection and 3D focus APIs with a source-bound website sheet adapter. See the [integration guide](https://wayri.github.io/kicad-webview/docs/examples/#link-the-hierarchy-pcb-and-3d-assembly) for that host integration.
 
@@ -63,6 +63,10 @@ After building, serve the generated dist/ folder with your static website:
 ~~~
 
 The same distribution includes an ES module (kivi-viewer.js), a custom element, an iframe entry and a browser-only exporter. Give each viewer a usable height. Preserve legal notices and the matching-source link when distributing builds. [Hosting guide](docs/HOSTING.md) · [Public API](docs/PUBLIC-API.md)
+
+## Translucent inspection and progressive loading
+
+Choose **Display → Appearance → Translucent**, or call viewer.setAppearance('translucent') after opening 3D. The board and component models become translucent; copper uses saved layer colors and filled zones stay faint. Internal copper is built only when requested. Missing stackup elevations are labelled illustrative. Selection, layer visibility and normal rendering remain available. See [3D appearance and performance](docs/PRESENTATION.md).
 
 ## Capabilities
 
