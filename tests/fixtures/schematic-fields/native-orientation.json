@@ -1,0 +1,173 @@
+{
+  "kicad_version": "10.0.6",
+  "cases": [
+    {
+      "ref": "R1",
+      "symbolAngle": 0,
+      "fieldAngle": 0,
+      "mirror": "",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R2",
+      "symbolAngle": 0,
+      "fieldAngle": 90,
+      "mirror": "",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R3",
+      "symbolAngle": 90,
+      "fieldAngle": 0,
+      "mirror": "",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R4",
+      "symbolAngle": 90,
+      "fieldAngle": 90,
+      "mirror": "",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R5",
+      "symbolAngle": 180,
+      "fieldAngle": 0,
+      "mirror": "",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R6",
+      "symbolAngle": 180,
+      "fieldAngle": 90,
+      "mirror": "",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R7",
+      "symbolAngle": 270,
+      "fieldAngle": 0,
+      "mirror": "",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R8",
+      "symbolAngle": 270,
+      "fieldAngle": 90,
+      "mirror": "",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R9",
+      "symbolAngle": 0,
+      "fieldAngle": 0,
+      "mirror": "x",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R10",
+      "symbolAngle": 0,
+      "fieldAngle": 90,
+      "mirror": "x",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R11",
+      "symbolAngle": 90,
+      "fieldAngle": 0,
+      "mirror": "x",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R12",
+      "symbolAngle": 90,
+      "fieldAngle": 90,
+      "mirror": "x",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R13",
+      "symbolAngle": 180,
+      "fieldAngle": 0,
+      "mirror": "x",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R14",
+      "symbolAngle": 180,
+      "fieldAngle": 90,
+      "mirror": "x",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R15",
+      "symbolAngle": 270,
+      "fieldAngle": 0,
+      "mirror": "x",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R16",
+      "symbolAngle": 270,
+      "fieldAngle": 90,
+      "mirror": "x",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R17",
+      "symbolAngle": 0,
+      "fieldAngle": 0,
+      "mirror": "y",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R18",
+      "symbolAngle": 0,
+      "fieldAngle": 90,
+      "mirror": "y",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R19",
+      "symbolAngle": 90,
+      "fieldAngle": 0,
+      "mirror": "y",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R20",
+      "symbolAngle": 90,
+      "fieldAngle": 90,
+      "mirror": "y",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R21",
+      "symbolAngle": 180,
+      "fieldAngle": 0,
+      "mirror": "y",
+      "nativeSvgAngle": 0
+    },
+    {
+      "ref": "R22",
+      "symbolAngle": 180,
+      "fieldAngle": 90,
+      "mirror": "y",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R23",
+      "symbolAngle": 270,
+      "fieldAngle": 0,
+      "mirror": "y",
+      "nativeSvgAngle": -90.0
+    },
+    {
+      "ref": "R24",
+      "symbolAngle": 270,
+      "fieldAngle": 90,
+      "mirror": "y",
+      "nativeSvgAngle": 0
+    }
+  ]
+}

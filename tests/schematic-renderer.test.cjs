@@ -33,7 +33,8 @@ test("placed unit graphics and pins use world-mm rotation while hidden fields st
   assert.equal(pick.stroke, false);
   assert.equal(pick.fill, false);
   assert.ok(pick.points[0].x < 100 && pick.points[2].x > 100);
-  const reference = owned.find((item) => item.text === "U1" && item.kind === "property");
+  const reference = owned.find((item) => item.text === "U1A" && item.kind === "property");
+  assert.equal(reference.reference, "U1"); // Unit suffix is display-only.
   assert.deepEqual({ x: reference.x, y: reference.y, size: reference.size, color: reference.color, align: reference.align,
     baseline: reference.baseline, bold: reference.bold, italic: reference.italic },
   { x: 102, y: 75, size: 1.5, color: "#840000", align: "left", baseline: "top", bold: true, italic: true });

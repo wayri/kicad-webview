@@ -1,4 +1,5 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
+import * as inspection from './inspection-api.mjs';
 import {rotatedCamera3D} from './viewer-navigation.mjs';
 /* Public browser entry point; shared renderer sources remain authoritative. */
 import '../engine/design-diff.js';
@@ -37,7 +38,7 @@ function awaitOperation(promise, signal) {
 
 /** Read-only, independently mounted schematic / PCB / 3D viewer. */
 export class KiCadViewer extends EventTarget {
-  constructor(target, { theme = 'light', loadAsset, assetPaths = [], inspectOnSelect = true, appearance = 'realistic' } = {}) {
+  constructor(target, { theme = 'light', loadAsset, assetPaths = [], inspectOnSelect = true, appearance = 'realistic', highlightStyle = 'dim', highlightColor = 'accent' } = {}) {
     super();
     const host = typeof target === 'string' ? document.querySelector(target) : target;
     if (!host?.append || !host?.ownerDocument) throw new TypeError('Choose a viewer container element.');
@@ -45,6 +46,8 @@ export class KiCadViewer extends EventTarget {
     if (!['light', 'dark'].includes(theme)) throw new TypeError('Theme must be light or dark.');
     if (typeof inspectOnSelect !== 'boolean') throw new TypeError('inspectOnSelect must be a boolean.');
     if (!['realistic', 'layers', 'translucent'].includes(appearance)) throw new TypeError('Choose realistic, layers or translucent appearance.');
+    const highlight=inspection.highlightSettings(highlightStyle,highlightColor);
+    this.highlightMode=highlight.mode;this.highlightColor=highlight.color;
     this.inspectOnSelect = inspectOnSelect;
     this.host = host;
     this.theme = theme;
@@ -290,7 +293,8 @@ export class KiCadViewer extends EventTarget {
           ...this.modelOptions, ...projectModels,
           ...(this.modelOptions.loadAsset ? { loadAsset: this.modelOptions.loadAsset } : {}),
           boardPath: state.path, dark: this.theme === 'dark', embedded: true, externalInspector: true,
-          onAppearanceChange: value => { if (mounted()) this.modelOptions.appearance = value; },
+          onAppearanceChange: value => { if (mounted()) {this.modelOptions.appearance = value;this.updateControls();} },
+          onLayersChange: () => {if(mounted())this.updateControls();},
           onDiagnostics: value => { notes = value; if (mounted()) { this.renderingNotes = notes; this.updateStatus(); } },
           onSelect: item => { if (mounted()) this.handleSelection({ item }, '3d'); },
         });
@@ -410,15 +414,15 @@ export class KiCadViewer extends EventTarget {
   setMeasuring(enabled) {this.assertActive();if(this.view!=='manufacturing')throw new Error('Measurement requires manufacturing view.');this.renderer.setMeasuring(enabled);this.updateControls();}
 
   getLayers() { this.assertActive(); return [...(this.design?.layers || [])]; }
-  setLayers(layers) {
-    this.assertActive();
-    if (!['pcb','manufacturing'].includes(this.view) || !this.renderer) throw new Error('Layer control requires the PCB view.');
-    const known = this.getLayers();
-    if (!Array.isArray(layers) || layers.some(layer => !known.includes(layer))) throw new TypeError('Choose saved PCB layer names.');
-    this.renderer.visibleLayers = new Set(layers);
-    this.renderer.draw();
-    this.updateControls();
-  }
+  setLayers(layers) { return inspection.setLayers(this,layers); }
+  getLayerState() { return inspection.getLayerState(this); }
+  setLayerPreset(preset) { return inspection.setLayerPreset(this,preset); }
+  focusLayer(layer,options) { return inspection.focusLayer(this,layer,options); }
+  clearLayerFocus() { return inspection.clearLayerFocus(this); }
+  restoreLayerView() { return inspection.restoreLayerView(this); }
+  fitFocusedLayer() { return inspection.fitFocusedLayer(this); }
+  setHighlightStyle(mode,options) { return inspection.setHighlightStyle(this,mode,options); }
+  getHighlightStyle() { this.assertActive();return {mode:this.highlightMode,color:this.highlightColor}; }
 
   dispose() {
     if (this.disposed) return;

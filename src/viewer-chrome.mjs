@@ -1,4 +1,5 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
+import {createLayerControls,createHighlightControls,INSPECTION_STYLE} from './inspection-controls.mjs';
 import {createViewerNavigation,NAVIGATION_STYLE} from './viewer-navigation.mjs';
 /* Compact, shadow-scoped chrome shared by every embedded drawing instance. */
 const icons = {
@@ -8,6 +9,7 @@ const icons = {
   fit: 'M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5M8 8h8v8H8z',
   moon: 'M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13z',
   sun: 'M12 3V1M12 23v-2M3 12H1M23 12h-2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
+  highlight: 'm9 3 1.5 4.5L15 9l-4.5 1.5L9 15l-1.5-4.5L3 9l4.5-1.5zM18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1z',
   layers: 'm12 3 10 5-10 5L2 8zM3 13l9 5 9-5M3 18l9 5 9-5',
   inspect: 'M4 3h16v18H4zM9 3v18M12 7h5M12 11h5M12 15h3',
   ruler: 'M3 17 17 3l4 4L7 21zM13 7l4 4M9 11l3 3M5 15l3 3',
@@ -68,7 +70,7 @@ export function createViewerChrome(viewer) {
     node.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="' + icons[name] + '"/></svg>';
     return node;
   };
-  const style = make('style'); style.textContent = STYLE+NAVIGATION_STYLE;
+  const style = make('style'); style.textContent = STYLE+NAVIGATION_STYLE+INSPECTION_STYLE;
   const toolbar = make('div', 'viewer-toolbar');
   toolbar.setAttribute('role', 'toolbar'); toolbar.setAttribute('aria-label', 'Drawing viewer controls');
   const picker = make('div', 'viewer-picker'), fileSelect = make('select'), fileName = make('span', 'viewer-name');
@@ -90,20 +92,15 @@ export function createViewerChrome(viewer) {
   views.append(layoutButton, threeButton);
   const fitButton = button('fit', 'Fit drawing', () => viewer.fit());
   const themeButton = button('moon', 'Switch to dark theme', () => viewer.setTheme(viewer.theme === 'light' ? 'dark' : 'light'));
-  const layersMenu = make('details', 'viewer-layers'), layersSummary = make('summary');
-  layersSummary.title = 'PCB layers'; layersSummary.setAttribute('aria-label', 'PCB layers'); layersSummary.append(icon('layers'));
-  const layerList = make('div', 'viewer-layer-list'), layerFilter = make('input');
-  layerFilter.type = 'search'; layerFilter.placeholder = 'Filter layers'; layerFilter.setAttribute('aria-label', 'Filter layers');
-  layerFilter.style.cssText='width:100%;padding:7px;margin-bottom:6px;border:1px solid var(--viewer-border);border-radius:5px;background:var(--viewer-bg);color:var(--viewer-ink);font:12px system-ui';
-  const layerPopup=make('div','viewer-layer-list'),layerClose=make('button');layerClose.type='button';layerClose.textContent='Close layers';layerClose.setAttribute('aria-label','Close layers');layerClose.style.cssText='display:flex;margin-left:auto;margin-bottom:6px;min-height:44px';layerClose.onclick=()=>{layersMenu.open=false;layersSummary.focus?.();};layerList.className='';layerPopup.append(layerClose,layerFilter,layerList);layersMenu.append(layersSummary,layerPopup);
-  layerFilter.oninput=()=>{const query=layerFilter.value?.trim().toLowerCase()||'';for(const label of layerList.children)label.hidden=!label.title.toLowerCase().includes(query);};
+  const layerControls=createLayerControls(viewer,make,icon,fail),highlightControls=createHighlightControls(viewer,make,icon,fail);
+  const layersMenu=layerControls.menu,layerList=layerControls.list,layerFilter=layerControls.filter,layersSummary=layerControls.summary;
   const notesButton = button('notes', 'Rendering notes', () => toggleNotes());
   const noteCount = make('span', 'viewer-note-count'); noteCount.hidden = true; notesButton.append(noteCount);
   notesButton.setAttribute('aria-expanded', 'false');
   const measureButton=button('ruler','Measure distance',()=>viewer.setMeasuring(!viewer.renderer?.measuring));
   const inspectorButton = button('inspect', 'Inspect properties and parts', () => { toggleNotes(false); viewer.setInspectorOpen(!viewer.inspector.isOpen()); });
   inspectorButton.setAttribute('aria-expanded', 'false');
-  actions.append(fitButton, measureButton, inspectorButton, themeButton, layersMenu, notesButton);
+  actions.append(fitButton, measureButton, inspectorButton, themeButton, highlightControls.menu, layersMenu, notesButton);
   toolbar.append(picker, views, actions);
   const ToolbarObserver=doc.defaultView?.ResizeObserver||globalThis.ResizeObserver;
   const toolbarObserver=ToolbarObserver?new ToolbarObserver(()=>{const height=toolbar.getBoundingClientRect().height;viewer.root.style.setProperty('--viewer-toolbar-height',height+'px');}):null;
@@ -116,6 +113,7 @@ export function createViewerChrome(viewer) {
   const layerInputs = new Map();
   function toggleNotes(open = !notesOpen) {
     notesOpen = Boolean(open); status.hidden = !notesOpen;
+    if(notesOpen){layersMenu.open=false;highlightControls.menu.open=false;}
     if (notesOpen) viewer.inspector?.toggle(false);
     notesButton.setAttribute('aria-expanded', String(notesOpen));
   }
@@ -146,33 +144,20 @@ export function createViewerChrome(viewer) {
     threeButton.setAttribute('aria-pressed', String(viewer.view === '3d'));
     fitButton.disabled = !viewer.renderer;
     measureButton.hidden=viewer.view!=='manufacturing';measureButton.setAttribute('aria-pressed',String(Boolean(viewer.renderer?.measuring)));
-    layersSummary.title=viewer.view==='manufacturing'?'Manufacturing layers':'PCB layers';layersSummary.setAttribute('aria-label',layersSummary.title);
-    layersMenu.hidden = !['pcb','manufacturing'].includes(viewer.view) || !viewer.renderer;
-    if (layersMenu.hidden) layersMenu.open = false;
-    const layers = ['pcb','manufacturing'].includes(viewer.view) && viewer.renderer ? viewer.getLayers() : [];
-    const signature = layers.join('\0');
-    if (signature !== layerSignature) {
-      layerInputs.clear(); layerSignature = signature;
-      layerList.replaceChildren(...layers.map(layer => {
-        const label = make('label'), input = make('input'), text = make('span');
-        input.type = 'checkbox'; input.setAttribute('aria-label', layer); layerInputs.set(layer, input);
-        input.onchange = () => { const selected = new Set(viewer.renderer.visibleLayers); if (input.checked) selected.add(layer); else selected.delete(layer); viewer.setLayers([...selected]); };
-        text.textContent = layer; label.title=layer; label.append(input, text); return label;
-      }));
-    }
-    for (const [layer, input] of layerInputs) input.checked = viewer.renderer.visibleLayers.has(layer);
-    layerFilter.oninput();
+    layerControls.update();highlightControls.update();
     setTheme(viewer.theme);
   }
+  layerControls.menu.ontoggle=()=>{if(layerControls.menu.open){highlightControls.menu.open=false;toggleNotes(false);viewer.inspector.toggle(false);}};
+  highlightControls.menu.ontoggle=()=>{if(highlightControls.menu.open){layerControls.menu.open=false;toggleNotes(false);viewer.inspector.toggle(false);}};
   fileSelect.onchange = () => viewer.openFile(fileSelect.value).catch(fail);
-  const escape = event => { if (event.key === 'Escape') { toggleNotes(false); layersMenu.open = false; } };
+  const escape = event => { if (event.key === 'Escape') { toggleNotes(false); layersMenu.open = false; highlightControls.menu.open=false; } };
   viewer.surface.addEventListener?.('keydown', escape);
   return {
     style, toolbar, fileSelect, layoutButton, threeButton, fitButton, themeButton, layersMenu, layerList, notesButton, measureButton, inspectorButton, layerFilter,
     update, setTheme, setStatus, toggleNotes,
     dispose() {
       navigation.dispose();
-      layerClose.onclick=null;
+      layerControls.menu.ontoggle=highlightControls.menu.ontoggle=null;layerControls.dispose();highlightControls.dispose();
       toolbarObserver?.disconnect();
       viewer.surface.removeEventListener?.('keydown', escape);
       for (const node of [layoutButton, threeButton, fitButton, themeButton, notesButton, measureButton, inspectorButton]) node.onclick = null;

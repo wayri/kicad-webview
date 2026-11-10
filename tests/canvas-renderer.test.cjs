@@ -309,3 +309,9 @@ test('selected PCB net repaints copper with accent and dims other copper while r
  assert.equal(painted.find(e=>e.p===a).style.color,'#ffe18b');assert.equal(painted.find(e=>e.p===a).style.opacity,1);assert.ok(painted.find(e=>e.p===b).style.opacity<1);
  assert.equal(a.width,.4);assert.equal(canvas.query({x:2,y:0})[0],a);canvas.dispose();
 });
+
+
+test('isolated highlights exclude unrelated overlapping copper from picking and clear restores it',()=>{
+ const {canvas}=runtime();const a={type:'polyline',points:[{x:0,y:0},{x:5,y:0}],width:.4,uuid:'a',kind:'track',layer:'F.Cu'},b={...a,uuid:'b'};
+ canvas.setDocument({layers:['F.Cu'],primitives:[a,b]},'board.kicad_pcb');canvas.setNetHighlight({primitives:[a]},{mode:'isolate'});assert.deepEqual(canvas.query({x:2,y:0}).map(p=>p.uuid),['a']);canvas.setNetHighlight(null);assert.deepEqual(canvas.query({x:2,y:0}).map(p=>p.uuid),['a','b']);canvas.dispose();
+});

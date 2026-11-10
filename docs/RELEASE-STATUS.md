@@ -1,7 +1,7 @@
 # Release status
 
-KiCad WebView 0.1.1 is the MPL-2.0 npm release. Use the latest dist-tag or pin 0.1.1. See [npm](https://www.npmjs.com/package/@wayrisignals/kicad-webview), [documentation](https://wayri.github.io/kicad-webview/docs/) and [current demos](https://wayri.github.io/kicad-webview/). Third-party terms remain in [LICENSING.md](../LICENSING.md).
+KiCad WebView 0.2.0 is the MPL-2.0 inspection update. Matching covered source is published with the release; npm publication is verified separately before CDN links are advertised. See [documentation](https://wayri.github.io/kicad-webview/docs/) and [inspection controls](INSPECTION-CONTROLS.md).
 
-Version 0.1.1 is a documentation-only patch clarifying free use and optional paid help. Viewer behavior is unchanged from 0.1.0, which introduced translucent layer-colored 3D inspection, reversible model opacity and lazy internal copper, plus batched progressive model refresh, allocation-free label positions and an empty-selection fast path. The npm artifact excludes legacy design fixtures and fixture-backed demo pages. Earlier website SDK paths remain immutable.
+This update adds configurable dim/bright/isolate highlighting and accent/source colors; searchable saved layers with colors, counts and presets; 2D PCB focus/isolate/fit/restore; and 3D copper visibility through the same compact controls. It also ports schematic field orientation and multi-unit display fixes from KiCad Online. Translucent rendering, independent embeds and source identities remain supported.
 
-This remains a read-only interpretation of saved source. Missing models, illustrative layer elevations and renderer limits remain disclosed. Slack and Notion web clients have displayed interactive HTML snapshots; physical mobile clients remain unverified, and the Confluence Forge adapter has not been deployed.
+Free-use and optional paid-help wording is included in 0.2.0. The library remains a read-only viewer; adapter and renderer limitations remain disclosed.

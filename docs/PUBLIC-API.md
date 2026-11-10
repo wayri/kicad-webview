@@ -57,3 +57,7 @@ DemoController(viewer) adds explicit caller-scripted LED/display/button/knob ove
 ## Independent project hierarchy
 
 buildProjectHierarchy(files,{root,entry}) builds source-derived root/subsheet instance data. loadProjectHierarchy loads listed sources; ProjectTree mounts an expandable diagram, emits sheet selection and exports script-free SVG through toSVG(). Available in full/lite entries and the independent /hierarchy subpath. See [project tree API](PROJECT-TREE.md).
+
+## Highlight and layer controls
+
+See [inspection controls](INSPECTION-CONTROLS.md) for setHighlightStyle/getHighlightStyle, getLayerState, layer presets, 2D focus/fit/restore, 3D copper visibility and per-instance behavior.

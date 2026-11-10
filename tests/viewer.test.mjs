@@ -256,9 +256,9 @@ test('icon controls have accessible names, active states and expandable renderin
 test('download failures expose readable notes and a layer checkbox keeps its focusable node', async () => {
   const { viewer } = fixture();
   await viewer.loadSource(board);
-  const checkbox = viewer.layerList.children[0].children[0];
+  const checkbox = viewer.layerList.children[0].children[0].children[0];
   checkbox.checked = false; checkbox.onchange();
-  assert.equal(viewer.layerList.children[0].children[0], checkbox);
+  assert.equal(viewer.layerList.children[0].children[0].children[0], checkbox);
   assert.equal(checkbox.checked, false);
   const original = globalThis.fetch;
   try {

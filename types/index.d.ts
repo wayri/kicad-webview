@@ -2,6 +2,11 @@
 export as namespace KiCadWebView;
 export declare const EMBED_API_VERSION: '1.0-beta';
 export type Theme = 'light' | 'dark';
+export type HighlightMode = 'dim' | 'bright' | 'isolate';
+export type HighlightColor = 'accent' | 'source';
+export interface HighlightStyle { mode: HighlightMode; color: HighlightColor; }
+export type LayerPreset = 'all' | 'none' | 'front' | 'back' | 'copper';
+export interface LayerState { layers: string[]; visible: string[]; focused: string | null; focusMode: 'dim' | 'isolate'; canFocus: boolean; canRestore: boolean; }
 export type BoardAppearance = 'realistic' | 'layers' | 'translucent';
 export interface RenderStats { appearance: BoardAppearance; drawCalls: number; renderCount: number; loadedModelCount: number; componentCount: number; modelUpdates: { requestCount: number; flushCount: number; pending: boolean; cpuMilliseconds: number }; [key: string]: unknown; }
 export type Camera3DPreset = 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right' | 'isometric';
@@ -15,7 +20,7 @@ export interface LoadOptions {
   view?: DrawingView; file?: string; ref?: string; signal?: AbortSignal;
   baseURL?: string; credentials?: 'omit' | 'same-origin';
 }
-export interface ViewerOptions { theme?: Theme; appearance?: BoardAppearance; inspectOnSelect?: boolean; assetPaths?: string[]; loadAsset?: (path: string) => unknown | Promise<unknown>; }
+export interface ViewerOptions { theme?: Theme; appearance?: BoardAppearance; highlightStyle?: HighlightMode; highlightColor?: HighlightColor; inspectOnSelect?: boolean; assetPaths?: string[]; loadAsset?: (path: string) => unknown | Promise<unknown>; }
 export interface Part { id: string; uuid: string; reference: string; value: string; footprint: string; layer: string; schematicUuid?: string; }
 export interface SavedNet { id: string; name: string; layers: string[]; count: number; }
 export interface SheetLink { uuid: string; name: string; file: string; path: string | null; }
@@ -33,6 +38,8 @@ export interface AnalysisData {
   fields: AnalysisField[];
 }
 export interface ViewerEvents {
+  highlightstylechange: CustomEvent<HighlightStyle>;
+  layerschange: CustomEvent<LayerState>;
   dispose: CustomEvent<null>;
   ready: CustomEvent<ReadyDetail>;
   select: CustomEvent<SelectionDetail>;
@@ -61,7 +68,11 @@ export declare class KiCadViewer extends EventTarget {
   setRenderQuality(quality: 'low'|'balanced'|'high'|'presentation'): 'low'|'balanced'|'high'|'presentation';
   setAppearance(appearance: BoardAppearance): BoardAppearance; getAppearance(): BoardAppearance | null; getRenderStats(): RenderStats | null;
   getCamera(): Camera2D | null; setCamera(camera: Camera2D): void; pickDemoFace(options?: {signal?: AbortSignal}): Promise<SelectedDemoFace>; rotate3D(direction: 'left'|'right'|'up'|'down'|'clockwise'|'counterclockwise', degrees?: number): boolean; getCamera3D(): Camera3D | null; setCamera3D(preset: Camera3DPreset | Camera3D): boolean;
-  getLayers(): string[]; setLayers(layers: string[]): void; setTheme(theme: Theme): void;
+  getLayers(): string[]; setLayers(layers: string[]): LayerState;
+  getLayerState(): LayerState; setLayerPreset(preset: LayerPreset): LayerState;
+  focusLayer(layer: string, options?: {mode?: 'dim'|'isolate'; fit?: boolean}): LayerState;
+  clearLayerFocus(): LayerState; restoreLayerView(): LayerState; fitFocusedLayer(): boolean;
+  setHighlightStyle(mode: HighlightMode, options?: {color?: HighlightColor}): HighlightStyle; getHighlightStyle(): HighlightStyle; setTheme(theme: Theme): void;
   setMeasuring(enabled: boolean): void;
   setAnalysis(input: AnalysisData | DeepReadonly<AnalysisData> | string): Promise<boolean>;
   getAnalysis(): DeepReadonly<AnalysisData> | null; setAnalysisField(id: string): void; clearAnalysis(): void;

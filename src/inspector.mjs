@@ -271,9 +271,9 @@ export function createInspector(viewer) {
     const owner = record?.part || record;
     const net = record?.type === 'net' ? record : netToggle.checked && record?.type !== 'part' ? model.netFor(record) : null;
     const primitives = net?.primitives || (record?.type === 'pad' || record?.type === 'pin' ? record.primitives : owner?.primitives) || [];
-    if (viewer.view === '3d') { viewer.renderer?.setSelectionDim?.(true); viewer.renderer?.setSelection?.(net ? { netNames: [net.name] } : record ? { uuids: unique([model.find(owner.uuid) === owner ? owner.uuid : '', ...(owner.pads || []).filter(pad => model.find(pad.uuid) === pad).map(pad => pad.uuid), model.find(record.uuid) === record ? record.uuid : '']) } : {}); if (locate && owner?.type === 'part' && model.find(owner.uuid) === owner) viewer.renderer?.focusPart?.(owner.uuid); return; }
+    if (viewer.view === '3d') { if(viewer.renderer?.setSelectionStyle)viewer.renderer.setSelectionStyle({mode:viewer.highlightMode||'dim',color:viewer.highlightColor||'accent'});else viewer.renderer?.setSelectionDim?.(viewer.highlightMode!=='bright'); viewer.renderer?.setSelection?.(net ? { netNames: [net.name] } : record ? { uuids: unique([model.find(owner.uuid) === owner ? owner.uuid : '', ...(owner.pads || []).filter(pad => model.find(pad.uuid) === pad).map(pad => pad.uuid), model.find(record.uuid) === record ? record.uuid : '']) } : {}); if (locate && owner?.type === 'part' && model.find(owner.uuid) === owner) viewer.renderer?.focusPart?.(owner.uuid); return; }
     if (viewer.view === 'manufacturing') return;
-    viewer.renderer?.setNetHighlight?.(record && primitives.length ? { primitives } : null, { mode: 'dim' });
+    viewer.renderer?.setNetHighlight?.(record && primitives.length ? { primitives } : null, { mode: viewer.highlightMode||'dim', selectionColor: viewer.highlightColor||'accent' });
     if (locate && record?.primitives?.length && viewer.renderer?.viewport?.camera) {
       const bounds = globalThis.KiCadOwnedCanvas?.bounds(record.primitives); if (bounds) { const margin = Math.max(1, Math.max(bounds.w, bounds.h) * 0.15); viewer.renderer.viewport.camera.bbox = { x: bounds.x - margin, y: bounds.y - margin, w: Math.max(bounds.w, 1) + margin * 2, h: Math.max(bounds.h, 1) + margin * 2 }; }
     }
@@ -292,7 +292,7 @@ export function createInspector(viewer) {
   function selectNet(id, { locate = false } = {}) {
     const exact = model.nets.find(net => net.id === id), names = model.nets.filter(net => net.name === id), net = exact || (names.length === 1 ? names[0] : null);
     if (!net?.primitives.length || !['pcb', 'schematic', '3d'].includes(viewer.view)) return false;
-    selected = net; viewer.renderer.selected = null; highlight(net, locate); renderProperties(); setTab('properties'); toggle(true);
+    selected = net; viewer.renderer.selected = null; highlight(net, locate); renderProperties(); if(viewer.inspectOnSelect!==false){setTab('properties');toggle(true);}
     viewer.emit('select', { item: { kind: 'net', id: net.id, netName: net.name }, path: viewer.path, view: viewer.view }); return true;
   }
   function updateNetResults() {
@@ -314,7 +314,7 @@ export function createInspector(viewer) {
   }
   labelToggle.onchange = () => { labelsEnabled = labelToggle.checked; syncRenderer(); };
   const api = { style, panel, search, results, resultCount, clearButton, closeButton, propertiesTab, partsTab, properties, partsPanel, netsTab, netSearch, netResults, netToggle, layerSection: null,
-    toggle, select, refreshLayers, syncRenderer, labelToggle, autoInspect,
+    toggle, select, refreshLayers, syncRenderer, labelToggle, autoInspect, refreshHighlight() {highlight(selected);},
     setModel(value) { model = value; selected = null; search.value = ''; netSearch.value = ''; updateResults(); updateNetResults(); renderProperties(); },
     resetSelection() { selected = null; renderProperties(); },
     getSelection() {if(!selected)return null;const net=selected.type==='net'?selected:model.netFor(selected);return {kind:selected.type,...(selected.uuid?{uuid:selected.uuid}:{}),...(selected.id?{id:selected.id}:{}),...(selected.part?.uuid?{ownerUuid:selected.part.uuid}:{}),...(net?.name||selected.net?{netName:net?.name||selected.net}:{}),...(['pad','pin'].includes(selected.type)?{pinNumber:selected.number}:{})};},

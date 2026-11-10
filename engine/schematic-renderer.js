@@ -242,6 +242,23 @@
       }
       return selected;
     }
+    function libraryUnitCount(name, visited = new Set()) {
+      if (visited.has(name) || visited.size > 8) return 1;
+      visited.add(name);
+      const definition = definitions.get(name);
+      if (!definition) return 1;
+      let count = 1;
+      const base = scalar(definition, "extends");
+      if (base) {
+        const prefix = name.includes(":") ? name.slice(0, name.indexOf(":") + 1) : "";
+        count = libraryUnitCount(definitions.has(base) ? base : prefix + base, visited);
+      }
+      for (const nested of forms(definition, "symbol")) {
+        const match = /_(\d+)_(\d+)$/.exec(value(nested[1]) || "");
+        if (match) count = Math.max(count, Number(match[1]));
+      }
+      return count;
+    }
     function renderPin(pin, map, owner, symbolDef) {
       const at = point(pin, "at"), length = scalar(pin, "length") ?? 0;
       if (!at || !finite(length) || length < 0) { warn("Pin without valid position/length was skipped."); return; }
@@ -353,10 +370,19 @@
       pick: true, stroke: false, fill: false, ...owner });
       for (const property of forms(node, "property")) {
         if (isHidden(property)) continue;
-        const position = point(property, "at"), string = value(property[2]);
+        const position = point(property, "at");
+        let string = value(property[2]);
         if (!position) { warn(`Visible property ${value(property[1])} has no position.`); continue; }
         const propertyAngle = value(form(property, "at")?.[3]) || 0;
-        text(position, string, fontSize(property), -propertyAngle, COLOR.symbol,
+        // Saved field positions are world coordinates, but their orientation is
+        // relative to the symbol. KiCad keeps the resulting text upright.
+        const fieldAngle = ((propertyAngle + angle) % 180 + 180) % 180;
+        if (value(property[1]) === "Reference" && libraryUnitCount(id) > 1 && Number.isInteger(unit) && unit > 0) {
+          let suffix = "", ordinal = unit;
+          while (ordinal > 0) { ordinal--; suffix = String.fromCharCode(65 + ordinal % 26) + suffix; ordinal = Math.floor(ordinal / 26); }
+          string += suffix;
+        }
+        text(position, string, fontSize(property), -fieldAngle, COLOR.symbol,
           { ...owner, kind: "property", property: value(property[1]), ...fontStyle(property) });
       }
     }

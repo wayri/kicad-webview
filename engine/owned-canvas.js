@@ -279,7 +279,7 @@
       for(const label of labels){ctx.save();ctx.translate(label.x,label.y);ctx.rotate(label.angle*Math.PI/180);ctx.font=label.size+'px monospace';const lines=label.text.split('\n');lines.forEach((line,i)=>{const y=(i-(lines.length-1)/2)*label.size*1.4;ctx.strokeText(line,0,y);ctx.fillText(line,0,y);});ctx.restore();}ctx.restore();
     }
     setSelectionMode(mode){this.selectionMode=['all','part','net','pin'].includes(mode)?mode:'all';}
-    query(at,pixels=5){const tolerance=pixels/this.viewport.camera.zoom;return this.candidates({x:at.x-tolerance,y:at.y-tolerance,w:2*tolerance,h:2*tolerance}).filter(p=>this.geometryVisible(p)&&p.pick!==false&&(this.selectionMode!=='pin'||['pad','pin','pin-marker','pin-name','pin-number'].includes(p.kind))&&(p.uuid||p.reference)&&(!p.layer||this.visibleLayers.has(p.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||p.layer===this.focusedLayer)&&hitPrimitive(p,at,tolerance)).sort((a,b)=>{const priority=p=>p.kind==='pad'?0:this.pcb&&['track','arc','via'].includes(p.kind)?1:p.kind==='footprint'||p.kind==='symbol'||p.kind==='footprint-hit'?2:p.type==='text'?4:p.kind==='zone'?5:3;const focus=p=>this.focusedLayer&&p.layer===this.focusedLayer?0:1;return focus(a)-focus(b)||priority(a)-priority(b);}).slice(0,40);}
+    query(at,pixels=5){const tolerance=pixels/this.viewport.camera.zoom;return this.candidates({x:at.x-tolerance,y:at.y-tolerance,w:2*tolerance,h:2*tolerance}).filter(p=>this.geometryVisible(p)&&p.pick!==false&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(p))&&(this.selectionMode!=='pin'||['pad','pin','pin-marker','pin-name','pin-number'].includes(p.kind))&&(p.uuid||p.reference)&&(!p.layer||this.visibleLayers.has(p.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||p.layer===this.focusedLayer)&&hitPrimitive(p,at,tolerance)).sort((a,b)=>{const priority=p=>p.kind==='pad'?0:this.pcb&&['track','arc','via'].includes(p.kind)?1:p.kind==='footprint'||p.kind==='symbol'||p.kind==='footprint-hit'?2:p.type==='text'?4:p.kind==='zone'?5:3;const focus=p=>this.focusedLayer&&p.layer===this.focusedLayer?0:1;return focus(a)-focus(b)||priority(a)-priority(b);}).slice(0,40);}
 
     select(hit,options={}){this.selected=hit?.primitive||null;this.draw();this.dispatchEvent(new CustomEvent('kicad:select',{detail:{item:hit?.context||null,multi:Boolean(options.multi)}}));}
 
@@ -412,7 +412,7 @@
       }
 
       this.drawNetNames();
-      if(this.selected&&this.geometryVisible(this.selected)){const b=bounds([this.selected],true);if(b){const a=c.world_to_screen(b);ctx.strokeStyle='#80f0b7';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(a.x-4,a.y-4,(c.flipped?-1:1)*b.w*c.zoom+8,b.h*c.zoom+8);ctx.setLineDash([]);}}
+      if(this.selected&&this.geometryVisible(this.selected)&&(!this.selected.layer||this.visibleLayers.has(this.selected.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||this.selected.layer===this.focusedLayer)&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(this.selected))){const b=bounds([this.selected],true);if(b){const a=c.world_to_screen(b);ctx.strokeStyle='#80f0b7';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(a.x-4,a.y-4,(c.flipped?-1:1)*b.w*c.zoom+8,b.h*c.zoom+8);ctx.setLineDash([]);}}
 
     }
 
