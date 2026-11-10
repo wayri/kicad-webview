@@ -14,6 +14,7 @@ const STYLE = `
 select{color-scheme:dark}:host([data-theme=light]) select{color-scheme:light}select option{background:var(--project-bar);color:var(--project-ink)}button,input,select{font:inherit;color:inherit}button,select{border:1px solid var(--project-line);border-radius:6px;background:var(--project-bg);padding:6px 8px}button{cursor:pointer}button:hover{background:var(--project-active)}button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--project-accent);outline-offset:2px}
 .project-shell{display:flex;flex-direction:column;height:100%;min-height:0;background:var(--project-bg)}.project-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px;border-bottom:1px solid var(--project-line);background:var(--project-bar)}.project-brand{font-weight:750;letter-spacing:.03em;margin-right:auto}.project-toolbar label{display:flex;align-items:center;gap:5px}.project-toolbar button[aria-pressed=true]{background:var(--project-active);color:var(--project-accent)}
 .project-body{display:flex;flex:1;min-height:0}.project-nav{width:236px;flex:none;border-right:1px solid var(--project-line);background:var(--project-bar);display:flex;flex-direction:column;min-height:0}.project-tabs{display:flex;padding:6px;gap:4px;border-bottom:1px solid var(--project-line)}.project-tabs button{flex:1;padding:6px 4px}.project-tabs button[aria-selected=true]{background:var(--project-active);color:var(--project-accent)}.project-search{width:calc(100% - 16px);margin:8px;padding:8px;border:1px solid var(--project-line);border-radius:6px;background:var(--project-bg)}.project-count,.project-help{font-size:10px;color:var(--project-muted);padding:0 8px;margin:0 0 8px}.project-list{overflow:auto;min-height:0;flex:1;padding:0 7px 9px}.project-list button{display:block;text-align:left;width:100%;margin-bottom:4px;overflow-wrap:anywhere}.project-list small{display:block;font-size:10px;color:var(--project-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.project-list button[aria-current=true]{border-color:var(--project-accent);background:var(--project-active)}.project-list details{margin:3px 0 3px 5px}.project-list summary{color:var(--project-muted);padding:4px;cursor:pointer;overflow-wrap:anywhere}.project-list details>div{border-left:1px solid var(--project-line);padding-left:6px}
+.project-layer{padding:7px;border:1px solid var(--project-line);border-radius:6px;margin-bottom:5px}.project-layer label{display:flex;align-items:center;gap:6px;overflow-wrap:anywhere}.project-layer input{flex:none}.project-layer button{margin:5px 0 0;padding:4px 6px}.project-layer small{margin-top:3px}
 .project-panes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);flex:1;min-width:0;min-height:0;gap:1px;background:var(--project-line)}.project-panes[data-layout=single]{grid-template-columns:minmax(0,1fr)}.project-pane{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--project-bg);border-top:2px solid transparent}.project-pane[data-active=true]{border-top-color:var(--project-accent)}.project-pane-heading{display:flex;align-items:center;gap:6px;padding:5px 7px;background:var(--project-bar);font-size:10px;color:var(--project-muted)}.project-pane-heading button{padding:3px 6px;white-space:nowrap}.project-path{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.project-mount{flex:1;min-height:0;min-width:0}.project-empty{padding:20px;color:var(--project-muted)}.project-status{padding:5px 9px;border-top:1px solid var(--project-line);font-size:10px;color:var(--project-muted);overflow-wrap:anywhere}.project-status[data-error=true]{color:#efb3a8}
 @container (max-width:850px){.project-panes{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr)}.project-panes[data-layout=single]{grid-template-rows:minmax(0,1fr)}.project-nav{width:200px}.project-toolbar{gap:5px}.project-brand{font-size:11px}}
 @container (max-width:580px){.project-body{position:relative}.project-nav{position:absolute;inset:0 auto 0 0;width:min(270px,calc(100% - 28px));z-index:20;box-shadow:8px 0 28px #0005}.project-toolbar{padding:6px}.project-brand{flex:1 0 100%}.project-toolbar label{font-size:10px}.project-toolbar button,.project-toolbar select{padding:5px}.project-status{max-height:56px;overflow:auto}}
@@ -29,7 +30,7 @@ export class AdvancedKiCadViewer extends EventTarget {
     if (!['split', 'single'].includes(layout)) throw new TypeError('Choose split or single layout.');
     if (!['dark', 'light'].includes(theme)) throw new TypeError('Choose light or dark theme.');
     this.host = host; this.doc = host.ownerDocument; this.disposed = false; this.ticket = 0; this.activePane = 0; this.restoreTicket = 0;
-    this.layout = layout; this.linkedSelection = Boolean(linkedSelection); this.theme = theme; this.files = []; this.source = null; this.tab = 'files'; this.linkGuard = false; this.listeners = [];
+    this.layout = layout; this.linkedSelection = Boolean(linkedSelection); this.theme = theme; this.files = []; this.source = null; this.tab = 'files'; this.linkGuard = false; this.listeners = []; this.layerControlStops = [];
     const make = (tag, className, value) => { const node = this.doc.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node; };
     this.make = make;
     this.root = make('div'); this.root.style.cssText = 'height:100%;min-height:0;container-type:inline-size'; this.root.setAttribute('data-theme', theme);
@@ -49,7 +50,7 @@ export class AdvancedKiCadViewer extends EventTarget {
     this.toolbar.append(brand,this.navButton,this.paneSelect,this.layoutButton,linked,this.themeButton,this.shareButton,this.viewLinkInput);
     const body=make('div','project-body');this.nav=make('aside','project-nav');this.nav.setAttribute('aria-label','Project navigator');
     const tabs=make('div','project-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Project sections');this.tabButtons={};
-    for(const name of ['files','parts','nets']){const node=this.button(name[0].toUpperCase()+name.slice(1),()=>this.setTab(name));node.setAttribute('role','tab');this.tabButtons[name]=node;tabs.append(node);}
+    for(const name of ['files','parts','nets','layers']){const node=this.button(name[0].toUpperCase()+name.slice(1),()=>this.setTab(name));node.setAttribute('role','tab');this.tabButtons[name]=node;tabs.append(node);}
     this.search=make('input','project-search');this.search.type='search';this.search.setAttribute('aria-label','Search project files');this.search.placeholder='Search files';this.search.oninput=()=>this.renderList();
     this.count=make('p','project-count');this.count.setAttribute('role','status');this.list=make('div','project-list');
     const help=make('p','project-help','Read only. Part links use saved symbol UUIDs in the two loaded panes. Nets link between identical saved drawings; local names are not linked across sheets.');
@@ -63,6 +64,7 @@ export class AdvancedKiCadViewer extends EventTarget {
         this.listen(pane,'pointerdown',()=>this.setActivePane(i));this.listen(pane,'focusin',()=>this.setActivePane(i));
         this.listen(viewer,'ready',event=>{path.textContent=viewer.path||'Drawing';path.title=path.textContent;this.refresh();this.emit('ready',{pane:i,...event.detail});});
         this.listen(viewer,'select',event=>{this.refresh();this.emit('select',{pane:i,...event.detail});this.crossProbe(i,event.detail.item);});
+        this.listen(viewer,'layerschange',()=>{if(i===this.activePane&&this.tab==='layers')this.renderList();});
         this.listen(viewer,'error',event=>{this.setStatus(event.detail?.message||'Drawing failed.',true);this.emit('error',{pane:i,error:event.detail});});
       }
       this.status=make('div','project-status','Load a project manifest, repository link or local bundle.');this.status.setAttribute('role','status');
@@ -80,11 +82,12 @@ export class AdvancedKiCadViewer extends EventTarget {
   setLayout(layout){this.assertActive();if(!['split','single'].includes(layout))throw new TypeError('Choose split or single layout.');this.layout=layout;this.panes.setAttribute('data-layout',layout);this.layoutButton.textContent=layout==='split'?'Single pane':'Split panes';this.layoutButton.setAttribute('aria-label',layout==='split'?'Use single pane':'Use split panes');this.layoutButton.setAttribute('aria-pressed',String(layout==='split'));this.setActivePane(this.activePane);}
   setTheme(theme){this.assertActive();if(!['dark','light'].includes(theme))throw new TypeError('Choose light or dark theme.');this.theme=theme;this.root.setAttribute('data-theme',theme);this.viewers.forEach(viewer=>viewer.setTheme(theme));this.themeButton.textContent=theme==='dark'?'Light':'Dark';}
   setNavigatorOpen(open){this.assertActive();this.nav.hidden=!open;this.navButton.setAttribute('aria-expanded',String(Boolean(open)));}
-  setTab(tab){this.assertActive();if(!['files','parts','nets'].includes(tab))throw new TypeError('Choose Files, Parts or Nets.');this.tab=tab;this.search.value='';this.search.placeholder='Search '+tab;this.search.setAttribute('aria-label','Search project '+tab);for(const [name,node]of Object.entries(this.tabButtons))node.setAttribute('aria-selected',String(name===tab));this.renderList();}
+  setTab(tab){this.assertActive();if(!['files','parts','nets','layers'].includes(tab))throw new TypeError('Choose Files, Parts, Nets or Layers.');this.tab=tab;this.search.value='';this.search.placeholder='Search '+tab;this.search.setAttribute('aria-label','Search project '+tab);for(const [name,node]of Object.entries(this.tabButtons))node.setAttribute('aria-selected',String(name===tab));this.renderList();}
   refresh(){if(this.disposed||!this.viewers.length)return;if(this.shareButton)this.shareButton.disabled=!this.projectReady;const project=this.viewers[0].project;const files=project?.files||this.source?.files;this.files=files?[...files]:this.viewers[0].path?[{path:this.viewers[0].path}]:[];this.renderList();}
   renderList(){
-    if(!this.list||!this.viewers.length||this.disposed)return;const viewer=this.viewers[this.activePane],query=(this.search.value||'').trim().toLowerCase().slice(0,200);this.list.replaceChildren();
-    if(this.tab==='files'){
+    if(!this.list||!this.viewers.length||this.disposed)return;this.clearLayerControls();const viewer=this.viewers[this.activePane],query=(this.search.value||'').trim().toLowerCase().slice(0,200);this.list.replaceChildren();
+    if(this.tab==='layers'){this.renderLayers(viewer,query);
+    }else if(this.tab==='files'){
       const files=this.files.slice(0,256).filter(file=>file.path&&file.path.toLowerCase().includes(query));this.count.textContent=files.length+' files · opens in pane '+(this.activePane+1);
       const sheets=(viewer.getSheets?.()||[]).slice(0,256).filter(sheet=>[sheet.name,sheet.file].join(' ').toLowerCase().includes(query));
       if(sheets.length){const heading=this.make('p','project-help','Child sheets · saved links');this.list.append(heading);for(const sheet of sheets){const node=this.button(sheet.name||sheet.file||'Child sheet',()=>this.openFile(sheet.path));node.append(this.make('small','',sheet.file||'Missing Sheetfile'));node.disabled=!sheet.path||!this.files.some(file=>file.path===sheet.path);node.title=node.disabled?'Referenced drawing is absent from the loaded project.':sheet.path;this.list.append(node);}this.list.append(this.make('p','project-help','All project files'));}
@@ -98,6 +101,22 @@ export class AdvancedKiCadViewer extends EventTarget {
     }else{
       const nets=(viewer.getNets?.()||[]).filter(net=>net.name.toLowerCase().includes(query));this.count.textContent=nets.length+' saved nets'+(nets.length>LIMIT?' · first 100':'');
       for(const net of nets.slice(0,LIMIT)){const node=this.button(net.name,()=>viewer.selectNet(net.id||net.name,{locate:false}));if(net.count!==undefined)node.append(this.make('small','',net.count+' objects'));this.list.append(node);}
+    }
+  }
+  clearLayerControls(){for(const stop of this.layerControlStops)stop();this.layerControlStops=[];}
+  renderLayers(viewer,query){
+    const state=viewer.getLayerState(),layers=state.layers.filter(layer=>layer.toLowerCase().includes(query)),visible=new Set(state.visible);
+    const button=(label,action)=>{const node=this.button(label,action);this.layerControlStops.push(()=>{node.onclick=null;});return node;};
+    const open=button('Open layer controls',()=>{const menu=viewer.chrome?.layersMenu;if(menu&&!menu.hidden){menu.open=true;menu.querySelector?.('summary')?.focus?.();}});
+    open.disabled=!state.layers.length||!viewer.chrome?.layersMenu||viewer.chrome.layersMenu.hidden;this.list.append(open);
+    this.count.textContent=layers.length+' layers · '+visible.size+' visible · pane '+(this.activePane+1);
+    if(!state.layers.length){this.list.append(this.make('p','project-help',viewer.view==='schematic'?'Layer controls are available for PCB and manufacturing views.':'Load a PCB or manufacturing drawing to inspect saved layers.'));return;}
+    for(const layer of layers){
+      const row=this.make('div','project-layer'),label=this.make('label'),input=this.make('input'),status=this.make('small','',visible.has(layer)?'Visible':'Hidden');input.type='checkbox';input.checked=visible.has(layer);input.setAttribute('aria-label','Show '+layer);
+      input.onchange=()=>{const current=viewer.getLayerState(),enabled=new Set(current.visible);if(input.checked)enabled.add(layer);else enabled.delete(layer);viewer.setLayers(current.layers.filter(name=>enabled.has(name)));};this.layerControlStops.push(()=>{input.onchange=null;});
+      label.append(input,this.make('span','',layer));row.append(label,status);
+      if(viewer.view==='pcb'&&state.canFocus){const focus=button('Focus',()=>viewer.focusLayer(layer));focus.setAttribute('aria-label','Focus '+layer);focus.setAttribute('aria-pressed',String(state.focused===layer));if(state.focused===layer)status.textContent+=' · Focused';row.append(focus);}
+      this.list.append(row);
     }
   }
   async load(input,options={}){return this.loadWith('load',input,options);}
@@ -152,6 +171,6 @@ export class AdvancedKiCadViewer extends EventTarget {
     }catch(error){if(!current())return false;this.setStatus(error.message,true);throw error;}
     finally{signal?.removeEventListener('abort',abort);if(ticket===this.restoreTicket){this.restoring=false;this.restorePending=null;}}
   }
-  dispose(){if(this.disposed)return;this.disposed=true;++this.ticket;this.restorePending?.abort();this.pending?.abort();this.panePending?.forEach(c=>c?.abort());for(const stop of this.listeners)stop();this.listeners=[];for(const viewer of this.viewers)viewer.dispose();this.search.oninput=this.paneSelect.onchange=this.linkToggle.onchange=null;this.root.remove();viewerOwners.delete(this.host);this.source=null;this.files=[];}
+  dispose(){if(this.disposed)return;this.clearLayerControls();this.disposed=true;++this.ticket;this.restorePending?.abort();this.pending?.abort();this.panePending?.forEach(c=>c?.abort());for(const stop of this.listeners)stop();this.listeners=[];for(const viewer of this.viewers)viewer.dispose();this.search.oninput=this.paneSelect.onchange=this.linkToggle.onchange=null;this.root.remove();viewerOwners.delete(this.host);this.source=null;this.files=[];}
 }
 export { AdvancedKiCadViewer as ProjectViewer };

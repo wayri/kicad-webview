@@ -61,3 +61,5 @@ buildProjectHierarchy(files,{root,entry}) builds source-derived root/subsheet in
 ## Highlight and layer controls
 
 See [inspection controls](INSPECTION-CONTROLS.md) for setHighlightStyle/getHighlightStyle, getLayerState, layer presets, 2D focus/fit/restore, 3D copper visibility and per-instance behavior.
+
+See [mobile website performance](MOBILE-PERFORMANCE.md) for rendering suspension, source reuse, statistics and no-Node embedding guidance.

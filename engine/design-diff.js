@@ -234,9 +234,10 @@
     preparedProjects.set(snapshot, {files: files.map(file => ({path: file.path, content: file.content})), parsed, records});
     return snapshot;
   }
-  function preparedFile(snapshot, path) {
+  function preparedFile(snapshot, path, expectedContent) {
     const state = preparedProjects.get(snapshot);
     if (!state || !state.parsed.has(path)) throw new Error('Prepared KiCad file is unavailable.');
+    if (expectedContent !== undefined && !state.files.some(file => file.path === path && file.content === expectedContent)) throw new Error('Prepared KiCad file differs from source.');
     return state.parsed.get(path);
   }
   function projectObjects(files, onParsed = null, snapshot = null) {

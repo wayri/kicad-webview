@@ -8,7 +8,7 @@ try {
   const provider = query.get('provider') || 'kicad';
   if (!['kicad', 'altium'].includes(provider)) throw new Error('Choose the kicad or altium provider.');
   const viewer = provider === 'altium' ? new AltiumViewer('#drawing')
-    : new KiCadViewer('#drawing', { theme: query.get('theme') || 'light', inspectOnSelect:query.get('inspectOnSelect')!=='false' });
+    : new KiCadViewer('#drawing', { theme: query.get('theme') || 'light', inspectOnSelect:query.get('inspectOnSelect')!=='false', highlightStyle:query.get('highlightStyle')||'dim', highlightColor:query.get('highlightColor')||'accent', appearance:query.get('appearance')||'realistic' });
   window.addEventListener('pagehide', () => viewer.dispose(), { once: true });
   const options = { view: query.get('view') || undefined };
   if (provider === 'kicad') {

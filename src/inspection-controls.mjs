@@ -40,7 +40,8 @@ export function createLayerControls(viewer,make,icon,fail){
       input.onchange=()=>{try{const visible=new Set(viewer.getLayerState().visible);input.checked?visible.add(layer):visible.delete(layer);viewer.setLayers([...visible]);}catch(error){fail(error);}};
       const focus=ui.button('Focus',()=>viewer.focusLayer(layer,{mode:mode.value}));focus.setAttribute('aria-label','Focus layer '+layer);const count=make('small');count.textContent=String(counts.get(layer)||0);count.title='Saved drawing primitives on this layer';label.append(input,swatch,text,count);node.append(label,focus);list.append(node);rows.set(layer,{node,input,focus});
     }}
-    for(const [layer,row]of rows){row.input.checked=state.visible.includes(layer);row.focus.hidden=!state.canFocus;row.focus.setAttribute('aria-pressed',String(state.focused===layer));row.node.setAttribute('data-focused',String(state.focused===layer));}
+    const visible=new Set(state.visible);
+    for(const [layer,row]of rows){row.input.checked=visible.has(layer);row.focus.hidden=!state.canFocus;row.focus.setAttribute('aria-pressed',String(state.focused===layer));row.node.setAttribute('data-focused',String(state.focused===layer));}
     mode.parentNode&&(mode.parentNode.hidden=!state.canFocus);focusActions.hidden=!state.canFocus;fit.disabled=clear.disabled=!state.focused;restore.disabled=!state.canRestore;mode.value=state.focused?state.focusMode:mode.value||'dim';
     status.textContent=state.focused?state.focused+' · '+(state.focusMode==='isolate'?'isolated':'other layers dimmed'):viewer.view==='3d'?'Copper visibility. Internal layers are rendered in Translucent appearance.':'Select layers to show, or focus one layer. [ and ] cycle; Shift+F fits focus.';
     reveal.hidden=viewer.view!=='3d';filter.oninput();

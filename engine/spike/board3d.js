@@ -32,6 +32,8 @@ import {createSelectionAppearance,selectionStyle} from "./selectionAppearance.mj
 import {appearanceName,createTranslucentAppearance,inspectionTarget} from "./translucentAppearance.mjs";
 import {copperLayerPlan} from "./copperLayers.mjs";
 import {createUpdateBatch} from "./updateBatch.mjs";
+import {createRenderActivity,observeRenderActivity} from "./renderActivity.mjs";
+import {selectionNetNames,pureNetSelection,countNetSelection} from "./selectionWorkload.mjs";
 import { hasSavedSelection, selectionMatcher, selectableRecord, tapGesture, holdGesture } from "./selectionState.mjs";
 import { sphereFitDistance,boxFitDistance } from "./fitPolicy.mjs";
 import {createPresentationStudio} from "./presentationStudio.mjs";
@@ -133,7 +135,7 @@ export function mountBoard3D(container, source, options = {}) {
   const initialAppearance=appearanceName(options.appearance??'realistic');
   const initialDark = options.dark !== false;
   const board = parseKicadBoard(source);
-  const sourceAST=globalThis.KiCadDesignDiff.parse(source),savedZones=sourceZoneGeometry(sourceAST);
+  const sourceAST=options.sourceSnapshot?(options.sourceParser||globalThis.KiCadDesignDiff).preparedFile(options.sourceSnapshot,options.sourceKey,source):globalThis.KiCadDesignDiff.parse(source),savedZones=sourceZoneGeometry(sourceAST);
   const padDetails=padSourceDetails(sourceAST),nativePads=board.pads.map(pad=>({...pad,...padDetails.get(pad.id)}));
   const geometryDiagnostics=[...(board.geometryWarnings||[])];
   const throughVias=board.vias.filter(throughVia);
@@ -214,8 +216,10 @@ export function mountBoard3D(container, source, options = {}) {
   const modelGeometryBudget=(graphics.constrained?32:graphics.premium?96:64)*1024*1024;
   const modelTextureBudget=(graphics.constrained?16:graphics.premium?64:32)*1024*1024;
   if(!savedQuality&&!options.quality)initialQuality=graphics.defaultQuality;
-  let active=true,frame=0,contextLost=false,renderCount=0,pipeline=null,quality=initialQuality,shaderFailure=false;
-  function invalidate(){if(!active||contextLost||document.hidden||frame)return;frame=requestAnimationFrame(drawFrame);}
+  let active=true,contextLost=false,renderCount=0,pipeline=null,quality=initialQuality,shaderFailure=false;
+  const hasViewportSize=()=>canvasHost.clientWidth>0&&canvasHost.clientHeight>0;
+  const renderActivity=createRenderActivity({request:callback=>requestAnimationFrame(callback),cancel:id=>cancelAnimationFrame(id),render:drawFrame,canRender:()=>active&&!contextLost&&!document.hidden&&hasViewportSize(),state:{documentVisible:!document.hidden,hasSize:hasViewportSize()}});
+  function invalidate(){if(!active)return;renderActivity.setState({documentVisible:!document.hidden,hasSize:hasViewportSize()});renderActivity.invalidate();}
   function graphicsNotice(message,retry=false){qualityNotice.replaceChildren(document.createTextNode(message));qualityNotice.hidden=false;
     const close=document.createElement('button');close.type='button';close.textContent='Dismiss';close.onclick=()=>{qualityNotice.hidden=true;};qualityNotice.append(close);
     if(retry){const button=document.createElement('button');button.type='button';button.textContent='Retry graphics';button.onclick=()=>renderer.forceContextRestore();qualityNotice.append(button);}
@@ -591,6 +595,7 @@ export function mountBoard3D(container, source, options = {}) {
   function refreshClippingBounds(){fittedBounds.setFromObject(boardGroup);const sphere=fittedBounds.getBoundingSphere(new THREE.Sphere());if(Number.isFinite(sphere.radius)&&sphere.radius>0){fittedRadius=sphere.radius;fittedCenter.copy(sphere.center);}updateClipping();}
   controls.addEventListener("change", updateClipping);
   function sizeViewport() {
+    const hasSize=hasViewportSize();renderActivity.setState({hasSize});if(!hasSize){invalidate();return;}
     const viewportWidth = Math.max(1, canvasHost.clientWidth), viewportHeight = Math.max(1, canvasHost.clientHeight);
     const plan=qualityViewport(viewportWidth,viewportHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics),ratio=plan.ratio;
     if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
@@ -776,12 +781,19 @@ export function mountBoard3D(container, source, options = {}) {
   groupHighlight.frustumCulled = false; groupHighlight.renderOrder = 101;
   scene.add(groupHighlight);
   let externalSelection = {};
+  const selectionWorkload={netOnlyUpdates:0,netRecordsScanned:0,netBoundsAvoided:0,boundsEvaluations:0,outlineVerticesWritten:0};
   const selectionNotice = document.createElement('div'); selectionNotice.className = 'hint'; selectionNotice.style.bottom = '42px'; selectionNotice.hidden = true; stage.append(selectionNotice);
   function setSelection(selection = {}) {
     invalidate();
     externalSelection = selection || {};
     if(!hasSavedSelection(externalSelection)){groupGeometry.setDrawRange(0,0);selectionNotice.hidden=true;selectionNotice.style.display='none';highlight.visible=false;groupHighlight.visible=false;selectionAppearance.restore();return{highlighted:0,matched:0,limited:false};}
-    const matches = selectionMatcher(externalSelection, board);
+    const matches = selectionMatcher(externalSelection, board),netNames=selectionNetNames(externalSelection,board);
+    if(pureNetSelection(externalSelection,netNames)){
+      const result=countNetSelection(pickables,matches);selectionWorkload.netOnlyUpdates++;selectionWorkload.netRecordsScanned+=result.visitedRecords;selectionWorkload.netBoundsAvoided+=result.matchedRecords;
+      groupGeometry.setDrawRange(0,0);selectionNotice.hidden=true;selectionNotice.style.display='none';highlight.visible=false;groupHighlight.visible=false;
+      selectionAppearance.update(matches,result.matched>0&&selectionDim,record=>netNames.has(record?.net),selectionDisplayStyle);
+      return {highlighted:Math.min(result.matched,selectionLimit),matched:result.matched,limited:result.matched>selectionLimit};
+    }
     const matrix = new THREE.Matrix4(), local = new THREE.Matrix4(), box = new THREE.Box3();
     const center = new THREE.Vector3(), size = new THREE.Vector3();
     let count = 0, total = 0;
@@ -792,7 +804,7 @@ export function mountBoard3D(container, source, options = {}) {
         if (local.determinant() === 0) return;
       }
 
-      object.updateWorldMatrix(true, false);
+      selectionWorkload.boundsEvaluations++;object.updateWorldMatrix(true, false);
       if (Number.isInteger(instanceId)) {
         if (!object.geometry.boundingBox) object.geometry.computeBoundingBox(); box.copy(object.geometry.boundingBox);
         matrix.multiplyMatrices(object.matrixWorld, local); box.applyMatrix4(matrix);
@@ -818,12 +830,11 @@ export function mountBoard3D(container, source, options = {}) {
       count++;
     }
     total += selectedBounds.size;
-    groupGeometry.setDrawRange(0, count * unitEdges.count); groupPositions.needsUpdate = true;
+    groupGeometry.setDrawRange(0, count * unitEdges.count); groupPositions.needsUpdate = true;selectionWorkload.outlineVerticesWritten+=count*unitEdges.count;
     selectionNotice.hidden = total <= selectionLimit;
     selectionNotice.textContent = `Showing ${count} of ${total} selected 3D objects`;
     selectionNotice.style.display = total > selectionLimit ? 'block' : 'none';
     highlight.visible = false;
-    const netNames=new Set(externalSelection.netNames||[]);
     groupHighlight.visible=!netNames.size;
     selectionAppearance.update(matches,total>0&&selectionDim,netNames.size?record=>netNames.has(record?.net):null,selectionDisplayStyle);
     return { highlighted: count, matched: total, limited: total > selectionLimit };
@@ -955,14 +966,15 @@ export function mountBoard3D(container, source, options = {}) {
     event.preventDefault(); // Right-click actions are opened only by an unmoved pointerup.
   });
   const resize = sizeViewport;
-  const observer = new ResizeObserver(()=>{resize();syncEmbeddedPanelOffset();}); observer.observe(canvasHost); resize();syncEmbeddedPanelOffset();
+  const observer = new ResizeObserver(()=>{resize();syncEmbeddedPanelOffset();}); observer.observe(canvasHost);
+  const intersectionObserver=observeRenderActivity(renderActivity,canvasHost);resize();syncEmbeddedPanelOffset();
   let analysisOverlay = null;
   const layoutFrame = requestAnimationFrame(() => { if (active) { resize(); if(!userAdjustedCamera)fit(); } });
   const projectAnchor=createAnchorProjector(THREE,{objects:()=>pickables,camera,rect:()=>renderer.domElement.getBoundingClientRect(),positionToWorld:(position,side)=>{const [x,y]=world([position.x,position.y]);return new THREE.Vector3(x,y,side==='back'?bottom:top);}});
   let activeAnchor=null,anchorSignature='',viewSignature='';
   function notifyAnchor(){if(!activeAnchor)return;const point=projectAnchor(activeAnchor),signature=JSON.stringify(point);if(signature!==anchorSignature){anchorSignature=signature;options.onAnchor?.({anchor:activeAnchor,point});}}
   function notifyView(){const rect=renderer.domElement.getBoundingClientRect(),signature=JSON.stringify([camera.matrixWorld.elements,camera.projectionMatrix.elements,rect.left,rect.top,rect.width,rect.height]);if(signature!==viewSignature){viewSignature=signature;options.onViewChange?.();}notifyAnchor();}
-  function drawFrame(){frame=0;if(!active||contextLost||document.hidden)return;modelUpdates.flush();controls.update();silkDetail.sync();demoSurfaces.sync();if(demoPointerId!==null&&!demoSurfaces.hasActivePointer)cancelDemoPointer();updateMeasurementGraphics();updateTerminalLabels();
+  function drawFrame(){if(!active||contextLost||document.hidden)return;modelUpdates.flush();controls.update();silkDetail.sync();demoSurfaces.sync();if(demoPointerId!==null&&!demoSurfaces.hasActivePointer)cancelDemoPointer();updateMeasurementGraphics();updateTerminalLabels();
     let rendered=false;try{
       if(pipeline){pipeline.composer.render();if(shaderFailure||renderer.getContext().getError()!==renderer.getContext().NO_ERROR)throw Error('Enhanced rendering failed.');}
       else renderer.render(scene,camera);
@@ -973,11 +985,11 @@ export function mountBoard3D(container, source, options = {}) {
     }
     if(rendered){drawMeasurementLens();notifyView();}
   }
-  const onContextLost=event=>{cancelDemoPointer();finishDemoFace(new DOMException('The graphics context was interrupted.','AbortError'));event.preventDefault();contextLost=true;cancelAnimationFrame(frame);frame=0;qualitySelect.disabled=true;graphicsNotice('The graphics context was interrupted. The board and selection are retained while the browser recovers.',true);};
-  const onContextRestored=()=>{if(!active)return;contextLost=false;qualitySelect.disabled=false;disposePipeline();environment?.dispose();environment=createEnvironment();scene.environment=environment?.texture||null;renderer.shadowMap.needsUpdate=true;quality='balanced';presentation.apply(false);qualitySelect.value=quality;host.dataset.quality=quality;graphicsNotice('Graphics restored. Balanced rendering is active; High quality can be selected again.');sizeViewport();invalidate();};
+  const onContextLost=event=>{cancelDemoPointer();finishDemoFace(new DOMException('The graphics context was interrupted.','AbortError'));event.preventDefault();contextLost=true;renderActivity.setState({contextAvailable:false});qualitySelect.disabled=true;graphicsNotice('The graphics context was interrupted. The board and selection are retained while the browser recovers.',true);};
+  const onContextRestored=()=>{if(!active)return;contextLost=false;renderActivity.setState({contextAvailable:true});qualitySelect.disabled=false;disposePipeline();environment?.dispose();environment=createEnvironment();scene.environment=environment?.texture||null;renderer.shadowMap.needsUpdate=true;quality='balanced';presentation.apply(false);qualitySelect.value=quality;host.dataset.quality=quality;graphicsNotice('Graphics restored. Balanced rendering is active; High quality can be selected again.');sizeViewport();invalidate();};
   renderer.domElement.addEventListener('webglcontextlost',onContextLost);
   renderer.domElement.addEventListener('webglcontextrestored',onContextRestored);
-  const onDocumentVisibility=()=>{if(document.hidden){cancelDemoPointer();cancelAnimationFrame(frame);frame=0;}else invalidate();};
+  const onDocumentVisibility=()=>{if(document.hidden)cancelDemoPointer();renderActivity.setState({documentVisible:!document.hidden});if(!document.hidden)invalidate();};
   document.addEventListener('visibilitychange',onDocumentVisibility);
   const closeVisibility=event=>{const path=event.composedPath();if(!path.includes(displayButton)&&!path.includes(visibilityOptions))setDisplayOpen(false);};
   const escapeVisibility=event=>{if(event.key==='Escape'&&!visibilityOptions.hidden){setDisplayOpen(false,true);event.preventDefault();event.stopImmediatePropagation();}};
@@ -1008,7 +1020,7 @@ export function mountBoard3D(container, source, options = {}) {
     getCopperLayers(){return copperPlan.map(layer=>layer.name);},
     getVisibleCopperLayers(){return visibleCopperLayers();},
     setVisibleCopperLayers,
-    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),appearance,modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline),renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
+    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),appearance,renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline),renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
     setAnalysisOverlay(surface) {
       if (!active) return { placed: false, reason: "3D viewer is closed." };
       if (!surface) { analysisOverlay?.dispose(); analysisOverlay = null; invalidate();return { placed: false, reason: "Overlay cleared." }; }
@@ -1096,6 +1108,6 @@ export function mountBoard3D(container, source, options = {}) {
         if (index != null && !population[index]) clearSelection();
       }
     },
-    dispose() { silkDetail.dispose();cancelDemoPointer();finishDemoFace(new DOMException('The 3D view was closed.','AbortError'));demoSurfaces.dispose();for(const [name,handler]of [['pointerdown',demoPointerDown],['pointermove',demoPointerMove],['pointerup',demoPointerUp],['pointercancel',demoPointerCancel],['lostpointercapture',demoPointerCancel]])renderer.domElement.removeEventListener(name,handler,true);shadow.removeEventListener('keydown',demoKey,true);document.defaultView?.removeEventListener('blur',cancelDemoPointer);if(measuring)options.onMeasurementMode?.(false);active = false; modelUpdates.dispose(); analysisOverlay?.dispose(); stepClient?.dispose(); cancelAnimationFrame(frame); cancelAnimationFrame(layoutFrame); observer.disconnect();controls.removeEventListener('change',invalidate); controls.removeEventListener("change", updateClipping); controls.removeEventListener("start", cameraInteraction); controls.dispose();disposePipeline();environment?.dispose();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);document.removeEventListener('pointerdown',closeVisibility);shadow.removeEventListener('keydown',escapeVisibility,true);shadow.removeEventListener('keydown',escapeMeasurement);
+    dispose() { silkDetail.dispose();cancelDemoPointer();finishDemoFace(new DOMException('The 3D view was closed.','AbortError'));demoSurfaces.dispose();for(const [name,handler]of [['pointerdown',demoPointerDown],['pointermove',demoPointerMove],['pointerup',demoPointerUp],['pointercancel',demoPointerCancel],['lostpointercapture',demoPointerCancel]])renderer.domElement.removeEventListener(name,handler,true);shadow.removeEventListener('keydown',demoKey,true);document.defaultView?.removeEventListener('blur',cancelDemoPointer);if(measuring)options.onMeasurementMode?.(false);active = false; modelUpdates.dispose(); analysisOverlay?.dispose(); stepClient?.dispose(); renderActivity.dispose(); cancelAnimationFrame(layoutFrame); observer.disconnect();intersectionObserver?.disconnect();controls.removeEventListener('change',invalidate); controls.removeEventListener("change", updateClipping); controls.removeEventListener("start", cameraInteraction); controls.dispose();disposePipeline();environment?.dispose();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);document.removeEventListener('pointerdown',closeVisibility);shadow.removeEventListener('keydown',escapeVisibility,true);shadow.removeEventListener('keydown',escapeMeasurement);
     renderer.domElement.removeEventListener('pointerdown',measurementTouchCapture,true);document.removeEventListener('visibilitychange',onDocumentVisibility);selectionAppearance.dispose();translucency.dispose();scene.traverse(object=>object.shadow?.dispose?.());resources.retain(scene);terminalLabelCache.forEach(texture=>resources.track(texture));resources.track(labelGeometry);resources.dispose();scene.clear();boardGroup.clear();parts.clear();silkGroup.clear();copperGroups.clear();pickables.length=0;visibilityRecords.length=0;appearanceRecords.length=0;componentMatrices.length=0;modelGroups.clear();terminalLabelCache.clear();hold.dispose(); renderer.dispose();renderer.domElement.width=1;renderer.domElement.height=1; host.remove(); } };
 }

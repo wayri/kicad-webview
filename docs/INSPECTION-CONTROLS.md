@@ -28,3 +28,11 @@ Read-only upstream snapshot (working source, not a claim of a released extension
 - extension/schematic-renderer.js SHA-256 90142cb46172d9928281620046e7bf913ed4dca194429b9f8f64be08504c8a17
 - extension/pcb-renderer.js SHA-256 3d70d4ba089f23b22503d7faa0f9d42844c15a5cff4be076355cb60e99dd0337
 - extension/owned-canvas.js SHA-256 a225ca7e8cd7cb2b5520d12681d4d86dca7044cb82989ca51ce675dab869194e
+
+## Embed and offline entry points
+
+New local integrations also accept initial highlightStyle, highlightColor and appearance in buildEmbedURL() options and hosted embed query parameters. The custom element supports highlight-style, highlight-color and appearance at initial connection. Invalid values use the same validation as the Viewer constructor; no arbitrary styles or scripts are accepted.
+
+createStandaloneHTML() is available from the main library export as well as its standalone module. It accepts those initial options alongside the classic viewer script, license/source notices and bundled files. Its exported HTML keeps connect-src 'none'; the new controls do not require a network connection.
+
+Advanced project viewers provide a Layers navigator tab for the active pane, reusing each pane's layer API. Layer visibility remains local to that pane even when saved part/net selection is linked.

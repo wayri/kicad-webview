@@ -164,13 +164,20 @@ export class KiCadViewer extends EventTarget {
   async showSource(source, { path = '', view, project = null, credentials = 'omit' } = {}, operation) {
     this.assertActive();
     if (typeof source === 'string' && detectManufacturing(source,path)) return this.showManufacturing([{source,path}],{path,view,project,credentials},operation);
-    const ast = globalThis.KiCadDesignDiff.parse(source);
+    // Reuse one bounded parse for geometry, connectivity and later 3D mounts.
+    // Unnamed sources retain their existing inferred-path behavior.
+    const sourceParser = globalThis.KiCadDesignDiff;
+    const sourceKey = path;
+    const sourceSnapshot = /\.kicad_(?:pcb|sch)$/i.test(path)
+      ? globalThis.KiCadDesignDiff.prepareProject([{path, content: source}]) : null;
+    const ast = sourceSnapshot ? globalThis.KiCadDesignDiff.preparedFile(sourceSnapshot, sourceKey, source)
+      : globalThis.KiCadDesignDiff.parse(source);
     const kind = ast[0] === 'kicad_pcb' ? 'pcb' : ast[0] === 'kicad_sch' ? 'schematic' : null;
     if (!kind) throw new TypeError('Expected a .kicad_sch or .kicad_pcb design.');
     view ||= kind; this.validateView(view, kind);
     const design = (kind === 'pcb' ? globalThis.KiCadPCBRenderer : globalThis.KiCadSchematicRenderer).build(ast, path);
     let connectivity = { nets: [], warnings: [] };
-    try { connectivity = globalThis.KiCadNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]])); }
+    try { connectivity = globalThis.KiCadNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]]), sourceSnapshot); }
     catch (error) { connectivity.warnings.push('Net selection unavailable: ' + error.message); }
     if (kind === 'schematic') connectivity.warnings.push('Schematic nets use per-file saved wires, labels and terminals; buses, implicit hidden power pins and repeated-sheet instance connectivity are not a KiCad netlist.');
     const inspectionModel = buildInspectionModel(ast, { kind, path, design, connectivity });
@@ -179,7 +186,7 @@ export class KiCadViewer extends EventTarget {
       const property = name => String(atom(form.find(item => Array.isArray(item) && atom(item[0]) === 'property' && String(atom(item[1])).replaceAll(' ', '').toLowerCase() === name.toLowerCase())?.[2]) || '').slice(0, 1000);
       return { uuid: String(atom(form.find(item => Array.isArray(item) && atom(item[0]) === 'uuid')?.[1]) || '').slice(0, 1000), name: property('Sheetname'), file: property('Sheetfile') };
     }) : [];
-    return this.mountView(view, { source, path, kind, design, project, credentials, sheetLinks, inspectionModel }, operation);
+    return this.mountView(view, { source, path, kind, design, project, credentials, sheetLinks, inspectionModel, sourceSnapshot, sourceKey, sourceParser }, operation);
   }
 
   /** Display imported scalar results; the viewer never runs an engineering solver. */
@@ -292,6 +299,7 @@ export class KiCadViewer extends EventTarget {
         renderer = engine.mountBoard3D(mount, state.source, {
           ...this.modelOptions, ...projectModels,
           ...(this.modelOptions.loadAsset ? { loadAsset: this.modelOptions.loadAsset } : {}),
+          sourceSnapshot: state.sourceSnapshot, sourceKey: state.sourceKey, sourceParser: state.sourceParser,
           boardPath: state.path, dark: this.theme === 'dark', embedded: true, externalInspector: true,
           onAppearanceChange: value => { if (mounted()) {this.modelOptions.appearance = value;this.updateControls();} },
           onLayersChange: () => {if(mounted())this.updateControls();},
@@ -434,6 +442,7 @@ export class KiCadViewer extends EventTarget {
     this.pending?.abort();
     this.assetController?.abort();
     this.renderer?.dispose();
+    this.sourceSnapshot = this.sourceKey = this.sourceParser = null;
     this.renderer = this.source = this.design = this.pending = this.project = null;
     this.inspector.dispose();
     this.chrome.dispose();
@@ -448,7 +457,7 @@ export function registerKiCadViewer(tag = 'kicad-viewer') {
   customElements.define(tag, class extends HTMLElement {
     connectedCallback() {
       if (this.viewer) return;
-      this.viewer = new KiCadViewer(this, { theme: this.getAttribute('theme') || 'light', inspectOnSelect:this.getAttribute('inspect-on-select')!=='false' });
+      this.viewer = new KiCadViewer(this, { theme: this.getAttribute('theme') || 'light', inspectOnSelect:this.getAttribute('inspect-on-select')!=='false', highlightStyle:this.getAttribute('highlight-style')||'dim', highlightColor:this.getAttribute('highlight-color')||'accent', appearance:this.getAttribute('appearance')||'realistic' });
       for (const name of ['ready', 'select', 'measure', 'analysis', 'error', 'viewchange', 'camerachange']) this.viewer.addEventListener(name,
         event => this.dispatchEvent(new CustomEvent(`kicad:${name}`, { detail: event.detail })));
       if (this.getAttribute('src')) this.viewer.load(this.getAttribute('src'), {

@@ -269,3 +269,39 @@ test('download failures expose readable notes and a layer checkbox keeps its foc
     assert.match(viewer.status.textContent, /404/);
   } finally { globalThis.fetch = original; viewer.dispose(); }
 });
+
+test('named sources parse once across geometry, nets and 3D switches; snapshots stay scoped', async () => {
+  const {readFileSync}=await import('node:fs');
+  const {runInNewContext}=await import('node:vm');
+  let parses=0;
+  const context={TextEncoder,Map,Set,WeakMap,countParse(){parses++;}};
+  runInNewContext(readFileSync(new URL('../engine/design-diff.js',import.meta.url),'utf8').replace('function parse(source) {','function parse(source) { countParse();'),context);
+  const previous=globalThis.KiCadDesignDiff;
+  globalThis.KiCadDesignDiff=context.KiCadDesignDiff;
+  const a=fixture().viewer,b=fixture().viewer;
+  const received=[];
+  globalThis.SpikeBoard3D={mountBoard3D(host,source,options){
+    received.push(options.sourceParser.preparedFile(options.sourceSnapshot,options.sourceKey,source));
+    return {fit(){},dispose(){}};
+  }};
+  try {
+    await a.loadSource(board,{path:'board.kicad_pcb'});
+    assert.equal(parses,1,'geometry and connectivity must consume the same parse');
+    assert.equal(a.getNets().length,0);
+    // A lazily bundled 3D engine may install its own parser global.
+    globalThis.KiCadDesignDiff=previous;
+    await a.setView('3d');await a.setView('pcb');await a.setView('3d');
+    globalThis.KiCadDesignDiff=context.KiCadDesignDiff;
+    assert.equal(parses,1,'switching back to 3D must reuse the source snapshot');
+    assert.equal(received[0],received[1]);
+    await b.loadSource(board,{path:'board.kicad_pcb'});
+    assert.equal(parses,2);assert.notEqual(a.sourceSnapshot,b.sourceSnapshot);
+    const snapshot=a.sourceSnapshot;
+    assert.throws(()=>context.KiCadDesignDiff.preparedFile(snapshot,'board.kicad_pcb',board+' '),/differs/);
+    await assert.rejects(a.loadSource('(broken)',{path:'bad.kicad_pcb'}));
+    assert.equal(a.sourceSnapshot,snapshot,'failed replacements preserve the current snapshot');
+    await a.loadSource(schematic);
+    assert.equal(a.sourceSnapshot,null,'unnamed replacements cannot retain a previous snapshot');
+    a.dispose();assert.equal(a.sourceSnapshot,null);
+  } finally {a.dispose();b.dispose();globalThis.KiCadDesignDiff=previous;delete globalThis.SpikeBoard3D;}
+});

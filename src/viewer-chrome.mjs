@@ -110,6 +110,7 @@ export function createViewerChrome(viewer) {
   status.className = 'viewer-notes'; status.hidden = true; status.tabIndex = 0;
   status.setAttribute('aria-label', 'Rendering notes');
   let messages = [], notesOpen = false, layerSignature = null;
+  let displayedTheme = null, displayedProject, displayedFiles = [];
   const layerInputs = new Map();
   function toggleNotes(open = !notesOpen) {
     notesOpen = Boolean(open); status.hidden = !notesOpen;
@@ -126,6 +127,8 @@ export function createViewerChrome(viewer) {
     if (error) toggleNotes(true);
   }
   function setTheme(theme) {
+    if (theme === displayedTheme) return;
+    displayedTheme = theme;
     viewer.root.setAttribute('data-theme', theme);
     themeButton.replaceChildren(icon(theme === 'dark' ? 'sun' : 'moon'));
     themeButton.title = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
@@ -135,9 +138,13 @@ export function createViewerChrome(viewer) {
     navigation.update();
     fileSelect.hidden = !viewer.project; fileName.hidden = Boolean(viewer.project);
     fileName.textContent = viewer.path?.split('/').at(-1) || 'KiCad viewer'; fileName.title = viewer.path || 'Read-only KiCad viewer';
-    fileSelect.replaceChildren(...viewer.getFiles().filter(file => !/\.(wrl|glb)$/i.test(file.path)).map(file => {
-      const option = make('option'); option.value = file.path; option.textContent = file.path; return option;
-    }));
+    const files = viewer.getFiles().filter(file => !/\.(wrl|glb)$/i.test(file.path)).map(file => file.path);
+    if (displayedProject !== viewer.project || files.length !== displayedFiles.length || files.some((path, index) => path !== displayedFiles[index])) {
+      displayedProject = viewer.project; displayedFiles = files;
+      fileSelect.replaceChildren(...files.map(path => {
+        const option = make('option'); option.value = path; option.textContent = path; return option;
+      }));
+    }
     fileSelect.value = viewer.path || '';
     layoutButton.hidden = threeButton.hidden = views.hidden = viewer.kind !== 'pcb';
     layoutButton.setAttribute('aria-pressed', String(viewer.view === 'pcb'));

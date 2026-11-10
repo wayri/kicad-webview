@@ -1,3 +1,5 @@
+import {highlightSettings} from '../../src/inspection-api.mjs';
+import {appearanceName} from '../../engine/spike/translucentAppearance.mjs';
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 /* Host adapters only: the viewer library remains the rendering authority. */
 export function publicHTTPS(input, allowedHosts) {
@@ -19,7 +21,7 @@ export function publicSource(input, allowedHosts) {
   return url.href;
 }
 
-export function validateEmbedOptions({ theme = 'light', view, file, ref, inspectOnSelect } = {}) {
+export function validateEmbedOptions({ theme = 'light', view, file, ref, inspectOnSelect, highlightStyle, highlightColor, appearance } = {}) {
   if (!['light', 'dark'].includes(theme)) throw new TypeError('Choose light or dark theme.');
   if (view !== undefined && !['pcb', 'schematic', '3d', 'manufacturing'].includes(view)) throw new TypeError('Unknown viewer mode.');
   for (const [name, value] of Object.entries({ file, ref })) {
@@ -28,7 +30,8 @@ export function validateEmbedOptions({ theme = 'light', view, file, ref, inspect
       throw new TypeError('Invalid ' + name + ' option.');
   }
   if(inspectOnSelect!==undefined&&typeof inspectOnSelect!=='boolean')throw new TypeError('inspectOnSelect must be a boolean.');
-  return { theme, ...(inspectOnSelect!==undefined?{inspectOnSelect}:{}), ...(view ? { view } : {}), ...(file ? { file } : {}), ...(ref ? { ref } : {}) };
+  if(highlightStyle!==undefined||highlightColor!==undefined)highlightSettings(highlightStyle,highlightColor);if(appearance!==undefined)appearanceName(appearance);
+  return { theme, ...(highlightStyle!==undefined?{highlightStyle}:{}), ...(highlightColor!==undefined?{highlightColor}:{}), ...(appearance!==undefined?{appearance}:{}), ...(inspectOnSelect!==undefined?{inspectOnSelect}:{}), ...(view ? { view } : {}), ...(file ? { file } : {}), ...(ref ? { ref } : {}) };
 }
 
 export function buildEmbedURL(viewerPage, source, options = {}, { sourceHosts, viewerHosts } = {}) {
