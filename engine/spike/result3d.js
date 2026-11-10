@@ -24,14 +24,23 @@ function release(object) {
 }
 
 /** Surface coordinates are original solver coordinates; transform is an explicit host mapping. */
-export function createResultOverlay(surface, transform = p => p) {
+export function createResultOverlay(surface, transform = p => p, options = {}) {
   const data = validateResultSurface(surface);
+  const customPalette=options.palette;
+  if(customPalette!==undefined&&(!Array.isArray(customPalette)||customPalette.length!==4||customPalette.some(rgb=>!Array.isArray(rgb)||rgb.length!==3||rgb.some(n=>!Number.isFinite(n)||n<0||n>255))))throw new TypeError("Choose four finite RGB palette stops.");
+  if(options.range!==undefined&&(!Array.isArray(options.range)||options.range.length!==2||!options.range.every(Number.isFinite)||options.range[1]<=options.range[0]))throw new TypeError("Choose an increasing finite result range.");
   const group = new THREE.Group(), pins = new THREE.Group();
   let low = Infinity, high = -Infinity;
   for (const value of data.values) if (value !== null) { low = Math.min(low, value); high = Math.max(high, value); }
-  const positions = [], colors = [], faces = [];
+  if(options.range){low=options.range[0];high=options.range[1];}
+  const positions = [], colors = [], faces = [], scalars=[];
   const palette = [new THREE.Color(0x2845bb), new THREE.Color(0x00cbd3), new THREE.Color(0xffe05a), new THREE.Color(0xe73c31)];
-  const color = value => { const fraction = Number.isFinite(high - low) ? (value - low) / (high - low) : (value / 2 - low / 2) / (high / 2 - low / 2); const f = high > low ? Math.max(0, Math.min(1, fraction)) : .5; const scaled = f * 3, index = Math.min(2, Math.floor(scaled)); return palette[index].clone().lerp(palette[index + 1], scaled - index); };
+  const normalized=value=>Number.isFinite(high-low)?(value-low)/(high-low):(value/2-low/2)/(high/2-low/2);
+  const fraction=value=>high>low?Math.max(0,Math.min(1,normalized(value))):.5;
+  const color=value=>{const scaled=fraction(value)*3,index=Math.min(2,Math.floor(scaled)),part=scaled-index;
+    if(customPalette){const rgb=customPalette[index].map((n,i)=>Math.round(n+(customPalette[index+1][i]-n)*part)/255);return new THREE.Color().setRGB(...rgb,THREE.SRGBColorSpace);}
+    return palette[index].clone().lerp(palette[index+1],part);
+  };
   data.triangles.forEach((triangle, index) => {
     const values = data.nodal ? triangle.map(i => data.values[i]) : triangle.map(() => data.values[index]);
     if (values.some(v => v === null)) return;
@@ -39,12 +48,13 @@ export function createResultOverlay(surface, transform = p => p) {
     if (points.some(p => !Array.isArray(p) || p.length !== 3 || !p.every(v => Number.isFinite(v) && Number.isFinite(Math.fround(v))))) throw new Error("Invalid result coordinate mapping.");
     const a = new THREE.Vector3(...points[0]), b = new THREE.Vector3(...points[1]), c = new THREE.Vector3(...points[2]);
     if (b.clone().sub(a).cross(c.clone().sub(a)).lengthSq() === 0) return;
-    points.forEach((p, i) => { positions.push(...p); const rgb = color(values[i]); colors.push(rgb.r, rgb.g, rgb.b); });
+    points.forEach((p, i) => { positions.push(...p); const rgb = color(values[i]); colors.push(rgb.r, rgb.g, rgb.b);if(options.range)scalars.push(normalized(values[i])); });
     faces.push(index);
   });
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  if(options.range)geometry.setAttribute("resultScalar",new THREE.Float32BufferAttribute(scalars,1));
   geometry.computeBoundingSphere();
   const material = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, side: THREE.DoubleSide, transparent: true, opacity: .85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const mesh = new THREE.Mesh(geometry, material); group.add(mesh, pins);
@@ -61,7 +71,7 @@ export function createResultOverlay(surface, transform = p => p) {
     const value = data.nodal ? data.values[triangle[0]] * weights.x + data.values[triangle[1]] * weights.y + data.values[triangle[2]] * weights.z : data.values[index];
     return { x: blend(0), y: blend(1), z: blend(2), value, unit: String(data.unit || ""), method: data.nodal ? "nodal barycentric interpolation" : "saved cell value", triangle: index };
   }
-  return { group, mesh, surface: data, min: low, max: high, sample,
+  return { group, mesh, surface: data, min: low, max: high, range:Number.isFinite(low)&&Number.isFinite(high)?[low,high]:null, sample,
     setOpacity(value) { if (Number.isFinite(value)) { material.opacity = Math.max(0, Math.min(1, value)); mesh.visible = material.opacity > 0; } },
     setProbes(probes = []) {
       release(pins);

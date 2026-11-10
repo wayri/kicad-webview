@@ -63,3 +63,7 @@ buildProjectHierarchy(files,{root,entry}) builds source-derived root/subsheet in
 See [inspection controls](INSPECTION-CONTROLS.md) for setHighlightStyle/getHighlightStyle, getLayerState, layer presets, 2D focus/fit/restore, 3D copper visibility and per-instance behavior.
 
 See [mobile website performance](MOBILE-PERFORMANCE.md) for rendering suspension, source reuse, statistics and no-Node embedding guidance.
+
+## WayriCAD saved results
+
+`WayriCADResultsViewer` provides inert saved PI/SI/thermal fields, curves, frames and data, optional exact-hash-registered PCB overlays and producer-identity source links. `parseWayriCADResults`, `classifyWayriCADSource`, `getWayriCADSourceLinks`, `createWayriCADSurface`, `getWayriCADFrame`, `probeWayriCADPlot` and `getWayriCADPointHistory` are pure model/query helpers. See [the result API, examples and limits](WAYRICAD-RESULTS.md). The `/results` entry supplies this component separately.

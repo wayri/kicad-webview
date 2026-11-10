@@ -28,6 +28,7 @@ const options = {
   } }],
 };
 await esbuild.build({entryPoints:[path.join(root,'src/standalone-html.mjs')],outfile:path.join(output,'standalone-html.mjs'),bundle:true,format:'esm',platform:'browser',target:['es2022'],minify:true,banner:{js:distributionNotice(root)}});
+await esbuild.build({...options,entryPoints:[path.join(root,'src/index-results.mjs')],outfile:path.join(output,'wayricad-results.js')});
 const result = await esbuild.build(options);
 const classic = await esbuild.build({ ...options, entryPoints: [path.join(root, 'src/browser-global.mjs')], outfile: path.join(output, 'kicad-webview.min.js'), format: 'iife', globalName: 'KiCadWebView' });
 if (Object.values(classic.metafile.outputs).some(item => item.imports.length)) throw new Error('Classic distribution has external imports.');
@@ -55,6 +56,7 @@ for(const name of ['3PD+IB-F_Cu.gtl','3PD+IB-B_Cu.gbl','3PD+IB-F_Silkscreen.gto'
 buildDemoArchive(root,path.join(output,'manufacturing/inverter-fabrication.zip'));
 for (const [source, target] of [
   ['docs/PRESENTATION.md','PRESENTATION.md'],
+  ['docs/WAYRICAD-RESULTS.md','WAYRICAD-RESULTS.md'],
   ['docs/MOBILE-PERFORMANCE.md','MOBILE-PERFORMANCE.md'],
   ['docs/INSPECTION-CONTROLS.md','INSPECTION-CONTROLS.md'],
   ['docs/PROJECT-TREE.md','PROJECT-TREE.md'],

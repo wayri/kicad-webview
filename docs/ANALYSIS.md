@@ -40,6 +40,6 @@ Controls include field selection, overlay visibility, opacity, fixed colour scal
 
 Limits: 8 fields, 10,000 cells total, 8 MiB JSON text, finite scalar magnitudes <= 1e9, coordinate/dimension magnitudes <= 1e6 mm, positive dimensions, unique field IDs and bounded metadata. `setAnalysis` accepts parsed objects or JSON text, copies/freezes the validated contract, and rejects malformed data. Hosts should bound network response bytes before parsing when accepting untrusted URLs. Use HTTPS/localhost for Web Crypto. Analysis data remains in browser memory; this API does not upload it.
 
-The local `analysis.html` example uses the real owner-authorized inverter with explicitly illustrative voltage-drop, current-density and temperature fields. Its deterministic gradient demonstrates the interface only; it contains no electrical or thermal analysis. A direct SPIKE/Quick PI exporter and 3D field surfaces are future integrations, not current capabilities. Adapt an existing solver's saved field output to this schema rather than inventing results or relabelling an image as quantitative data.
+For native WayriCAD portable results, use [WayriCADResultsViewer](WAYRICAD-RESULTS.md), which retains saved triangle meshes, grids, SI curves and thermal frames. This rectangular scalar interface remains separate and PCB-2D-only. Neither API executes a solver.
 
 Scalar readouts and scale endpoints use six significant figures for presentation; the accepted dataset retains its original values through getAnalysis().

@@ -47,6 +47,7 @@ import {createSceneResources} from "./sceneResources.mjs";
 import {createSilkscreenDetail} from "./silkscreenDetail.mjs";
 import {silkscreenSource,silkscreenPlan,paintSilkscreen} from "./surfaceSilkscreen.mjs";
 export { mountResultScene } from "./result3d.js";
+export {mountSavedResult3D} from "./wayricadResult3d.mjs";
 
 const STYLE = `
   :host{display:block;width:100%;height:100%;container-type:inline-size;font:12px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;

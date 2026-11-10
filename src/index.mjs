@@ -20,3 +20,5 @@ export {DemoController} from './demo-controller.mjs';
 export {ProjectTree,buildProjectHierarchy,loadProjectHierarchy,hierarchyToSVG} from './project-tree.mjs';
 
 export {createStandaloneHTML} from './standalone-html.mjs';
+
+export * from './index-results.mjs';

@@ -28,3 +28,11 @@ test('standalone distribution imports with no repository module dependencies', a
     assert.equal(viewer.fitButton.disabled, false);
   } finally { viewer.dispose(); globalThis.KiCadOwnedCanvas.mount = mount; }
 });
+
+test('dedicated result distribution imports without sibling dependencies and preserves public helpers',async t=>{
+ const url=new URL('../dist/wayricad-results.js',import.meta.url);try{await access(url);}catch{t.skip('Build to verify the result distribution.');return;}
+ const code=await readFile(url,'utf8'),api=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
+ for(const name of ['WayriCADResultsViewer','parseWayriCADResults','classifyWayriCADSource','getWayriCADSourceLinks','createWayriCADSurface','getWayriCADFrame','probeWayriCADPlot','getWayriCADPointHistory'])assert.equal(typeof api[name],'function',name);
+ const raw=await readFile(new URL('./fixtures/wayricad/quick-pi.pocket-kivi.json',import.meta.url),'utf8'),model=api.parseWayriCADResults(raw);
+ assert.equal(model.report.plots[0].type,'mesh-field');assert.ok(model.raw.result.potential_V.some(v=>v===null));
+});

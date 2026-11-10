@@ -1,4 +1,5 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
+import {fieldRGB} from '../engine/spike/fieldColors.mjs';
 /** Portable imported scalar fields. This module performs no engineering solve. */
 const text = (value, name, max=240) => {
   if(typeof value!=='string'||!value.trim()||value.length>max||/[\u0000-\u001f\u007f]/.test(value))throw new TypeError('Invalid analysis '+name+'.');
@@ -47,12 +48,7 @@ export async function analysisSourceHash(source) {
   if(!globalThis.crypto?.subtle)throw new Error('Analysis binding requires a secure context (HTTPS or localhost).');
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(source)))].map(v=>v.toString(16).padStart(2,'0')).join('');
 }
-export function analysisColor(value,range) {
-  const t=Math.max(0,Math.min(1,(value-range[0])/(range[1]-range[0])));
-  // Sequential blue-to-yellow scale, shared by cells and legend. Outliers clamp visibly.
-  const stops=[[26,64,115],[20,136,156],[107,196,151],[255,225,112]],u=t*3,i=Math.min(2,Math.floor(u)),f=u-i;
-  return 'rgb('+stops[i].map((n,k)=>Math.round(n+(stops[i+1][k]-n)*f)).join(',')+')';
-}
+export function analysisColor(value,range) { return 'rgb('+fieldRGB(value,range).join(',')+')'; }
 export function analysisCellAt(field,point) {
   for(let i=field.samples.length-1;i>=0;i--){const s=field.samples[i];if(point.x>=s.x&&point.x<=s.x+s.width&&point.y>=s.y&&point.y<=s.y+s.height)return s;}
   return null;

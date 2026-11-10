@@ -200,3 +200,5 @@ export * from './hierarchy.js';
 export interface StandaloneHTMLOptions { viewerScript: string; licenseText: string; files: {path: string; bytes: Uint8Array}[]; title?: string; view?: DrawingView; theme?: Theme; highlightStyle?: HighlightMode; highlightColor?: HighlightColor; appearance?: BoardAppearance; }
 /** Generate an offline HTML string in caller memory. Include the matching viewer script, license and source notices. */
 export declare function createStandaloneHTML(options: StandaloneHTMLOptions): string;
+
+export * from './wayricad-results.js';
