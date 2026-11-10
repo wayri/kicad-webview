@@ -244,6 +244,7 @@ export class KiCadViewer extends EventTarget {
   setInspectOnSelect(enabled) { this.assertActive(); if(typeof enabled!=='boolean')throw new TypeError('inspectOnSelect must be a boolean.');this.inspectOnSelect=enabled;if(this.inspector?.autoInspect)this.inspector.autoInspect.checked=enabled; }
   setInspectorOpen(open) { this.assertActive(); this.inspector.toggle(open); }
   getSelection() { this.assertActive(); return this.inspector.getSelection(); }
+  getSelectionPosition() { this.assertActive(); return this.inspector.getSelectionPosition(); }
   selectObject(id, options) { this.assertActive(); return this.inspector.selectObject(id, options); }
   getParts() { this.assertActive(); return this.inspector.getParts(); }
   selectPart(id, options) { this.assertActive(); return this.inspector.selectPart(id, options); }
@@ -302,9 +303,10 @@ export class KiCadViewer extends EventTarget {
           sourceSnapshot: state.sourceSnapshot, sourceKey: state.sourceKey, sourceParser: state.sourceParser,
           boardPath: state.path, dark: this.theme === 'dark', embedded: true, externalInspector: true,
           onAppearanceChange: value => { if (mounted()) {this.modelOptions.appearance = value;this.updateControls();} },
-          onLayersChange: () => {if(mounted())this.updateControls();},
+          onLayersChange: () => {if(mounted()){this.updateControls();this.emit('layerschange',this.getLayerState());}},
           onDiagnostics: value => { notes = value; if (mounted()) { this.renderingNotes = notes; this.updateStatus(); } },
           onSelect: item => { if (mounted()) this.handleSelection({ item }, '3d'); },
+          onAnalysisProbe: probe => { if (mounted()) this.emit('analysisprobe', {probe,path:this.path,view:'3d'}); },
         });
       } else if (view === 'manufacturing') {
         renderer = mountManufacturing(mount, { dark: this.theme === 'dark' }); renderer.setDocument(state.design);

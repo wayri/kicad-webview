@@ -17,6 +17,10 @@ export class WayriCADResultsViewer extends EventTarget {
  getResults():WayriCADResults|null;
  getSourceState():WayriCADSourceState;
  getView():'2d'|'3d';
+ getResultLayers():string[];
+ setLayer(layer:string):boolean;
+ setBoardOverlay(enabled:boolean):boolean;
+ getBoardOverlayState():Record<string,unknown>;
  getRenderStats():Record<string,unknown>;
  setPlot(index:number):boolean;
  setFrame(index:number):void;

@@ -16,7 +16,9 @@ Everything needed for native KiCad viewing runs in the browser. Visitors need no
 - [Read the user guide](https://wayri.github.io/kicad-webview/docs/user-guide/) or [API reference](https://wayri.github.io/kicad-webview/docs/api/).
 - [Download a release](https://github.com/wayri/kicad-webview/releases), or build this checkout.
 
-The current release is **0.3.0**, licensed under MPL-2.0. Install the latest release or pin a version. The website’s immutable beta.2 SDK remains available, while its separately maintained demonstrations may use additional host adapters. Archived beta.1 downloads retain their earlier license.
+The current npm release is **0.3.0**, licensed under MPL-2.0. Install the latest release or pin a version. The website’s immutable beta.2 SDK remains available, while its separately maintained demonstrations may use additional host adapters. Archived beta.1 downloads retain their earlier license.
+
+The **0.4.0 self-hosted SDK and source** add registered WayriCAD fields on the native 3D board, saved result layer selection and linked spatial probes. npm remains at 0.3.0 until its next publication.
 
 WayriCAD results: load retained PI fields, SI graphs and thermal frames alongside an exact-hash-matched PCB, inspect source-linked routes and explore supported independent 3D fields. [WayriCAD result API and limits](docs/WAYRICAD-RESULTS.md).
 

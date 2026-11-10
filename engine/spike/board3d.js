@@ -38,7 +38,7 @@ import { hasSavedSelection, selectionMatcher, selectableRecord, tapGesture, hold
 import { sphereFitDistance,boxFitDistance } from "./fitPolicy.mjs";
 import {createPresentationStudio} from "./presentationStudio.mjs";
 import { qualityName, qualityViewport, graphicsProfile, boardOcclusion, boardClipRange, boxNearDepth, configureOcclusionDepth, studioLights, studioMaterials, padHasMaskOpening, physicalColors } from "./renderQuality.mjs";
-import { createResultOverlay } from "./result3d.js";
+import {createAnalysisOverlayController} from "./registeredResult3d.mjs";
 import { sourceZoneGeometry,drillLoopInsideBoard } from "./sourceGeometry.mjs";
 import { nativePadOutline,padSourceDetails,nativeDrillOutline } from "./padGeometry.mjs";
 import { MeasurementSession,distanceLabel,snapProjectedEdges } from "./measurement3d.mjs";
@@ -913,19 +913,21 @@ export function mountBoard3D(container, source, options = {}) {
     pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
     raycaster.setFromCamera(pointer, camera);
     if(measuring){measureSurface();return;}
+    let analysisResult = null;
+    const analysisOverlay = analysisController.overlay;
     if (analysisOverlay?.mesh.visible) {
       const result = analysisOverlay.sample(raycaster.intersectObject(analysisOverlay.mesh, false)[0]);
-      if (result) { options.onAnalysisProbe?.(result); return; }
+      if (result) analysisResult = result;
     }
     const visible=item=>inspectionTarget(item,substrate,appearance);
     const hits = raycaster.intersectObjects(pickables.filter(visible), false).filter(hit=>selectionAppearance.isVisible(hit.object,hit.instanceId));
     const mode = options.getSelectionMode?.() || selectionMode;
     const selectable=hit=>selectableRecord(hit.object.userData.records?.[hit.instanceId]||hit.object.userData.record,mode);
     const hit=(appearance==='translucent'&&hits.find(hit=>selectable(hit)&&(hit.object.userData.records?.[hit.instanceId]||hit.object.userData.record)?.type!=='Zone'))||hits.find(selectable);
-    if (!hit) { clearSelection(); return; }
+    if (!hit) { if (!analysisResult) clearSelection(); else options.onAnalysisProbe?.(analysisResult); return; }
     const record = hit.object.userData.records?.[hit.instanceId] || hit.object.userData.record;
-    if (!record) return;
-    select(record, hit.point, hit.object, hit.instanceId);
+    if (record) select(record, hit.point, hit.object, hit.instanceId);
+    if (analysisResult) options.onAnalysisProbe?.(analysisResult);
   }
   let selectionMode = 'all';
   const hold = holdGesture(event => contextMenu(event));
@@ -933,6 +935,7 @@ export function mountBoard3D(container, source, options = {}) {
   renderer.domElement.addEventListener("pointerdown", (event) => { gesture.down(event); hold.down(event); menu.hidden = true;if(measuring&&event.pointerType==='touch'){measurementPointers.add(event.pointerId);measurementTouchDrag=measurementPointers.size===1?event.pointerId:null;controls.enabled=measurementPointers.size!==1;measurementTouch={x:event.clientX,y:event.clientY};invalidate();} });
   renderer.domElement.addEventListener("pointermove", event => {
     gesture.move(event); hold.move(event);if(measuring&&event.pointerType==='touch'){measurementTouch={x:event.clientX,y:event.clientY};invalidate();}
+    const analysisOverlay = analysisController.overlay;
     if (analysisOverlay && options.onAnalysisHover) {
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
@@ -969,19 +972,20 @@ export function mountBoard3D(container, source, options = {}) {
   const resize = sizeViewport;
   const observer = new ResizeObserver(()=>{resize();syncEmbeddedPanelOffset();}); observer.observe(canvasHost);
   const intersectionObserver=observeRenderActivity(renderActivity,canvasHost);resize();syncEmbeddedPanelOffset();
-  let analysisOverlay = null;
+  const analysisController = createAnalysisOverlayController({bounds:board.bounds,thickness,layers:board.layers||[]},{scene,invalidate,isActive:()=>active});
   const layoutFrame = requestAnimationFrame(() => { if (active) { resize(); if(!userAdjustedCamera)fit(); } });
   const projectAnchor=createAnchorProjector(THREE,{objects:()=>pickables,camera,rect:()=>renderer.domElement.getBoundingClientRect(),positionToWorld:(position,side)=>{const [x,y]=world([position.x,position.y]);return new THREE.Vector3(x,y,side==='back'?bottom:top);}});
   let activeAnchor=null,anchorSignature='',viewSignature='';
   function notifyAnchor(){if(!activeAnchor)return;const point=projectAnchor(activeAnchor),signature=JSON.stringify(point);if(signature!==anchorSignature){anchorSignature=signature;options.onAnchor?.({anchor:activeAnchor,point});}}
   function notifyView(){const rect=renderer.domElement.getBoundingClientRect(),signature=JSON.stringify([camera.matrixWorld.elements,camera.projectionMatrix.elements,rect.left,rect.top,rect.width,rect.height]);if(signature!==viewSignature){viewSignature=signature;options.onViewChange?.();}notifyAnchor();}
   function drawFrame(){if(!active||contextLost||document.hidden)return;modelUpdates.flush();controls.update();silkDetail.sync();demoSurfaces.sync();if(demoPointerId!==null&&!demoSurfaces.hasActivePointer)cancelDemoPointer();updateMeasurementGraphics();updateTerminalLabels();
-    let rendered=false;try{
+    let rendered=false;shaderFailure=false;try{
       if(pipeline){pipeline.composer.render();if(shaderFailure||renderer.getContext().getError()!==renderer.getContext().NO_ERROR)throw Error('Enhanced rendering failed.');}
-      else renderer.render(scene,camera);
+      else {renderer.render(scene,camera);if(shaderFailure)throw Error('Board rendering shader failed.');}
       renderCount++;rendered=true;
     }catch{
-      if(pipeline){fallbackQuality('Enhanced rendering could not complete. Balanced rendering is active.');invalidate();}
+      if(shaderFailure&&analysisController.useColorFallback()){shaderFailure=false;invalidate();}
+      else if(pipeline){fallbackQuality('Enhanced rendering could not complete. Balanced rendering is active.');invalidate();}
       else graphicsNotice('The graphics device could not draw this view. Try Low quality or reopen 3D.');
     }
     if(rendered){drawMeasurementLens();notifyView();}
@@ -1022,23 +1026,10 @@ export function mountBoard3D(container, source, options = {}) {
     getVisibleCopperLayers(){return visibleCopperLayers();},
     setVisibleCopperLayers,
     getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),appearance,renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline),renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
-    setAnalysisOverlay(surface) {
-      if (!active) return { placed: false, reason: "3D viewer is closed." };
-      if (!surface) { analysisOverlay?.dispose(); analysisOverlay = null; invalidate();return { placed: false, reason: "Overlay cleared." }; }
-      const basis = surface.zBasis;
-      const savedLayer = surface.layer;
-      if ((surface.zKnown && !["front-depth", "board-center"].includes(basis)) || (!surface.zKnown && !["F.Cu", "B.Cu"].includes(savedLayer))) return { placed: false, reason: "Saved result elevation basis or board layer is unknown; use the standalone result scene." };
-      const transform = ([x, y, z]) => [x - centerX, centerY - y, surface.zKnown ? (basis === "front-depth" ? thickness / 2 - z : z) : (savedLayer === "F.Cu" ? thickness / 2 : -thickness / 2)];
-      const next = createResultOverlay(surface, transform);
-      // Internal copper/thermal layers must remain inspectable on the opaque PCB.
-      // The result UI identifies this as showing the selected field through the board.
-      next.mesh.material.depthTest = false; next.mesh.renderOrder = 20;
-      analysisOverlay?.dispose(); analysisOverlay = next; scene.add(next.group);
-      invalidate();
-      return { placed: true, basis: surface.zKnown ? basis : savedLayer, flat: !surface.zKnown };
-    },
-    setAnalysisProbes(probes) { analysisOverlay?.setProbes(probes);invalidate(); },
-    setAnalysisOpacity(value) { analysisOverlay?.setOpacity(value);invalidate(); },
+    setAnalysisOverlay:analysisController.setAnalysisOverlay,
+    getAnalysisOverlayState:analysisController.getAnalysisOverlayState,
+    setAnalysisProbes:analysisController.setAnalysisProbes,
+    setAnalysisOpacity:analysisController.setAnalysisOpacity,
     setSelection,
     focusPart(uuid){
       if(!active||typeof uuid!=='string')return false;
@@ -1109,6 +1100,6 @@ export function mountBoard3D(container, source, options = {}) {
         if (index != null && !population[index]) clearSelection();
       }
     },
-    dispose() { silkDetail.dispose();cancelDemoPointer();finishDemoFace(new DOMException('The 3D view was closed.','AbortError'));demoSurfaces.dispose();for(const [name,handler]of [['pointerdown',demoPointerDown],['pointermove',demoPointerMove],['pointerup',demoPointerUp],['pointercancel',demoPointerCancel],['lostpointercapture',demoPointerCancel]])renderer.domElement.removeEventListener(name,handler,true);shadow.removeEventListener('keydown',demoKey,true);document.defaultView?.removeEventListener('blur',cancelDemoPointer);if(measuring)options.onMeasurementMode?.(false);active = false; modelUpdates.dispose(); analysisOverlay?.dispose(); stepClient?.dispose(); renderActivity.dispose(); cancelAnimationFrame(layoutFrame); observer.disconnect();intersectionObserver?.disconnect();controls.removeEventListener('change',invalidate); controls.removeEventListener("change", updateClipping); controls.removeEventListener("start", cameraInteraction); controls.dispose();disposePipeline();environment?.dispose();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);document.removeEventListener('pointerdown',closeVisibility);shadow.removeEventListener('keydown',escapeVisibility,true);shadow.removeEventListener('keydown',escapeMeasurement);
+    dispose() { silkDetail.dispose();cancelDemoPointer();finishDemoFace(new DOMException('The 3D view was closed.','AbortError'));demoSurfaces.dispose();for(const [name,handler]of [['pointerdown',demoPointerDown],['pointermove',demoPointerMove],['pointerup',demoPointerUp],['pointercancel',demoPointerCancel],['lostpointercapture',demoPointerCancel]])renderer.domElement.removeEventListener(name,handler,true);shadow.removeEventListener('keydown',demoKey,true);document.defaultView?.removeEventListener('blur',cancelDemoPointer);if(measuring)options.onMeasurementMode?.(false);active = false; modelUpdates.dispose(); analysisController.dispose(); stepClient?.dispose(); renderActivity.dispose(); cancelAnimationFrame(layoutFrame); observer.disconnect();intersectionObserver?.disconnect();controls.removeEventListener('change',invalidate); controls.removeEventListener("change", updateClipping); controls.removeEventListener("start", cameraInteraction); controls.dispose();disposePipeline();environment?.dispose();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);document.removeEventListener('pointerdown',closeVisibility);shadow.removeEventListener('keydown',escapeVisibility,true);shadow.removeEventListener('keydown',escapeMeasurement);
     renderer.domElement.removeEventListener('pointerdown',measurementTouchCapture,true);document.removeEventListener('visibilitychange',onDocumentVisibility);selectionAppearance.dispose();translucency.dispose();scene.traverse(object=>object.shadow?.dispose?.());resources.retain(scene);terminalLabelCache.forEach(texture=>resources.track(texture));resources.track(labelGeometry);resources.dispose();scene.clear();boardGroup.clear();parts.clear();silkGroup.clear();copperGroups.clear();pickables.length=0;visibilityRecords.length=0;appearanceRecords.length=0;componentMatrices.length=0;modelGroups.clear();terminalLabelCache.clear();hold.dispose(); renderer.dispose();renderer.domElement.width=1;renderer.domElement.height=1; host.remove(); } };
 }

@@ -7,7 +7,7 @@
 ```html
 <div id="board" style="height:420px"></div>
 <div id="results"></div>
-<script src="https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@0.3.0/dist/kicad-webview.min.js"></script>
+<script src="https://wayri.github.io/assets/lib/kicad-webview/releases/0.4.0/kicad-webview.min.js"></script>
 <script type="module">
   const board = new KiCadWebView.Viewer('#board', {theme:'dark'});
   await board.load('/designs/board.kicad_pcb');
@@ -15,6 +15,8 @@
     theme:'dark', boardViewer:board
   });
   await results.loadURL('/results/board.quick-pi.pocket-kivi.json');
+  results.setBoardOverlay(true);
+  await board.setView('3d');
   window.addEventListener('pagehide', () => {
     results.dispose();
     board.dispose();
@@ -48,11 +50,17 @@ Pass a `KiCadViewer` as `boardViewer`, or call `results.attachBoard(board)`. A s
 | `stale` | A single declared source hash differs from the loaded PCB. Board overlays and source actions are disabled. |
 | `unverified` | Missing, ambiguous, unsaved or unsupported source evidence. Independent plots/data remain available; PCB registration is disabled. |
 
-**Show on matching PCB** adds a 2D display-only field overlay only when the result declares KiCad PCB XY millimetres and the source matches. Layer visibility and the PCB camera are respected. Switching the board to 3D pauses this 2D overlay; the independent result 3D scene remains available separately. A source replacement immediately invalidates registration. SHA-256 registration needs HTTPS or localhost.
+**Show on matching PCB** adds a display-only field overlay only when the result declares KiCad PCB XY millimetres and the source matches. Layer visibility and the PCB camera are respected. Switching the board between PCB and 3D retains the enabled field on the same source. The native 3D overlay maps saved front-depth or board-center Z; without saved Z only explicitly named F.Cu/B.Cu surfaces are placed. The selected field is shown through the substrate and components, with that presentation labelled. Hidden PCB layers hide their field. A source replacement immediately invalidates registration. SHA-256 registration needs HTTPS or localhost.
 
 For supported SI exports, **Highlight saved net** and **Locate saved route** use the producer’s exact net name and segment UUIDs on the matching PCB. Selecting a linked PCB net/object reports its match in the result panel. No relationship is inferred from a graph label, a shortened hierarchical net name or an unrelated part reference. `highlightSource()` and `locateSource()` return false for missing, ambiguous or unregistered targets.
 
 Complete `wayricad.project-result/v1` library records can expose supported plots and full data, but canonical project-library content identity is not verified by this adapter. They remain **unverified** for PCB registration. Export a supported portable companion with its original saved-source evidence for the registered route.
+
+## Layers and linked probes
+
+Choose **Saved result layer** to switch layers while retaining the field quantity where available. PCB layer visibility remains controlled by the native Layers panel. Click a result or PCB field to link its saved spatial probe marker; clicking a saved PCB part/segment samples its source anchor or segment midpoint. Native part/trace selection stays usable under the field. When the overlay is active the chosen result layer stays pinned; exact raycast probes retain their triangle, Z and value. A spatial marker does not assert electrical connectivity. SI net/route links use only explicit saved identities. Unknown values produce no marker.
+
+`getResultLayers()` returns available names; `setLayer(name)` chooses one; `setBoardOverlay(boolean)` enables supported matching-source registration and returns the accepted state; `getBoardOverlayState()` returns placement/layer/basis/visibility feedback. `Viewer.getSelectionPosition()` returns a saved source anchor or segment midpoint with its layer, or null. `analysisprobe` emits registered native 3D probe data.
 
 ## API
 

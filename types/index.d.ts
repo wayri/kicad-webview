@@ -40,6 +40,7 @@ export interface AnalysisData {
   fields: AnalysisField[];
 }
 export interface ViewerEvents {
+  analysisprobe: CustomEvent<{probe:{x:number;y:number;z?:number;value:number;unit:string};path:string;view:'3d'}>;
   highlightstylechange: CustomEvent<HighlightStyle>;
   layerschange: CustomEvent<LayerState>;
   dispose: CustomEvent<null>;
@@ -62,7 +63,7 @@ export declare class KiCadViewer extends EventTarget {
   getFiles(): ProjectFileInfo[]; openFile(path: string, options?: LoadOptions): Promise<boolean>;
   getParts(): Part[]; selectPart(id: string, options?: { locate?: boolean }): boolean;
   setInspectOnSelect(enabled: boolean): void;
-  getSelection(): ViewSelection | null; selectObject(id: string, options?: {locate?: boolean; pinNumber?: string | number}): boolean;
+  getSelection(): ViewSelection | null; getSelectionPosition(): {x:number;y:number;layer:string|null}|null; selectObject(id: string, options?: {locate?: boolean; pinNumber?: string | number}): boolean;
   getNets(): SavedNet[]; selectNet(idOrUniqueName: string, options?: { locate?: boolean }): boolean;
   getSheets(): SheetLink[]; clearSelection(): void; setInspectorOpen(open: boolean): void;
   setView(view: DrawingView, options?: {signal?: AbortSignal}): Promise<boolean>; fit(): void;

@@ -187,6 +187,7 @@ export function mountSavedResult3D(container,surface,options={}){
     if(options.signal?.aborted){dispose();throw abortError();}
   }catch(caught){dispose();throw caught;}
   return {host,unavailable:false,setSurface,
+    setProbes(probes){content?.overlay.setProbes(probes);invalidate();},
     setTheme(dark){if(!active)return;theme(Boolean(dark));scene.background.setHex(dark?0x101d28:0xf3f7f5);invalidate();},
     setOpacity(value){if(!active)return;if(!Number.isFinite(value)||value<0||value>1)throw new TypeError('Choose result opacity between 0 and 1.');opacity=value;content.overlay.setOpacity(value);invalidate();},
     fit,getCameraState(){return {position:camera.position.toArray(),target:controls.target.toArray(),up:camera.up.toArray()};},

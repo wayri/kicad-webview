@@ -525,7 +525,8 @@
       "Reject empty/invalid current-vector dimensions instead of manufacturing zero magnitude.",
       "Do not create area surfaces from singleton grid axes.",
       "Exact-hash registration is separate from producer claims; canonical project-library integrity remains unverified.",
-      "Normalize the validated JSON object directly, avoiding duplicate stringify/parse and preserving one frozen savedSource graph."
+      "Normalize the validated JSON object directly, avoiding duplicate stringify/parse and preserving one frozen savedSource graph.",
+      "Register supported fields on exact-source native 3D boards, preserve exact raycast probes and expose saved-layer controls."
     ],
     "files": [
       {
