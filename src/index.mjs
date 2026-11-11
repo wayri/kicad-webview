@@ -22,3 +22,5 @@ export {ProjectTree,buildProjectHierarchy,loadProjectHierarchy,hierarchyToSVG} f
 export {createStandaloneHTML} from './standalone-html.mjs';
 
 export * from './index-results.mjs';
+
+export * from './index-bom.mjs';

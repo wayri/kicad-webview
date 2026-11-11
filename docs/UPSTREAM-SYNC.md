@@ -1,0 +1,9 @@
+# Extension synchronization: 0.5.0
+
+The native read-only BOM/board analytics engine was ported from the main KiCad Online extension working tree, based at commit `ecb2ca40baf80981e36ad948b29c4166cb808ef2`. Its working tree included unpublished changes; this is a file snapshot, not a claim that all source matches that commit. Upstream `extension/bom-analytics.js` SHA-256: `ca80cba6bf46e8299ea878b37bfad28a9d414c98e43603a7672cb4f319e24059`. The library copy adds its MPL header; bounded public adapters and UI are maintained separately.
+
+The renderer audit found the web library already ahead of the inspected extension in native 3D depth/clipping, translucent copper layers, registered WayriCAD fields, source selection and embed lifecycle. Those fixes are retained. Editor, comments, authentication, procurement and extension-only persistence are not imported.
+
+Retained synthetic native Bezier references were copied from the extension tests. Their recorded KiCad CLI version is 10.0.6, exported 2026-11-03. This release checks the retained output; it does not claim a fresh native export. Tests cover bounded cubic flattening, mirrored/rotated transforms, pin/wire connectivity, malformed geometry warnings and agreement with retained SVG coordinates (PCB 0.00501 mm; schematic 0.006 mm). These are geometric checks, not universal font/pixel fidelity or all-version compatibility.
+
+See [BOM semantics and limits](BOM-ANALYTICS.md), [mobile performance](MOBILE-PERFORMANCE.md) and [WayriCAD result limits](WAYRICAD-RESULTS.md). Existing draw/texture/offscreen budgets remain; no new physical-device benchmark is claimed.

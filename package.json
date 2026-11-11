@@ -1,6 +1,6 @@
 {
   "name": "@wayrisignals/kicad-webview",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Interactive KiCad schematic, PCB and 3D viewer for the web, with Gerber, Excellon, linked views and offline HTML exports",
   "type": "module",
   "license": "MPL-2.0",
@@ -34,6 +34,11 @@
       "types": "./types/wayricad-results.d.ts",
       "import": "./dist/wayricad-results.js",
       "default": "./dist/wayricad-results.js"
+    },
+    "./bom": {
+      "types": "./types/bom.d.ts",
+      "import": "./dist/bom-viewer.js",
+      "default": "./dist/bom-viewer.js"
     }
   },
   "files": [
@@ -91,7 +96,10 @@
     "SECURITY.md",
     "docs/MOBILE-PERFORMANCE.md",
     "dist/wayricad-results.js",
-    "docs/WAYRICAD-RESULTS.md"
+    "docs/WAYRICAD-RESULTS.md",
+    "dist/bom-viewer.js",
+    "docs/BOM-ANALYTICS.md",
+    "docs/UPSTREAM-SYNC.md"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",

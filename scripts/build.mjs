@@ -29,6 +29,7 @@ const options = {
 };
 await esbuild.build({entryPoints:[path.join(root,'src/standalone-html.mjs')],outfile:path.join(output,'standalone-html.mjs'),bundle:true,format:'esm',platform:'browser',target:['es2022'],minify:true,banner:{js:distributionNotice(root)}});
 await esbuild.build({...options,entryPoints:[path.join(root,'src/index-results.mjs')],outfile:path.join(output,'wayricad-results.js')});
+await esbuild.build({...options,entryPoints:[path.join(root,'src/index-bom.mjs')],outfile:path.join(output,'bom-viewer.js')});
 const result = await esbuild.build(options);
 const classic = await esbuild.build({ ...options, entryPoints: [path.join(root, 'src/browser-global.mjs')], outfile: path.join(output, 'kicad-webview.min.js'), format: 'iife', globalName: 'KiCadWebView' });
 if (Object.values(classic.metafile.outputs).some(item => item.imports.length)) throw new Error('Classic distribution has external imports.');
@@ -55,6 +56,8 @@ mkdirSync(path.join(output,'manufacturing'),{recursive:true});
 for(const name of ['3PD+IB-F_Cu.gtl','3PD+IB-B_Cu.gbl','3PD+IB-F_Silkscreen.gto','3PD+IB-Edge_Cuts.gm1','3PD+IB-PTH.drl','3PD+IB-NPTH.drl','project.json','PROVENANCE.json'])copyFileSync(path.join(root,'fixtures/inverter-cam',name),path.join(output,'manufacturing',name));
 buildDemoArchive(root,path.join(output,'manufacturing/inverter-fabrication.zip'));
 for (const [source, target] of [
+  ['docs/BOM-ANALYTICS.md','BOM-ANALYTICS.md'],
+  ['docs/UPSTREAM-SYNC.md','UPSTREAM-SYNC.md'],
   ['docs/PRESENTATION.md','PRESENTATION.md'],
   ['docs/WAYRICAD-RESULTS.md','WAYRICAD-RESULTS.md'],
   ['docs/MOBILE-PERFORMANCE.md','MOBILE-PERFORMANCE.md'],

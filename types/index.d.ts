@@ -203,3 +203,5 @@ export interface StandaloneHTMLOptions { viewerScript: string; licenseText: stri
 export declare function createStandaloneHTML(options: StandaloneHTMLOptions): string;
 
 export * from './wayricad-results.js';
+
+export * from './bom.js';
