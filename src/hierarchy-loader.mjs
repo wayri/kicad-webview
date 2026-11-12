@@ -38,12 +38,16 @@ export async function loadProjectHierarchy(input,options={}){
   else {
    const listed=resolved.project?.files||[{path:resolved.path}],schematics=listed.filter(file=>schematic(file.path));files=[];let total=0;
    if(schematics.length>256)throw new Error('Hierarchy exceeds 256 schematic files.');
-   for(const file of schematics){
-    signal?.throwIfAborted();let source;
-    try{source=file.path===resolved.path&&typeof resolved.source==='string'?resolved.source:await fetchText(file.url,{signal,credentials,limit:MAX_FILE});}
-    catch(error){signal?.throwIfAborted();if(error?.name==='AbortError')throw error;files.push({path:file.path,error:String(error.message||error).slice(0,512)});continue;}
-    signal?.throwIfAborted();const count=size(source);total+=count;if(count>MAX_FILE||total>MAX_TOTAL)throw new Error('Hierarchy exceeds 8 MiB per schematic or 64 MiB total.');files.push({path:file.path,source});
-   }
+   files=new Array(schematics.length);let next=0;const controller=new AbortController(),abort=()=>controller.abort(signal?.reason);
+   signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
+   async function worker(){while(next<schematics.length){controller.signal.throwIfAborted();const index=next++,file=schematics[index];let source;
+    try{source=file.path===resolved.path&&typeof resolved.source==='string'?resolved.source:await fetchText(file.url,{signal:controller.signal,credentials,limit:MAX_FILE});}
+    catch(error){controller.signal.throwIfAborted();if(error?.name==='AbortError')throw error;files[index]={path:file.path,error:String(error.message||error).slice(0,512)};continue;}
+    controller.signal.throwIfAborted();const count=size(source);total+=count;if(count>MAX_FILE||total>MAX_TOTAL)throw new Error('Hierarchy exceeds 8 MiB per schematic or 64 MiB total.');files[index]={path:file.path,source};
+   }}
+   try{await Promise.all(Array.from({length:Math.min(3,schematics.length)},()=>worker().catch(error=>{controller.abort(error);throw error;})));}
+   finally{signal?.removeEventListener('abort',abort);}
+
   }
  }
  signal?.throwIfAborted();return buildProjectHierarchy(files,{root,entry});

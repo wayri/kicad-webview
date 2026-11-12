@@ -32,3 +32,5 @@ test('direct hierarchy schematics enforce the 8 MiB download budget',async()=>{
  const original=globalThis.fetch;globalThis.fetch=async()=>new Response('',{headers:{'content-length':String(8*1024*1024+1)}});
  try{const model=await loadProjectHierarchy('https://example.test/main.kicad_sch');assert.equal(model.roots[0].status,'error');assert.match(model.files[0].error,/8388608 byte/);}finally{globalThis.fetch=original;}
 });
+
+test('remote hierarchy reads at most three listed files concurrently and preserves listing order',async()=>{const original=globalThis.fetch;let active=0,peak=0;globalThis.fetch=async()=>{active++;peak=Math.max(active,peak);await new Promise(r=>setTimeout(r,8));active--;return new Response(sch());};try{const files=Array.from({length:8},(_,i)=>({path:'sheet'+i+'.kicad_sch',url:'https://example.test/sheet'+i+'.kicad_sch'}));const model=await loadProjectHierarchy({files,entry:files[0].path});assert.equal(peak,3);assert.deepEqual(model.files.map(f=>f.path),files.map(f=>f.path));}finally{globalThis.fetch=original;}});

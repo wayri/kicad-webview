@@ -20,6 +20,7 @@ export interface HierarchySelection {id: string; path: string; file: string; nam
 export declare function buildProjectHierarchy(files: HierarchyFileInput[], options?: HierarchyBuildOptions): ProjectHierarchy;
 export declare function loadProjectHierarchy(input: HierarchyLoadInput, options?: HierarchyLoadOptions): Promise<ProjectHierarchy>;
 export declare function hierarchyToSVG(model: ProjectHierarchy, options?: {theme?:'light'|'dark'}): string;
+export interface ProjectTreeCamera {zoom:number; x:number; y:number;}
 export declare class ProjectTree extends EventTarget {
  constructor(target: string|HTMLElement, options?: {theme?:'light'|'dark'; onSelect?: (node: HierarchySelection)=>unknown|Promise<unknown>});
  readonly host: HTMLElement; readonly root: HTMLElement; readonly disposed: boolean;
@@ -27,7 +28,8 @@ export declare class ProjectTree extends EventTarget {
  loadFiles(files: Exclude<HierarchyLoadInput,string|URL|Uint8Array|ArrayBuffer|{files:unknown[];entry?:string}>, options?: HierarchyLoadOptions): Promise<boolean>;
  loadArchive(bytes: Uint8Array|ArrayBuffer, options?: HierarchyLoadOptions): Promise<boolean>;
  setHierarchy(model: ProjectHierarchy): this; setFiles(files: HierarchyFileInput[], options?: HierarchyBuildOptions): this;
- getHierarchy(): ProjectHierarchy|null; select(id:string): boolean; expandAll():void; collapseAll():void;
+ clear():this; getHierarchy(): ProjectHierarchy|null; select(id:string): boolean; expandAll():void; collapseAll():void;
+ getCamera():ProjectTreeCamera; setCamera(camera:ProjectTreeCamera):ProjectTreeCamera; zoomBy(factor:number):ProjectTreeCamera; fit():boolean; resetView():ProjectTreeCamera;
  setTheme(theme:'light'|'dark'):void; toSVG(options?:{theme?:'light'|'dark'}):string; dispose():void;
  addEventListener(type:'ready', listener:(event:CustomEvent<{hierarchy:ProjectHierarchy}>)=>void, options?:boolean|AddEventListenerOptions):void;
  addEventListener(type:'select', listener:(event:CustomEvent<{node:HierarchySelection}>)=>void, options?:boolean|AddEventListenerOptions):void;

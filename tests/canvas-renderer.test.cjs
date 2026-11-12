@@ -315,3 +315,31 @@ test('isolated highlights exclude unrelated overlapping copper from picking and 
  const {canvas}=runtime();const a={type:'polyline',points:[{x:0,y:0},{x:5,y:0}],width:.4,uuid:'a',kind:'track',layer:'F.Cu'},b={...a,uuid:'b'};
  canvas.setDocument({layers:['F.Cu'],primitives:[a,b]},'board.kicad_pcb');canvas.setNetHighlight({primitives:[a]},{mode:'isolate'});assert.deepEqual(canvas.query({x:2,y:0}).map(p=>p.uuid),['a']);canvas.setNetHighlight(null);assert.deepEqual(canvas.query({x:2,y:0}).map(p=>p.uuid),['a','b']);canvas.dispose();
 });
+
+test('outline rectangles do not capture their interior while filled pads and component bodies remain selectable',()=>{
+ const outline={type:'polygon',kind:'rectangle',uuid:'outline',points:[{x:0,y:0},{x:20,y:0},{x:20,y:20},{x:0,y:20}],width:.15};
+ assert.equal(core.hitPrimitive(outline,{x:10,y:10},.1),false);assert.equal(core.hitPrimitive(outline,{x:0,y:10},.1),true);
+ assert.equal(core.hitPrimitive({...outline,kind:'symbol'},{x:10,y:10},.1),true);
+ const {canvas}=runtime();canvas.primitives=[outline,{type:'circle',kind:'via',uuid:'via',x:10,y:10,r:.4,fill:true}];canvas.viewport.camera.zoom=20;
+ assert.deepEqual(Array.from(canvas.query({x:10,y:10}),p=>p.uuid),['via']);canvas.dispose();
+});
+test('filled background drawings remain behind enclosed wires when picking',()=>{
+ const {canvas}=runtime(),background={type:'polygon',kind:'rectangle',fill:true,uuid:'background',points:[{x:0,y:0},{x:20,y:0},{x:20,y:20},{x:0,y:20}]},wire={type:'line',kind:'wire',uuid:'wire',points:[{x:5,y:10},{x:15,y:10}],width:.15};canvas.pcb=false;canvas.primitives=[background,wire];canvas.viewport.camera.zoom=20;assert.equal(canvas.query({x:10,y:10})[0],wire);canvas.dispose();
+});
+
+test('screen-space proximity breaks same-category ties while PCB priority is preserved',()=>{
+ const {canvas}=runtime(),near={type:'circle',kind:'pad',uuid:'near',x:.1,y:0,r:.1,fill:true},far={...near,uuid:'far',x:.4};canvas.viewport.camera.zoom=10;canvas.primitives=[far,near];assert.equal(canvas.query({x:0,y:0})[0],near);assert.ok(canvas.pickDistance(far,{x:0,y:0})>canvas.pickDistance(near,{x:0,y:0}));canvas.dispose();
+});
+
+test('saved RGBA bypasses theme remapping, background fills use the body color and dash state resets',()=>{
+ const {canvas,operations}=runtime(),ctx=canvas.ctx;canvas.pcb=false;const p={type:'polygon',points:[{x:0,y:0},{x:5,y:0},{x:5,y:5}],width:.2,color:'rgba(132,0,0,0.5)',sourceColor:'rgba(132,0,0,0.5)',fill:'color',fillColor:'rgba(20,80,240,0.25)',lineStyle:'dash_dot'};
+ for(const dark of [false,true]){canvas.dark=dark;canvas.paint(p);assert.equal(ctx.strokeStyle,p.sourceColor);assert.equal(ctx.fillStyle,p.fillColor);assert.ok(operations.some(row=>row[0]==='setLineDash'&&row[1].length===4));}
+ canvas.dark=false;canvas.paint({...p,sourceColor:undefined,color:'#840000',fill:'background',lineStyle:undefined});assert.equal(ctx.strokeStyle,core.schematicColor('#840000',false));assert.equal(ctx.fillStyle,'#ffffc2');assert.equal(operations.findLast(row=>row[0]==='setLineDash')[1].length,0);canvas.paint(p,{color:'#00ffff'});assert.equal(ctx.fillStyle,'#00ffff');canvas.dispose();
+});
+
+test('embedded PNGs decode once, use saved world geometry and release pending loads on source replacement',()=>{
+ const decoded=[];class Image{constructor(){decoded.push(this);}set src(value){this.source=value;}get src(){return this.source;}}
+ const {canvas,operations}=runtime(1,{Image}),png={type:'image',uuid:'png',pixelWidth:2,pixelHeight:1,dataUrl:'data:image/png;base64,iVBORw0KGgoAAA==',points:[{x:400,y:10},{x:420,y:10},{x:420,y:20},{x:400,y:20}]};
+ canvas.primitives=[png];canvas.viewport.camera.bbox={x:395,y:5,w:30,h:20};canvas.draw();assert.equal(decoded.length,1);assert.equal(decoded[0].decoding,'async');decoded[0].naturalWidth=2;decoded[0].naturalHeight=1;decoded[0].onload();operations.length=0;canvas.draw();assert.ok(operations.some(row=>row[0]==='drawImage'));assert.equal(decoded.length,1);assert.equal(canvas.query({x:410,y:15})[0],png);
+ const unsafe={...png,dataUrl:'https://example.com/private.png'};canvas.imageResource(unsafe);assert.equal(decoded.length,1);canvas.primitives=[];assert.equal(decoded[0].onload,null);assert.equal(decoded[0].src,'');canvas.dispose();
+});

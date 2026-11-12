@@ -1,4 +1,5 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
+import {ViewMemory} from './view-memory.mjs';
 import * as inspection from './inspection-api.mjs';
 import {rotatedCamera3D} from './viewer-navigation.mjs';
 /* Public browser entry point; shared renderer sources remain authoritative. */
@@ -51,7 +52,7 @@ export class KiCadViewer extends EventTarget {
     this.inspectOnSelect = inspectOnSelect;
     this.host = host;
     this.theme = theme;
-    this.modelOptions = { loadAsset, assetPaths, appearance };
+    this.modelOptions = { loadAsset, assetPaths, appearance };this.viewMemory=new ViewMemory();
     this.root = host.ownerDocument.createElement('div');
     this.root.style.cssText = 'display:flex;flex-direction:column;width:100%;height:100%;min-height:0;overflow:hidden;position:relative;container-type:inline-size';
     this.stage = host.ownerDocument.createElement('div');
@@ -321,6 +322,7 @@ export class KiCadViewer extends EventTarget {
       operation.check();
     } catch (error) { renderer?.dispose(); assetController.abort(); mount.remove(); throw error; }
     // Only a fully prepared current operation replaces the visible drawing and its callbacks.
+    if(this.source&&this.renderer)this.viewMemory.remember(this);
     this.rendererToken = token;
     this.assetController?.abort(); this.stopCamera?.(); this.renderer?.dispose();
     if (candidate) {
@@ -330,7 +332,7 @@ export class KiCadViewer extends EventTarget {
     }
     this.assetController = assetController; this.renderer = renderer; this.view = view; this.renderingNotes = notes;
     mount.style.visibility = ''; this.stage.replaceChildren(mount);
-    this.analysis?.attach(); this.inspector.syncRenderer(); this.bindCamera(); this.updateControls(); this.updateStatus();
+    this.analysis?.attach(); this.inspector.syncRenderer(); this.viewMemory.restore(this); this.bindCamera(); this.updateControls(); this.updateStatus();
     this.emit('ready', { view, path: this.path, revision: this.project?.revision || null, warnings: [...(this.design.warnings || [])] });
     this.emit('viewchange', { view, path: this.path }); this.reportCamera();
     return true;
@@ -343,6 +345,9 @@ export class KiCadViewer extends EventTarget {
     if (this.view !== '3d' || typeof this.renderer?.setQuality !== 'function') throw new Error('Rendering quality requires a loaded 3D view.');
     return this.renderer.setQuality(quality);
   }
+
+  setExplode(value){this.assertActive();if(!Number.isFinite(value)||value<0||value>100)throw new TypeError('Explode must be a number from 0 to 100.');if(this.view!=='3d'||!this.renderer?.setExplode)throw new Error('Explode requires a loaded 3D board.');return this.renderer.setExplode(value);}
+  getExplode(){this.assertActive();return this.view==='3d'?this.renderer?.getExplode?.()||0:0;}
 
   setAppearance(appearance) {
     this.assertActive();
@@ -445,7 +450,7 @@ export class KiCadViewer extends EventTarget {
     this.assetController?.abort();
     this.renderer?.dispose();
     this.sourceSnapshot = this.sourceKey = this.sourceParser = null;
-    this.renderer = this.source = this.design = this.pending = this.project = null;
+    this.viewMemory.clear();this.renderer = this.source = this.design = this.pending = this.project = null;
     this.inspector.dispose();
     this.chrome.dispose();
     this.root.remove();

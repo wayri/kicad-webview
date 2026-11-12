@@ -34,7 +34,7 @@ import {copperLayerPlan} from "./copperLayers.mjs";
 import {createUpdateBatch} from "./updateBatch.mjs";
 import {createRenderActivity,observeRenderActivity} from "./renderActivity.mjs";
 import {selectionNetNames,pureNetSelection,countNetSelection} from "./selectionWorkload.mjs";
-import { hasSavedSelection, selectionMatcher, selectableRecord, tapGesture, holdGesture } from "./selectionState.mjs";
+import { hasSavedSelection, selectionMatcher, selectableRecord, holdGesture } from "./selectionState.mjs";
 import { sphereFitDistance,boxFitDistance } from "./fitPolicy.mjs";
 import {createPresentationStudio} from "./presentationStudio.mjs";
 import { qualityName, qualityViewport, graphicsProfile, boardOcclusion, boardClipRange, boxNearDepth, configureOcclusionDepth, studioLights, studioMaterials, padHasMaskOpening, physicalColors } from "./renderQuality.mjs";
@@ -44,6 +44,9 @@ import { nativePadOutline,padSourceDetails,nativeDrillOutline } from "./padGeome
 import { MeasurementSession,distanceLabel,snapProjectedEdges } from "./measurement3d.mjs";
 import { boardViewPresets,boardViewPreset } from "./viewPresets.mjs";
 import {createSceneResources} from "./sceneResources.mjs";
+import {selectionGesture} from './selectionGesture.mjs';
+import {createExplodeView,createExplodeOverlayGuard} from './explodeView.mjs';
+import {copperDepthPolicy,copperCapMaterials} from './copperDepth.mjs';
 import {createSilkscreenDetail} from "./silkscreenDetail.mjs";
 import {silkscreenSource,silkscreenPlan,paintSilkscreen} from "./surfaceSilkscreen.mjs";
 export { mountResultScene } from "./result3d.js";
@@ -293,6 +296,7 @@ export function mountBoard3D(container, source, options = {}) {
   const arcIds=new Set(sourceAST.filter(node=>Array.isArray(node)&&node[0]==='arc').map(node=>{const id=node.find(value=>Array.isArray(value)&&['uuid','tstamp'].includes(value[0]))?.[1];return typeof id==='object'?id?.quoted:id;}).filter(Boolean));
   const isArc=track=>arcIds.has(track.id)||arcIds.has(track.id?.replace(/:\d+$/,''))||/^track-\d+:\d+$/.test(track.id||'');
   const copperPlan=copperLayerPlan(board,thickness),renderedCopperLayers=new Set(),layerEnabled=new Map(copperPlan.map(layer=>[layer.name,true]));
+  const explode=createExplodeView(THREE,{layers:copperPlan}),viaExplode=[],overlayExplodeGuard=createExplodeOverlayGuard();
   const translucency=createTranslucentAppearance(),appearanceRecords=[];let appearance='realistic',selectionAppearanceReady=false;
   const appearanceLabel=document.createElement('label');appearanceLabel.append(document.createTextNode('Appearance'));
   const appearanceSelect=document.createElement('select');appearanceSelect.setAttribute('aria-label','3D board appearance');
@@ -300,13 +304,14 @@ export function mountBoard3D(container, source, options = {}) {
   const qualityHelp=document.createElement('p');qualityHelp.className='quality-help';qualityHelp.textContent='Translucent reveals copper in layer colors through the board and models. Fills stay faint; shadows and screen-space occlusion are disabled in this inspection mode. Presentation adds a stage and enhanced shadows in opaque modes.';renderingOptions.append(appearanceLabel,qualityLabel,qualityHelp);
   function applyAppearance(value=appearance){
     const next=appearanceName(value),previous=appearance;if(selectionAppearanceReady)selectionAppearance.restore();translucency.setEnabled(false);appearance=next;appearanceSelect.value=next;host.dataset.appearance=next;
-    if(next==='translucent')ensureInternalCopper();const realistic=next==='realistic';
+    if(next==='translucent'||explode.get()>0)ensureInternalCopper();const realistic=next==='realistic';
     for(const {mesh,role,layer,pads}of appearanceRecords){
-      if(role==='pads'){mesh.material.color.setHex(0xffffff);const color=new THREE.Color();pads.forEach((pad,index)=>mesh.setColorAt(index,color.setHex(realistic?(padHasMaskOpening(pad,layer)?physicalColors.exposedCopper:physicalColors.coatedCopper):layerThreeColor(layer))));if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
-      else mesh.material.color.setHex(realistic?physicalColors.coatedCopper:layerThreeColor(layer));
-      mesh.material.metalness=realistic&&role!=='pads'?.08:studioMaterials.copper.metalness;mesh.material.roughness=realistic&&role!=='pads'?.52:studioMaterials.copper.roughness;
+      const materials=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+      if(role==='pads'){for(const material of materials)material.color.setHex(0xffffff);const color=new THREE.Color();pads.forEach((pad,index)=>mesh.setColorAt(index,color.setHex(realistic?(padHasMaskOpening(pad,layer)?physicalColors.exposedCopper:physicalColors.coatedCopper):layerThreeColor(layer))));if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
+      else for(const material of materials)material.color.setHex(realistic?physicalColors.coatedCopper:layerThreeColor(layer));
+      for(const material of materials){material.metalness=realistic&&role!=='pads'?.08:studioMaterials.copper.metalness;material.roughness=realistic&&role!=='pads'?.52:studioMaterials.copper.roughness;}
     }
-    for(const layer of copperPlan){const group=copperGroups.get(layer.name);if(group)group.visible=layerEnabled.get(layer.name)&&(!layer.internal||next==='translucent');}
+    for(const layer of copperPlan){const group=copperGroups.get(layer.name);if(group)group.visible=layerEnabled.get(layer.name)&&(!layer.internal||next==='translucent'||explode.get()>0);}
     translucency.setEnabled(next==='translucent');renderer.shadowMap.enabled=quality!=='low'&&next!=='translucent';renderer.shadowMap.needsUpdate=true;
     if((previous==='translucent')!==(next==='translucent'))try{createPipeline();}catch{fallbackQuality('Enhanced quality is unavailable. Balanced rendering is active.');}
     if(selectionAppearanceReady)setSelection(externalSelection);options.onAppearanceChange?.(next);invalidate();return next;
@@ -370,7 +375,7 @@ export function mountBoard3D(container, source, options = {}) {
     // Rectangle centerline body + two circular endpoint discs. Scaling a
     // prebuilt capsule stretches its circles; scaling a rectangle to the
     // capsule's total length instead produces the old square spikes at joins.
-    const material=new THREE.MeshStandardMaterial({color,...studioMaterials.copper,...copperSurfaceMaterial});
+    const material=new THREE.MeshStandardMaterial({color,...studioMaterials.copper,...copperSurfaceMaterial,...copperDepthPolicy('track')});
     for(const section of ['body','start','end']){
       const geometry=section==='body'?new THREE.PlaneGeometry(1,1):new THREE.CircleGeometry(.5,32);
       const mesh=makeInstanced(groupFor(layer),geometry,material,tracks,(object,track)=>{
@@ -387,7 +392,8 @@ export function mountBoard3D(container, source, options = {}) {
     const batches=new Map();let omittedPads=0;
     for(const pad of pads){const outline=nativePadOutline(pad);if(!outline){omittedPads++;continue;}const key=JSON.stringify([pad.shape,pad.width,pad.height,pad.roundrectRatio,pad.drill,pad.drillShape,pad.drillWidth,pad.drillHeight,pad.drillOffset]);if(!batches.has(key)){if(batches.size>=256){omittedPads++;continue;}batches.set(key,{outline,pads:[]});}batches.get(key).pads.push(pad);}
     if(omittedPads)geometryDiagnostics.push(`${layer}: ${omittedPads} unsupported/ambiguous pad shapes omitted; no rectangular stand-ins were substituted.`);
-    const padMaterial=new THREE.MeshStandardMaterial({color:0xffffff,...studioMaterials.copper,...copperSurfaceMaterial});
+    const padParameters={color:0xffffff,...studioMaterials.copper,...copperSurfaceMaterial};
+    const padMaterial=batches.size?(internal?new THREE.MeshStandardMaterial({...padParameters,...copperDepthPolicy('pad','cap')}):copperCapMaterials(THREE,'pad',padParameters)):null;
     for(const [key,batch]of batches){const geometry=internal?new THREE.ShapeGeometry(padShape(batch.outline)):new THREE.ExtrudeGeometry(padShape(batch.outline),{depth:.04,bevelEnabled:false,curveSegments:8});
       const padMesh=makeInstanced(groupFor(layer),geometry,padMaterial,batch.pads,(object,pad)=>{const[x,y]=world(pad.at);object.position.set(x,y,internal?z:z-.02);object.rotation.z=(pad.rotation||0)*Math.PI/180;},viewportSceneIdentity('copper-pad',layer,key));
       if(padMesh){visibilityRecord(padMesh,'pads',layer);pickables.push(padMesh);appearanceRecords.push({mesh:padMesh,role:'pads',layer,pads:batch.pads});}
@@ -400,7 +406,7 @@ export function mountBoard3D(container, source, options = {}) {
         if (index === 0) zoneShape.moveTo(point.x, point.y); else zoneShape.lineTo(point.x, point.y);
       });
       const mesh = new THREE.Mesh(new THREE.ShapeGeometry(zoneShape),
-        new THREE.MeshStandardMaterial({color,...studioMaterials.copper,...copperSurfaceMaterial}));
+        new THREE.MeshStandardMaterial({color,...studioMaterials.copper,...copperSurfaceMaterial,...copperDepthPolicy('zone')}));
       mesh.position.z = z - (layer === "F.Cu" ? .005 : -.005); mesh.userData.record = { ...zone, type: "Zone" };
       groupFor(layer).add(mesh);visibilityRecord(mesh,'fills',layer); pickables.push(mesh);
       appearanceRecords.push({mesh,role:'zone',layer});translucency.add(mesh,'zone');
@@ -418,8 +424,8 @@ export function mountBoard3D(container, source, options = {}) {
   const viaBatches=new Map();let omittedVias=0;
   for(const via of throughVias){const outline=nativePadOutline({shape:'circle',width:via.size,height:via.size,drill:via.drill,drillShape:'circle'});if(!outline){omittedVias++;continue;}const key=JSON.stringify([via.size,via.drill]);if(!viaBatches.has(key)){if(viaBatches.size>=128){omittedVias++;continue;}viaBatches.set(key,{outline,vias:[]});}viaBatches.get(key).vias.push(via);}
   if(omittedVias)geometryDiagnostics.push(`${omittedVias} unsupported via annuli omitted.`);
-  const viaMaterial=new THREE.MeshStandardMaterial({color:physicalColors.exposedCopper,...studioMaterials.copper});
-  for(const[key,batch]of viaBatches){const geometry=new THREE.ExtrudeGeometry(padShape(batch.outline),{depth:thickness+.08,bevelEnabled:false,curveSegments:8});const mesh=makeInstanced(boardGroup,geometry,viaMaterial,batch.vias,(object,via)=>{const[x,y]=world(via.at);object.position.set(x,y,bottom-.04);},viewportSceneIdentity('via-barrel','through',key));if(mesh){visibilityRecord(mesh,'vias','through');pickables.push(mesh);}}
+  const viaMaterial=viaBatches.size?copperCapMaterials(THREE,'via',{color:physicalColors.exposedCopper,...studioMaterials.copper}):null;
+  for(const[key,batch]of viaBatches){const geometry=new THREE.ExtrudeGeometry(padShape(batch.outline),{depth:thickness+.08,bevelEnabled:false,curveSegments:8});const mesh=makeInstanced(boardGroup,geometry,viaMaterial,batch.vias,(object,via)=>{const[x,y]=world(via.at);object.position.set(x,y,bottom-.04);},viewportSceneIdentity('via-barrel','through',key));if(mesh){visibilityRecord(mesh,'vias','through');pickables.push(mesh);viaExplode.push({mesh,span:{zMin:bottom-.04,zMax:top+.04}});}}
   const parts = new THREE.Group(); boardGroup.add(parts);
   const proxyPoses = footprintProxies(board);
   const componentMesh = makeInstanced(parts, new RoundedBoxGeometry(1, 1, 1, 2, .06),
@@ -442,10 +448,11 @@ export function mountBoard3D(container, source, options = {}) {
   let stepClient=null;
   let population = board.components.map(() => true);
   function updateComponentVisibility() {
-    board.components.forEach((_, index) => componentMesh?.setMatrixAt(index,
-      population[index] && objectVisibility.visible('bodies',board.components[index].layer) && !loadedModelIndexes.has(index) ? componentMatrices[index] : hiddenMatrix));
+    const matrix=new THREE.Matrix4();
+    board.components.forEach((part,index)=>{matrix.copy(componentMatrices[index]);matrix.elements[14]+=explode.offset(part.layer?.startsWith('B.')?'B.Cu':'F.Cu');componentMesh?.setMatrixAt(index,
+      population[index]&&objectVisibility.visible('bodies',part.layer)&&!loadedModelIndexes.has(index)?matrix:hiddenMatrix);});
     if (componentMesh) { componentMesh.instanceMatrix.needsUpdate = true; componentMesh.computeBoundingSphere(); }
-    for (const [index, group] of modelGroups) group.visible = population[index]&&objectVisibility.visible('bodies',board.components[index].layer);
+    for(const [index,group]of modelGroups){group.visible=population[index]&&objectVisibility.visible('bodies',board.components[index].layer);explode.layer(group,board.components[index].layer?.startsWith('B.')?'B.Cu':'F.Cu');}
     renderer.shadowMap.needsUpdate=true;
     invalidate();
   }
@@ -628,12 +635,36 @@ export function mountBoard3D(container, source, options = {}) {
   const panButton=action('Pan',()=>{setMeasurementMode(false);setPanMode(!panMode);},'M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4M7 8l-4 4 4 4M17 8l4 4-4 4','Pan view with left drag');panButton.setAttribute('aria-pressed','false');
   const measureButton=action('Measure',()=>setMeasurementMode(!measuring),'M3 17 17 3l4 4L7 21ZM7 13l3 3M10 10l2 2M13 7l3 3','Measure distance between 3D surfaces');measureButton.setAttribute('aria-pressed','false');
   const displayButton=action('Display',()=>setDisplayOpen(visibilityOptions.hidden),'M3 6h18M3 12h18M3 18h18M7 3v6M17 9v6M10 15v6','3D display settings');displayButton.setAttribute('aria-expanded','false');displayButton.setAttribute('aria-controls',visibilityOptions.id);
+  const explodeControl=document.createElement('label');explodeControl.className='explode-control';explodeControl.style.cssText='display:inline-flex;align-items:center;gap:5px;font-size:11px';
+  explodeControl.title='Display-only layer spacing. The substrate remains centered; registered results and measurements are unavailable while exploded.';
+  const explodeCaption=document.createElement('span');explodeCaption.textContent='Explode';
+  const explodeSlider=document.createElement('input');explodeSlider.type='range';explodeSlider.min='0';explodeSlider.max='100';explodeSlider.step='1';explodeSlider.value='0';explodeSlider.style.cssText='width:80px;min-width:50px';explodeSlider.setAttribute('aria-label','Explode board layers');
+  const explodeOutput=document.createElement('output');explodeOutput.textContent='0%';explodeControl.append(explodeCaption,explodeSlider,explodeOutput);bar.append(explodeControl);
+  const explodeNotice=document.createElement('p');explodeNotice.className='quality-help';explodeNotice.setAttribute('role','status');explodeNotice.hidden=true;explodeNotice.style.cssText='position:absolute;left:10px;bottom:10px;z-index:5;max-width:calc(100% - 20px);margin:0;padding:6px 9px;background:var(--panel);border:1px solid var(--border);border-radius:5px;pointer-events:none';stage.append(explodeNotice);
+  function syncExplodeAnalysis(){overlayExplodeGuard.sync(analysisController.overlay,explode.get());}
+  function analysisState(state=analysisController.getAnalysisOverlayState()){
+    return explode.get()>0&&state.placed?{...state,displaySuspended:true,diagnostics:[...state.diagnostics,'Registered result and probes are hidden while the board is exploded; restore Explode to 0% to view them.']}:state;
+  }
+  function setExplode(value){
+    if(!active)return explode.get();const previous=explode.get(),amount=explode.set(value);
+    if(amount>0){const count=renderedCopperLayers.size;ensureInternalCopper();if(renderedCopperLayers.size!==count)applyAppearance(appearance);}
+    if(amount!==previous){userAdjustedCamera=true;cancelDemoPointer();if(measuring)setMeasurementMode(false);}
+    for(const layer of copperPlan){const group=copperGroups.get(layer.name);if(group){explode.layer(group,layer.name);group.visible=layerEnabled.get(layer.name)&&(!layer.internal||appearance==='translucent'||amount>0);}}
+    for(const mesh of silkGroup.children){const layer=visibilityRecords.find(record=>record.mesh===mesh)?.layer;explode.layer(mesh,layer==='B.SilkS'?'B.Cu':'F.Cu');}
+    for(const {mesh,span}of viaExplode)explode.barrels(mesh,span);
+    updateComponentVisibility();setSelection(externalSelection);if(selected?.object&&!selectionNetNames(externalSelection,board).size){showHighlight(selected.object,selected.instanceId);bounds.getCenter(selected.point);}
+    syncExplodeAnalysis();refreshClippingBounds();updateTerminalLabels();explodeSlider.value=String(amount);explodeOutput.textContent=amount+'%';explodeSlider.setAttribute('aria-valuetext',amount+' percent exploded');
+    explodeNotice.hidden=amount===0;explodeNotice.textContent='Display-only spacing; dielectric remains centered. Registered results and probes are hidden, and measurements are disabled, until Explode returns to 0%.';
+    options.onExplodeChange?.(amount);invalidate();return amount;
+  }
+  let explodeFrame=0,pendingExplode=0;
+  explodeSlider.oninput=()=>{pendingExplode=Number(explodeSlider.value);if(!explodeFrame)explodeFrame=requestAnimationFrame(()=>{explodeFrame=0;if(active)setExplode(pendingExplode);});};
   const copperLayerToggles=new Map();
   const visibleCopperLayers=()=>copperPlan.filter(layer=>layerEnabled.get(layer.name)).map(layer=>layer.name);
   function setVisibleCopperLayers(names){
     if(!Array.isArray(names)||names.some(name=>typeof name!=='string'||!layerEnabled.has(name))||new Set(names).size!==names.length)throw new TypeError('Choose saved physical copper layer names.');
     const enabled=new Set(names);let changed=false;
-    for(const layer of copperPlan){const visible=enabled.has(layer.name);if(layerEnabled.get(layer.name)!==visible)changed=true;layerEnabled.set(layer.name,visible);const input=copperLayerToggles.get(layer.name);if(input)input.checked=visible;const group=copperGroups.get(layer.name);if(group)group.visible=visible&&(!layer.internal||appearance==='translucent');}
+    for(const layer of copperPlan){const visible=enabled.has(layer.name);if(layerEnabled.get(layer.name)!==visible)changed=true;layerEnabled.set(layer.name,visible);const input=copperLayerToggles.get(layer.name);if(input)input.checked=visible;const group=copperGroups.get(layer.name);if(group)group.visible=visible&&(!layer.internal||appearance==='translucent'||explode.get()>0);}
     setSelection(externalSelection);invalidate();const result=visibleCopperLayers();if(changed)options.onLayersChange?.([...result]);return result;
   }
   for(const layer of copperPlan)copperLayerToggles.set(layer.name,toggle(layer.name==='F.Cu'?'Front copper':layer.name==='B.Cu'?'Back copper':layer.name+' copper',true,visible=>{const names=new Set(visibleCopperLayers());if(visible)names.add(layer.name);else names.delete(layer.name);setVisibleCopperLayers([...names]);}));
@@ -666,7 +697,7 @@ export function mountBoard3D(container, source, options = {}) {
     for(const {pad,x,y} of labelRecords){
       if(count>=150)break;
       if(!(pad.layers?.includes(layer)||pad.layers?.includes('*.Cu')||pad.layer===layer))continue;
-      const z=layer==='F.Cu'?top+.055:bottom-.055;
+      const z=(layer==='F.Cu'?top+.055:bottom-.055)+explode.offset(layer);
       const distance=camera.position.distanceTo(labelPosition.set(x,y,z));
       const pxPerMm=canvasHeight/(2*Math.tan(camera.fov*Math.PI/360)*distance),padPixels=Math.min(pad.width,pad.height)*pxPerMm;
       if(!Number.isFinite(padPixels)||padPixels<32)continue;
@@ -736,7 +767,7 @@ export function mountBoard3D(container, source, options = {}) {
     }
     for(const marker of measureMarkers){const radius=Math.max(.005,camera.position.distanceTo(marker.position)*2*Math.tan(camera.fov*Math.PI/360)/Math.max(1,canvasHost.clientHeight)*3.5);marker.scale.setScalar(radius);}
   }
-  function setMeasurementMode(enabled){if(!active)return false;measuring=Boolean(enabled);if(measuring)setPanMode(false);host.dataset.measuring=String(measuring);measureButton.setAttribute('aria-pressed',String(measuring));measurementPanel.hidden=!measuring;if(!measuring){measurementSession.pending=null;measurementTouch=null;measurementTouchDrag=null;measurementPointers.clear();controls.enabled=true;measurementLens.hidden=true;}updateMeasurementPanel();options.onMeasurementMode?.(measuring);return measuring;}
+  function setMeasurementMode(enabled){if(!active)return false;if(enabled&&explode.get()>0){graphicsNotice('Restore Explode to 0% before measuring saved geometry.');return false;}measuring=Boolean(enabled);if(measuring)setPanMode(false);host.dataset.measuring=String(measuring);measureButton.setAttribute('aria-pressed',String(measuring));measurementPanel.hidden=!measuring;if(!measuring){measurementSession.pending=null;measurementTouch=null;measurementTouchDrag=null;measurementPointers.clear();controls.enabled=true;measurementLens.hidden=true;}updateMeasurementPanel();options.onMeasurementMode?.(measuring);return measuring;}
   function clearMeasurements(){measurementSession.clear();updateMeasurementPanel();options.onMeasurement?.(null);}
   measurementUnits.onchange=()=>{measurementUnit=measurementUnits.value==='mil'?'mil':'mm';updateMeasurementPanel();};
   measurementHistory.onchange=()=>{const record=measurementSession.replay(measurementHistory.value);if(record){updateMeasurementPanel();options.onMeasurement?.(record);}};
@@ -764,7 +795,7 @@ export function mountBoard3D(container, source, options = {}) {
     updateMeasurementPanel(hit.kind+' selected. '+(measurementSession.pending?'Choose the second point.':'Measurement complete.'));if(result?.distance!==undefined)options.onMeasurement?.(result);
   }
   let selected = null;
-  const gesture = tapGesture();
+  const gesture=selectionGesture({onPick:event=>{if(!panMode)pick(event);},onContextMenu:contextMenu,isHeld:()=>hold.isHeld()});
   let selectionDim=true,selectionDisplayStyle=selectionStyle();
   const selectionAppearance=createSelectionAppearance(THREE,()=>{const objects=[];boardGroup.traverse(object=>{if(object.material)objects.push(object);});return objects;});
   selectionAppearanceReady=true;
@@ -870,7 +901,7 @@ export function mountBoard3D(container, source, options = {}) {
   function select(record, point, object, instanceId) {
     const mode=options.getSelectionMode?.()||selectionMode;
     setSelection(mode==='net'&&record.net?{netNames:[record.net]}:record.type==='Component'||typeof record.library==='string'?{references:[record.ref]}:{uuids:[record.uuid||record.id]});
-    selected = { record, point: point.clone() };
+    selected = { record, point: point.clone(),object,instanceId };
     groupGeometry.setDrawRange(0, 0);
     if(mode!=='net'||!record.net)showHighlight(object, instanceId);else highlight.visible=false;
     options.onSelect?.(record);
@@ -915,7 +946,7 @@ export function mountBoard3D(container, source, options = {}) {
     if(measuring){measureSurface();return;}
     let analysisResult = null;
     const analysisOverlay = analysisController.overlay;
-    if (analysisOverlay?.mesh.visible) {
+    if (analysisOverlay?.group?.visible!==false&&analysisOverlay?.mesh.visible) {
       const result = analysisOverlay.sample(raycaster.intersectObject(analysisOverlay.mesh, false)[0]);
       if (result) analysisResult = result;
     }
@@ -940,13 +971,13 @@ export function mountBoard3D(container, source, options = {}) {
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
       raycaster.setFromCamera(pointer, camera);
-      options.onAnalysisHover(analysisOverlay.mesh.visible ? analysisOverlay.sample(raycaster.intersectObject(analysisOverlay.mesh, false)[0]) : null);
+      options.onAnalysisHover(analysisOverlay.group.visible&&analysisOverlay.mesh.visible ? analysisOverlay.sample(raycaster.intersectObject(analysisOverlay.mesh, false)[0]) : null);
     }
   });
   renderer.domElement.addEventListener("pointercancel", event => { gesture.cancel(event); hold.up(event);measurementPointers.delete(event.pointerId);measurementTouchDrag=null;controls.enabled=true;measurementTouch=null;measurementLens.hidden=true; });
   renderer.domElement.addEventListener("pointerup", (event) => {
-    const held = hold.up(event), tapped = gesture.up(event);
-    if(measuring&&event.pointerType==='touch'){if(measurementTouchDrag===event.pointerId&&measurementPointers.size===1)pick(event);measurementPointers.delete(event.pointerId);measurementTouchDrag=null;controls.enabled=true;}else if(!held&&tapped){if(event.button===0&&!panMode)pick(event);else if(event.button===2)contextMenu(event);}measurementTouch=null;measurementLens.hidden=true;
+    hold.up(event);gesture.up(event,{select:!(measuring&&event.pointerType==='touch')});
+    if(measuring&&event.pointerType==='touch'){if(measurementTouchDrag===event.pointerId&&measurementPointers.size===1)pick(event);measurementPointers.delete(event.pointerId);measurementTouchDrag=null;controls.enabled=true;}measurementTouch=null;measurementLens.hidden=true;
   });
   function contextMenu(event) {
     event.preventDefault?.();if(measuring||pendingDemoFace)return;pick(event); if (!selected) return;
@@ -967,14 +998,14 @@ export function mountBoard3D(container, source, options = {}) {
     menu.style.top = `${Math.max(8, Math.min(event.clientY - rect.top, rect.height - bounds.height - 8))}px`;
   }
   renderer.domElement.addEventListener("contextmenu", event => {
-    event.preventDefault(); // Right-click actions are opened only by an unmoved pointerup.
+    gesture.context(event);
   });
   const resize = sizeViewport;
   const observer = new ResizeObserver(()=>{resize();syncEmbeddedPanelOffset();}); observer.observe(canvasHost);
   const intersectionObserver=observeRenderActivity(renderActivity,canvasHost);resize();syncEmbeddedPanelOffset();
   const analysisController = createAnalysisOverlayController({bounds:board.bounds,thickness,layers:board.layers||[]},{scene,invalidate,isActive:()=>active});
   const layoutFrame = requestAnimationFrame(() => { if (active) { resize(); if(!userAdjustedCamera)fit(); } });
-  const projectAnchor=createAnchorProjector(THREE,{objects:()=>pickables,camera,rect:()=>renderer.domElement.getBoundingClientRect(),positionToWorld:(position,side)=>{const [x,y]=world([position.x,position.y]);return new THREE.Vector3(x,y,side==='back'?bottom:top);}});
+  const projectAnchor=createAnchorProjector(THREE,{objects:()=>pickables,camera,rect:()=>renderer.domElement.getBoundingClientRect(),positionToWorld:(position,side)=>{const [x,y]=world([position.x,position.y]);return new THREE.Vector3(x,y,side==='back'?bottom+explode.offset('B.Cu'):top+explode.offset('F.Cu'));}});
   let activeAnchor=null,anchorSignature='',viewSignature='';
   function notifyAnchor(){if(!activeAnchor)return;const point=projectAnchor(activeAnchor),signature=JSON.stringify(point);if(signature!==anchorSignature){anchorSignature=signature;options.onAnchor?.({anchor:activeAnchor,point});}}
   function notifyView(){const rect=renderer.domElement.getBoundingClientRect(),signature=JSON.stringify([camera.matrixWorld.elements,camera.projectionMatrix.elements,rect.left,rect.top,rect.width,rect.height]);if(signature!==viewSignature){viewSignature=signature;options.onViewChange?.();}notifyAnchor();}
@@ -1026,8 +1057,9 @@ export function mountBoard3D(container, source, options = {}) {
     getVisibleCopperLayers(){return visibleCopperLayers();},
     setVisibleCopperLayers,
     getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),appearance,renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline),renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
-    setAnalysisOverlay:analysisController.setAnalysisOverlay,
-    getAnalysisOverlayState:analysisController.getAnalysisOverlayState,
+    setExplode,getExplode:()=>explode.get(),
+    setAnalysisOverlay(surface,options){const state=analysisController.setAnalysisOverlay(surface,options);syncExplodeAnalysis();return analysisState(state);},
+    getAnalysisOverlayState:()=>analysisState(),
     setAnalysisProbes:analysisController.setAnalysisProbes,
     setAnalysisOpacity:analysisController.setAnalysisOpacity,
     setSelection,
@@ -1078,14 +1110,14 @@ export function mountBoard3D(container, source, options = {}) {
       if (model?.children.length) {
         const record = board.components[index];
         const [x, y] = world(record.at);
-        select(record, new THREE.Vector3(x, y, record.layer?.startsWith("B.") ? bottom : top), model);
+        select(record, new THREE.Vector3(x, y, (record.layer?.startsWith("B.") ? bottom : top)+explode.offset(record.layer?.startsWith("B.")?'B.Cu':'F.Cu')), model);
         return true;
       }
       const current = new THREE.Matrix4(); componentMesh.getMatrixAt(index, current);
       if (current.determinant() === 0) return false;
       const record = board.components[index];
       const [x, y] = world(record.at);
-      const point = new THREE.Vector3(x, y, record.layer?.startsWith("B.") ? bottom - 1.1 : top + 1.1);
+      const point = new THREE.Vector3(x, y, (record.layer?.startsWith("B.") ? bottom - 1.1 : top + 1.1)+explode.offset(record.layer?.startsWith("B.")?'B.Cu':'F.Cu'));
       componentMesh.localToWorld(point);
       select(record, point, componentMesh, index);
       return true;
@@ -1100,6 +1132,6 @@ export function mountBoard3D(container, source, options = {}) {
         if (index != null && !population[index]) clearSelection();
       }
     },
-    dispose() { silkDetail.dispose();cancelDemoPointer();finishDemoFace(new DOMException('The 3D view was closed.','AbortError'));demoSurfaces.dispose();for(const [name,handler]of [['pointerdown',demoPointerDown],['pointermove',demoPointerMove],['pointerup',demoPointerUp],['pointercancel',demoPointerCancel],['lostpointercapture',demoPointerCancel]])renderer.domElement.removeEventListener(name,handler,true);shadow.removeEventListener('keydown',demoKey,true);document.defaultView?.removeEventListener('blur',cancelDemoPointer);if(measuring)options.onMeasurementMode?.(false);active = false; modelUpdates.dispose(); analysisController.dispose(); stepClient?.dispose(); renderActivity.dispose(); cancelAnimationFrame(layoutFrame); observer.disconnect();intersectionObserver?.disconnect();controls.removeEventListener('change',invalidate); controls.removeEventListener("change", updateClipping); controls.removeEventListener("start", cameraInteraction); controls.dispose();disposePipeline();environment?.dispose();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);document.removeEventListener('pointerdown',closeVisibility);shadow.removeEventListener('keydown',escapeVisibility,true);shadow.removeEventListener('keydown',escapeMeasurement);
+    dispose() { silkDetail.dispose();cancelDemoPointer();finishDemoFace(new DOMException('The 3D view was closed.','AbortError'));demoSurfaces.dispose();for(const [name,handler]of [['pointerdown',demoPointerDown],['pointermove',demoPointerMove],['pointerup',demoPointerUp],['pointercancel',demoPointerCancel],['lostpointercapture',demoPointerCancel]])renderer.domElement.removeEventListener(name,handler,true);shadow.removeEventListener('keydown',demoKey,true);document.defaultView?.removeEventListener('blur',cancelDemoPointer);if(measuring)options.onMeasurementMode?.(false);active = false;cancelAnimationFrame(explodeFrame);explodeSlider.oninput=null; modelUpdates.dispose(); analysisController.dispose(); stepClient?.dispose(); renderActivity.dispose(); cancelAnimationFrame(layoutFrame); observer.disconnect();intersectionObserver?.disconnect();controls.removeEventListener('change',invalidate); controls.removeEventListener("change", updateClipping); controls.removeEventListener("start", cameraInteraction); controls.dispose();disposePipeline();environment?.dispose();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);document.removeEventListener('pointerdown',closeVisibility);shadow.removeEventListener('keydown',escapeVisibility,true);shadow.removeEventListener('keydown',escapeMeasurement);
     renderer.domElement.removeEventListener('pointerdown',measurementTouchCapture,true);document.removeEventListener('visibilitychange',onDocumentVisibility);selectionAppearance.dispose();translucency.dispose();scene.traverse(object=>object.shadow?.dispose?.());resources.retain(scene);terminalLabelCache.forEach(texture=>resources.track(texture));resources.track(labelGeometry);resources.dispose();scene.clear();boardGroup.clear();parts.clear();silkGroup.clear();copperGroups.clear();pickables.length=0;visibilityRecords.length=0;appearanceRecords.length=0;componentMatrices.length=0;modelGroups.clear();terminalLabelCache.clear();hold.dispose(); renderer.dispose();renderer.domElement.width=1;renderer.domElement.height=1; host.remove(); } };
 }

@@ -351,3 +351,26 @@ test('duplicate saved wire UUIDs cannot cross-highlight disconnected nets and me
  let reads=0;const entries=Array.from({length:500},(_,i)=>({uuid:'same',get kind(){reads++;return 'track';}}));const many=board('(net 1 "A")'+Array.from({length:500},(_,i)=>'(segment (start 0 '+i+') (end 5 '+i+') (layer "F.Cu") (net 1) (uuid "same"))').join(''));
  const stress=build([many],new Map([[many.path,{primitives:entries}]]));assert.equal(stress.nets[0].primitives.length,0);assert.ok(reads<5000,'membership must not scan 500² duplicate candidates');
 });
+
+test('connected power output flag bodies and saved sheet-pin graphics highlight their own source network',()=>{
+ const flag=powerSource(placedPower('flag',0,0,'PWR_FLAG','Any:Flag')+wire('wire',[0,0],[10,0]),powerDefinition('Any:Flag','(power global)','power_out','PWR_FLAG'));
+ const drawings=schRendered([flag]),net=build([flag],drawings).nets[0];
+ assert.ok(net);assert.equal(net.names.includes('PWR_FLAG'),false);assert.ok(net.primitives.some(p=>p.uuid==='flag'&&p.kind==='symbol'));assert.ok(net.primitives.some(p=>p.uuid==='flag'&&p.powerSymbol));
+ const sheet=schematic('(sheet (at 0 0) (size 10 10) (uuid "sheet") (pin "IN" input (at 0 5) (uuid "saved-pin")))'+wire('w',[-5,5],[0,5]));
+ const sheetDrawings=schRendered([sheet]),sheetNet=build([sheet],sheetDrawings).nets[0];assert.ok(sheetNet.primitives.some(p=>p.pinUuid==='saved-pin'&&p.kind==='sheet-pin'));assert.equal(sheetNet.primitives.some(p=>p.kind==='sheet'),false);
+});
+
+test('placed pin source UUID survives library rendering without replacing symbol identity',()=>{
+ const source=powerSource('(symbol (lib_id "pic_programmer:GND") (at 0 0) (unit 1) (uuid "symbol") (pin "1" (uuid "saved-pin")))');
+ const design=schRendered([source]).get(source.path),pin=design.primitives.find(p=>p.kind==='pin');assert.equal(pin.savedPinUuid,'saved-pin');assert.equal(pin.uuid,'symbol');assert.equal(pin.ownerUuid,'symbol');
+});
+
+test('workspace membership invalidates mutated saved sheet-pin identities',()=>{
+ const source=schematic('(sheet (at 0 0) (size 10 10) (uuid "sheet") (pin "IN" input (at 0 5) (uuid "saved-pin")))'+wire('w',[-5,5],[0,5]));
+ const designs=schRendered([source]),workspace=require('../engine/net-model.js').createBuilder();
+ const initial=workspace.build([source],designs).nets[0];assert.ok(initial.primitives.some(p=>p.pinUuid==='saved-pin'));
+ for(const p of designs.get(source.path).primitives)if(p.pinUuid==='saved-pin')p.pinUuid='different-pin';
+ const next=workspace.build([source],designs).nets[0];assert.equal(next.primitives.some(p=>p.pinUuid==='different-pin'),false);
+});
+
+test('duplicate nested sheet-pin IDs cannot merge unrelated graphical memberships',()=>{const source=schematic('(sheet(at 0 0)(size 10 10)(uuid "s1")(pin "A" input(at 0 5)(uuid "dup")))(sheet(at 30 0)(size 10 10)(uuid "s2")(pin "B" input(at 30 5)(uuid "dup")))'+wire('w1',[-5,5],[0,5])+wire('w2',[25,5],[30,5]));const report=build([source],schRendered([source]));assert.equal(report.nets.length,2);assert.ok(report.warnings.some(w=>/duplicate saved UUID/.test(w)));for(const net of report.nets){assert.ok(net.primitives.some(p=>p.kind==='wire'));assert.equal(net.primitives.some(p=>p.kind==='sheet-pin'),false);}});

@@ -156,7 +156,7 @@
     }
     const symbols=new Map(records.filter((r)=>r.kind === "symbol" && r.metadata.uuid).map((r)=>[r.metadata.uuid,r]));
     const definitions=new Map(children(child(ast,"lib_symbols"),"symbol").map((s)=>[String(value(s[1])),s]));
-    const powerSymbols=new Map(), version=Number(field(ast,"version"));
+    const powerSymbols=new Map(), powerFlags=new Set(), version=Number(field(ast,"version"));
     for (const [uuid, record] of symbols) {
       const definition=definitions.get(String(field(record.form,"lib_id"))), power=child(definition,"power");
       if (!power) continue; // Names and #PWR reference conventions are not electrical evidence.
@@ -165,7 +165,7 @@
         warn(`${path}: unsupported explicit power-symbol scope ${scope}; naming omitted.`); continue;
       }
       const libraryPins=children(definition,"symbol").flatMap((body)=>children(body,"pin"));
-      if (libraryPins.length===1 && value(libraryPins[0][1])==="power_out") continue; // ERC power flag, not a net-name source.
+      if (libraryPins.length===1 && value(libraryPins[0][1])==="power_out") {powerFlags.add(uuid);continue;} // ERC power flag, not a net-name source.
       if (libraryPins.length!==1 || value(libraryPins[0][1])!=="power_in") {
         warn(`${path}: explicit power symbol ${record.label} is not a supported single power-input pin; naming omitted.`);continue;
       }
@@ -191,7 +191,7 @@
       if (pins.has(key)) {pins.get(key).primitives.push(p); continue;}
       const power=powerSymbols.get(owner), isPower=power && power.pinNumber===String(p.pinNumber);
       const entry=add({record,kind:"pin",position:p.connectPoint,pin:String(p.pinNumber),primitives:[p],
-        name:isPower ? power.name : null,namePriority:isPower ? 1 : undefined,power:!!isPower,global:!!(isPower && power.global)});
+        name:isPower ? power.name : null,namePriority:isPower ? 1 : undefined,power:!!isPower,flag:powerFlags.has(owner),global:!!(isPower && power.global)});
       pins.set(key,entry); anchors.push({p:p.connectPoint,index:entry.index});
     }
     if (symbols.size && !pins.size) warn(`${path}: no conductive pin metadata is available; symbol pin membership was omitted.`);
@@ -232,7 +232,7 @@
     const groups=new Map();
     for (const entry of entries) {const key=find(entry.index);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(entry);}
     const byUuid=new Map();
-    for (const p of primitives) if (p.uuid) {if(!byUuid.has(p.uuid))byUuid.set(p.uuid,[]);byUuid.get(p.uuid).push(p);}
+    for (const p of primitives) for(const id of new Set([p.uuid,p.pinUuid,p.savedPinUuid].filter(Boolean))) {if(!byUuid.has(id))byUuid.set(id,[]);byUuid.get(id).push(p);}
     const nets=[];
     for (const group of groups.values()) {
       if (!group.some((e)=>e.kind === "wire" || e.name || e.sheetPin)) continue; // Isolated pins/junctions are not inferred nets.
@@ -255,9 +255,9 @@
       for (const entry of group) {
         const r=entry.record, uuid=r.metadata.uuid;
         net.objectIds.push(r.id || r.key);if(uuid)net.uuids.push(uuid);
-        spend((entry.kind === "pin" && !entry.power ? entry.primitives : byUuid.get(uuid) || []).length);
-        net.primitives.push(...(entry.power ? (byUuid.get(uuid) || []).filter((p)=>!p.frame) : entry.kind === "pin" ? entry.primitives :
-          (byUuid.get(uuid) || []).filter((p)=>p.kind === entry.kind)));
+        spend((entry.kind === "pin" && !entry.power && !entry.flag ? entry.primitives : byUuid.get(uuid) || []).length);
+        net.primitives.push(...((entry.power||entry.flag) ? (byUuid.get(uuid) || []).filter((p)=>!p.frame) : entry.kind === "pin" ? entry.primitives :
+          (byUuid.get(uuid) || []).filter((p)=>p.kind === entry.kind || entry.kind==="sheet_pin"&&p.kind==="sheet-pin")));
         net.members.push({uuid,reference:entry.kind === "pin" ? r.metadata.properties.Reference || "" : "",
           pad:"",pin:entry.pin || "",kind:entry.kind,position:entry.position});
         net.stats.lengthMm+=entry.length || 0;
@@ -282,10 +282,12 @@
       const ast=parsedFiles.get(file.path), records=recordsByPath.get(file.path) || [];
       const design=designs instanceof Map ? designs.get(file.path) : designs?.[file.path];
       const originalPrimitives=Array.isArray(design?.primitives) ? design.primitives : [];
-      const uuidCounts=new Map();for(const record of records){const uuid=record.metadata.uuid;if(uuid)uuidCounts.set(uuid,(uuidCounts.get(uuid)||0)+1);}
+      const uuidCounts=new Map();for(const record of records){const uuid=record.metadata.uuid;if(uuid)uuidCounts.set(uuid,(uuidCounts.get(uuid)||0)+1);
+        if(['sheet','symbol'].includes(kind(record.form)))for(const pin of children(record.form,'pin')){const pinUuid=field(pin,'uuid');if(pinUuid)uuidCounts.set(pinUuid,(uuidCounts.get(pinUuid)||0)+1);}}
+
       const ambiguous=new Set([...uuidCounts].filter(([,count])=>count>1).map(([uuid])=>uuid));
       if(ambiguous.size)warn(file.path+': '+ambiguous.size+' duplicate saved UUIDs excluded from net geometry membership.');
-      const primitives=ambiguous.size?originalPrimitives.filter(p=>!ambiguous.has(p.uuid)):originalPrimitives;
+      const primitives=ambiguous.size?originalPrimitives.filter(p=>![p.uuid,p.pinUuid,p.savedPinUuid].some(id=>id&&ambiguous.has(id))):originalPrimitives;
       if (primitives.length>250000) throw new Error("Too many render primitives for net selection.");
       nets.push(...(kind(ast)==="kicad_pcb" ? pcb(file.path,ast,records,primitives,warn,spend) : schematic(file.path,ast,records,primitives,warn,spend)));
     }
@@ -362,7 +364,7 @@
         if(!p||typeof p!=="object")entry=[typeof p,String(p)];
         else {
         if(!primitiveIds.has(p))primitiveIds.set(p,++nextPrimitiveId);
-          entry=[primitiveIds.get(p),p.kind,p.uuid,p.ownerUuid,p.name,p.pinNumber,p.connectPoint?.x,p.connectPoint?.y,Boolean(p.frame)];
+          entry=[primitiveIds.get(p),p.kind,p.uuid,p.ownerUuid,p.pinUuid,p.savedPinUuid,p.name,p.pinNumber,p.connectPoint?.x,p.connectPoint?.y,Boolean(p.frame)];
         }
         const chunk=JSON.stringify(entry);chars+=chunk.length+1;
         if(chars>4*1024*1024)return null; // Large render metadata is processed without caching.

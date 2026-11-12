@@ -187,3 +187,8 @@ test('pads retain saved terminal names, net labels and source-centered label dim
  assert.deepEqual([pad.pinNumber,pad.pinName,pad.netName,pad.ownerUuid],['2','OUT','SIGNAL','fp']);
  assert.deepEqual(pad.padCenter,{x:10,y:17});assert.deepEqual([pad.padWidth,pad.padHeight,pad.padAngle],[1,2,-45]);
 });
+
+test('saved graphic dash styles and solid fills survive native PCB extraction',()=>{
+ const result=build(parse('(kicad_pcb (gr_rect (start 0 0) (end 10 5) (layer "F.SilkS") (stroke (width .2) (type dash_dot_dot)) (fill solid) (uuid "box")))'),'styles.kicad_pcb');
+ const box=result.primitives.find(p=>p.uuid==='box');assert.equal(box.lineStyle,'dash_dot_dot');assert.equal(box.fill,true);assert.equal(box.width,.2);
+});

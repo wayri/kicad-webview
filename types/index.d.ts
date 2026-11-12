@@ -69,6 +69,8 @@ export declare class KiCadViewer extends EventTarget {
   setView(view: DrawingView, options?: {signal?: AbortSignal}): Promise<boolean>; fit(): void;
   /** Optional GPU-intensive studio presentation mode; returns the active quality after fallback. */
   setRenderQuality(quality: 'low'|'balanced'|'high'|'presentation'): 'low'|'balanced'|'high'|'presentation';
+  setExplode(value:number):number;
+  getExplode():number;
   setAppearance(appearance: BoardAppearance): BoardAppearance; getAppearance(): BoardAppearance | null; getRenderStats(): RenderStats | null;
   getCamera(): Camera2D | null; setCamera(camera: Camera2D): void; pickDemoFace(options?: {signal?: AbortSignal}): Promise<SelectedDemoFace>; rotate3D(direction: 'left'|'right'|'up'|'down'|'clockwise'|'counterclockwise', degrees?: number): boolean; getCamera3D(): Camera3D | null; setCamera3D(preset: Camera3DPreset | Camera3D): boolean;
   getLayers(): string[]; setLayers(layers: string[]): LayerState;
@@ -96,6 +98,8 @@ export interface ProjectEvents {
   panechange: CustomEvent<{ pane: 0 | 1 }>;
 }
 export declare class AdvancedKiCadViewer extends EventTarget {
+  openSheetBrowser():Promise<boolean>;
+  closeSheetBrowser():void;
   constructor(target: string | HTMLElement, options?: ProjectOptions);
   load(input: string | URL | ProjectManifest, options?: LoadOptions): Promise<boolean>;
   loadFiles(files: Iterable<File | LocalSource>, options?: LoadOptions): Promise<boolean>;

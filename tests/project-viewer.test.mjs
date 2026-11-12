@@ -94,3 +94,5 @@ test('cancelling from a workspace setting callback stops later active-pane and l
  await assert.rejects(project.restoreViewState(state,{signal:controller.signal}),{name:'AbortError'});
  assert.equal(project.activePane,0);assert.equal(project.linkedSelection,true);assert.equal(project.restoring,false);project.dispose();
 });
+
+test('sheet browser reopens from search, reuses exact hierarchy and cancels at project replacement',async()=>{const{project}=fixture();await project.loadFiles(files);assert.equal(await project.openSheetBrowser(),true);const model=project.sheetBrowser.tree.model;assert.ok(model);project.closeSheetBrowser();assert.equal(project.sheetBrowser.root.hidden,true);project.setTab('files');project.search.value='sheet navigator';project.renderList();assert.equal(project.list.children[0].textContent,'Show sheet browser');project.list.children[0].onclick();assert.equal(project.sheetBrowser.root.hidden,false);assert.equal(project.sheetBrowser.tree.model,model);await project.loadFiles(files);assert.equal(project.sheetBrowser.root.hidden,true);assert.equal(project.sheetBrowser.loadedSource,null);project.dispose();});

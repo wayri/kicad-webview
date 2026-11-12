@@ -585,5 +585,37 @@
         "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
       }
     ]
+  },
+  "extensionRefresh060": {
+    "candidate": "KiCad Online 0.12.94",
+    "baseCommit": "4a6b9147f165cefa38eb83365aac8d7fdf14f5fe",
+    "workingTreeSnapshot": true,
+    "method": "Selective read-only feature ports; library-specific guards and source contracts preserved.",
+    "files": [
+      {
+        "path": "extension/schematic-renderer.js",
+        "sha256": "8fa507b4ee85bed79f6d5bc237b8e6d5d8e9ca77dad194d49c73cefea7cf9042"
+      },
+      {
+        "path": "extension/pcb-renderer.js",
+        "sha256": "d879b9fcc5eaa4c8095f3328c1339c894fc97006de07f0159cd9128526cf3adc"
+      },
+      {
+        "path": "extension/net-model.js",
+        "sha256": "83da8680351ac82bb73a6dd9df9e278eea2d50e85d6e2928596e335e2fbf5646"
+      },
+      {
+        "path": "extension/owned-canvas.js",
+        "sha256": "ca863969e8354c1565fb373966dbefbfbaa3edf8784c7ec06717739764c54223"
+      },
+      {
+        "path": "extension/spike/board3d.js",
+        "sha256": "5279866a7103da449692c9ac9fbbd62926609afec07e7aabd1f4404db437f273"
+      },
+      {
+        "path": "extension/spike/explodeView.mjs",
+        "sha256": "daea0d9149d818120127f272cfbf57f42d5596a5c56dde5fecb747a2f6ab6aaf"
+      }
+    ]
   }
 }

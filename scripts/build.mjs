@@ -56,6 +56,7 @@ mkdirSync(path.join(output,'manufacturing'),{recursive:true});
 for(const name of ['3PD+IB-F_Cu.gtl','3PD+IB-B_Cu.gbl','3PD+IB-F_Silkscreen.gto','3PD+IB-Edge_Cuts.gm1','3PD+IB-PTH.drl','3PD+IB-NPTH.drl','project.json','PROVENANCE.json'])copyFileSync(path.join(root,'fixtures/inverter-cam',name),path.join(output,'manufacturing',name));
 buildDemoArchive(root,path.join(output,'manufacturing/inverter-fabrication.zip'));
 for (const [source, target] of [
+  ['docs/EXTENSION-REFRESH.md','EXTENSION-REFRESH.md'],
   ['docs/BOM-ANALYTICS.md','BOM-ANALYTICS.md'],
   ['docs/UPSTREAM-SYNC.md','UPSTREAM-SYNC.md'],
   ['docs/PRESENTATION.md','PRESENTATION.md'],

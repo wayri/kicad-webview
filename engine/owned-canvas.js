@@ -75,7 +75,7 @@
 
     const poly=points(p);
 
-    if((p.type==='polygon'||p.type==='pad'||p.type==='text')&&inside(at,poly))return true;
+    if((['pad','text','image'].includes(p.type)||p.type==='polygon'&&(p.fill||['symbol','footprint','footprint-hit','sheet'].includes(p.kind)))&&inside(at,poly))return true;
 
     const limit=tolerance+(p.width||.1)/2;
 
@@ -83,6 +83,16 @@
 
     return p.type==='polygon'&&poly.length>2&&segmentDistance(at,poly.at(-1),poly[0])<=limit;
 
+  }
+
+  function primitiveDistance(p,at,tolerance=.01){
+    if(!p||p.frame||p.hole)return Infinity;
+    if(p.type==='circle'||p.type==='pad'&&p.r){const distance=Math.hypot(at.x-p.x,at.y-p.y);return Math.max(0,(p.fill?distance-p.r:Math.abs(distance-p.r))-(p.width||.1)/2);}
+    const path=points(p);let distance=Infinity;
+    if((['pad','text','image'].includes(p.type)||p.type==='polygon'&&(p.fill||['symbol','footprint','footprint-hit','sheet'].includes(p.kind)))&&inside(at,path))return 0;
+    for(let i=1;i<path.length;i++)distance=Math.min(distance,segmentDistance(at,path[i-1],path[i]));
+    if(['polygon','pad','image','text'].includes(p.type)&&path.length>2)distance=Math.min(distance,segmentDistance(at,path.at(-1),path[0]));
+    return Math.max(0,distance-(p.width||.1)/2);
   }
 
   // Saved geometry is immutable between primitive-array replacements. Keep a
@@ -258,7 +268,17 @@
     setDocument(design,path){this.resize();this.design=design;this.document={filename:path};this.primitives=design.primitives;this.visibleLayers=new Set((design.layers||[]).filter(layer=>!this.pcb||['F.Cu','B.Cu','F.SilkS','B.SilkS','Edge.Cuts'].includes(layer)));this.selected=null;this.focusedLayer=null;this.layerSnapshot=null;this.setNetHighlight(null);this.zoom_to_board();this.draw();}
 
     get primitives(){return this._primitives;}
-    set primitives(value){this._primitives=value;this.spatialIndex=null;this.geometryBounds=new WeakMap();this.textBoundsCache=new WeakMap();this.ownedGeometry=new Map();for(const p of value||[])if(p.ownerUuid&&p.kind!=='footprint-hit'){const list=this.ownedGeometry.get(p.ownerUuid)||[];list.push(p);this.ownedGeometry.set(p.ownerUuid,list);}}
+    set primitives(value){this.releaseImages();this._primitives=value;this.spatialIndex=null;this.geometryBounds=new WeakMap();this.textBoundsCache=new WeakMap();this.ownedGeometry=new Map();for(const p of value||[])if(p.ownerUuid&&p.kind!=='footprint-hit'){const list=this.ownedGeometry.get(p.ownerUuid)||[];list.push(p);this.ownedGeometry.set(p.ownerUuid,list);}}
+    releaseImages(){for(const entry of this.images?.values()||[]){if(!entry.image)continue;entry.image.onload=entry.image.onerror=null;entry.image.src='';}this.images=new Map();this.imagePixels=0;}
+    imageResource(p){
+      if(this.images.has(p))return this.images.get(p);
+      const invalid={ready:false};this.images.set(p,invalid);
+      const width=p.pixelWidth,height=p.pixelHeight,pixels=width*height;
+      if(typeof root.Image!=='function'||typeof p.dataUrl!=='string'||p.dataUrl.length>5600000||!/^data:image\/png;base64,iVBORw0KGgo[A-Za-z0-9+/]*={0,2}$/.test(p.dataUrl)||!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||pixels>16000000||this.imagePixels+pixels>16000000||this.images.size>16)return invalid;
+      this.imagePixels+=pixels;const image=new root.Image(),entry={image,ready:false};this.images.set(p,entry);image.decoding='async';
+      image.onload=()=>{if(this.disposed||this.images.get(p)!==entry)return;entry.ready=image.naturalWidth===width&&image.naturalHeight===height;if(entry.ready)this.requestDraw();};
+      image.onerror=()=>{entry.ready=false;};image.src=p.dataUrl;return entry;
+    }
     candidates(box){
       if(this.primitives.length<512)return this.primitives;
       if(!this.spatialIndex||this.spatialIndex.length!==this.primitives.length)this.spatialIndex=new SpatialIndex(this.primitives);
@@ -279,7 +299,8 @@
       for(const label of labels){ctx.save();ctx.translate(label.x,label.y);ctx.rotate(label.angle*Math.PI/180);ctx.font=label.size+'px monospace';const lines=label.text.split('\n');lines.forEach((line,i)=>{const y=(i-(lines.length-1)/2)*label.size*1.4;ctx.strokeText(line,0,y);ctx.fillText(line,0,y);});ctx.restore();}ctx.restore();
     }
     setSelectionMode(mode){this.selectionMode=['all','part','net','pin'].includes(mode)?mode:'all';}
-    query(at,pixels=5){const tolerance=pixels/this.viewport.camera.zoom;return this.candidates({x:at.x-tolerance,y:at.y-tolerance,w:2*tolerance,h:2*tolerance}).filter(p=>this.geometryVisible(p)&&p.pick!==false&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(p))&&(this.selectionMode!=='pin'||['pad','pin','pin-marker','pin-name','pin-number'].includes(p.kind))&&(p.uuid||p.reference)&&(!p.layer||this.visibleLayers.has(p.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||p.layer===this.focusedLayer)&&hitPrimitive(p,at,tolerance)).sort((a,b)=>{const priority=p=>p.kind==='pad'?0:this.pcb&&['track','arc','via'].includes(p.kind)?1:p.kind==='footprint'||p.kind==='symbol'||p.kind==='footprint-hit'?2:p.type==='text'?4:p.kind==='zone'?5:3;const focus=p=>this.focusedLayer&&p.layer===this.focusedLayer?0:1;return focus(a)-focus(b)||priority(a)-priority(b);}).slice(0,40);}
+    pickDistance(p,at){return primitiveDistance(p,at,.25/this.viewport.camera.zoom)*this.viewport.camera.zoom;}
+    query(at,pixels=5){const tolerance=pixels/this.viewport.camera.zoom;return this.candidates({x:at.x-tolerance,y:at.y-tolerance,w:2*tolerance,h:2*tolerance}).filter(p=>this.geometryVisible(p)&&p.pick!==false&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(p))&&(this.selectionMode!=='pin'||['pad','pin','pin-marker','pin-name','pin-number'].includes(p.kind))&&(p.uuid||p.reference)&&(!p.layer||this.visibleLayers.has(p.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||p.layer===this.focusedLayer)&&hitPrimitive(p,at,tolerance)).sort((a,b)=>{const priority=p=>!this.pcb?(['pin','pad','via'].includes(p.kind)?0:['wire','junction','label','global_label','hierarchical_label','pin-number','pin-name'].includes(p.kind)?1:['symbol','sheet','footprint','footprint-hit'].includes(p.kind)?2:p.type==='image'?12:3):p.kind==='pad'?0:this.pcb&&['track','arc','via'].includes(p.kind)?1:p.kind==='footprint'||p.kind==='symbol'||p.kind==='footprint-hit'?2:p.type==='text'?4:p.kind==='zone'?5:3;const focus=p=>this.focusedLayer&&p.layer===this.focusedLayer?0:1;return focus(a)-focus(b)||(this.pcb?priority(a)-priority(b):this.pickDistance(a,at)-this.pickDistance(b,at)+(priority(a)-priority(b))*.35)||this.pickDistance(a,at)-this.pickDistance(b,at);}).slice(0,40);}
 
     select(hit,options={}){this.selected=hit?.primitive||null;this.draw();this.dispatchEvent(new CustomEvent('kicad:select',{detail:{item:hit?.context||null,multi:Boolean(options.multi)}}));}
 
@@ -416,13 +437,28 @@
 
     }
 
+    fillGraphic(p,path,worldSpace){
+      const ctx=this.ctx;
+      if(['hatch','reverse_hatch','cross_hatch'].includes(p.fill)){
+        this.hatchPatterns||=new Map();const color=ctx.fillStyle,key=p.fill+'|'+color+'|'+(p.width||.15);let pattern=this.hatchPatterns.get(key);
+        if(!pattern){const tile=document.createElement('canvas');tile.width=tile.height=16;const ink=tile.getContext('2d');ink.strokeStyle=color;ink.globalAlpha=.4;ink.lineWidth=Math.max(.025,(p.width||.15)/2)*16/(Math.SQRT2*4);ink.beginPath();
+          if(p.fill!=='reverse_hatch')for(const x of [-16,0,16]){ink.moveTo(x,0);ink.lineTo(x+16,16);}
+          if(p.fill!=='hatch')for(const x of [-16,0,16]){ink.moveTo(x,16);ink.lineTo(x+16,0);}
+          ink.stroke();pattern=ctx.createPattern(tile,'repeat');if(this.hatchPatterns.size>=32)this.hatchPatterns.clear();if(pattern)this.hatchPatterns.set(key,pattern);
+        }
+        if(pattern){const period=Math.SQRT2*4,scale=worldSpace?period/16:Math.max(4,period*this.viewport.camera.zoom)/16;pattern.setTransform?.({a:scale,b:0,c:0,d:scale,e:0,f:0});ctx.fillStyle=pattern;}
+      }
+      if(path)ctx.fill(path);else ctx.fill();
+    }
     paint(p,style={}){
 
-      const ctx=this.ctx,c=this.viewport.camera;ctx.save();let color=style.color||p.color||'#819baa';if(p.hole)color=this.paperVisible?this.paperColor():this.background();else if(!style.color){if(!this.pcb)color=schematicColor(color,this.dark);else if(p.layer&&root.KiCadLayerColors?.reviewColorFor)color=root.KiCadLayerColors.reviewColorFor(p.layer,this.dark);}
+      const ctx=this.ctx,c=this.viewport.camera;ctx.save();let color=style.color||p.color||'#819baa';if(p.hole)color=this.paperVisible?this.paperColor():this.background();else if(!style.color){if(!this.pcb&&!p.sourceColor)color=schematicColor(color,this.dark);else if(p.layer&&root.KiCadLayerColors?.reviewColorFor)color=root.KiCadLayerColors.reviewColorFor(p.layer,this.dark);}
 
-      ctx.strokeStyle=color;ctx.fillStyle=p.fill==='background'?(this.paperVisible?this.paperColor():this.background()):color;ctx.globalAlpha=Math.max(0,Math.min(1,(Number.isFinite(p.opacity)?p.opacity:1)*(style.opacity??1)));ctx.lineWidth=Math.max(.65,(p.width||.15)*c.zoom);ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.strokeStyle=color;ctx.fillStyle=style.color?color:['color','hatch','reverse_hatch','cross_hatch'].includes(p.fill)&&p.fillColor?p.fillColor:p.fill==='background'?(this.dark?'#32322a':'#ffffc2'):color;ctx.globalAlpha=Math.max(0,Math.min(1,(Number.isFinite(p.opacity)?p.opacity:1)*(style.opacity??1)));ctx.lineWidth=Math.max(.65,(p.width||.15)*c.zoom);ctx.lineCap='round';ctx.lineJoin='round';const dashUnit=Math.max(1,ctx.lineWidth),dash={dash:[11,4],dot:[.2,4],dash_dot:[11,4,.2,4],dash_dot_dot:[11,4,.2,4,.2,4]}[p.lineStyle];ctx.setLineDash?.(dash?dash.map(n=>n*dashUnit):[]);
 
       if(p.type==='text'){const q=c.world_to_screen(p);ctx.translate(q.x,q.y);ctx.rotate((p.angle||0)*Math.PI/180*(c.flipped?-1:1));if(Boolean(p.mirrored)!==Boolean(c.flipped))ctx.scale(-1,1);ctx.font=this.textFont(p);ctx.textAlign=p.align||'center';ctx.textBaseline=p.baseline||'middle';const height=p.fontHeight||p.size||1.27;if(p.fontWidth&&height>0)ctx.scale(p.fontWidth/height,1);const lines=String(p.text||'').split('\n');lines.forEach((text,i)=>ctx.fillText(text,0,(i-(lines.length-1)/2)*height*c.zoom*(p.lineSpacing||1.5)));ctx.restore();return;}
+
+      if(p.type==='image'){const entry=this.imageResource(p);if(entry.ready&&p.points?.length===4){const [a,b,,d]=p.points.map(point=>c.world_to_screen(point));ctx.transform((b.x-a.x)/p.pixelWidth,(b.y-a.y)/p.pixelWidth,(d.x-a.x)/p.pixelHeight,(d.y-a.y)/p.pixelHeight,a.x,a.y);ctx.drawImage(entry.image,0,0);}ctx.restore();return;}
 
       ctx.beginPath();
 
@@ -432,15 +468,15 @@
 
       else{const ps=points(p);if(ps.length){const q=c.world_to_screen(ps[0]);ctx.moveTo(q.x,q.y);for(const t of ps.slice(1)){const s=c.world_to_screen(t);ctx.lineTo(s.x,s.y);}if(p.type==='polygon'||p.type==='pad')ctx.closePath();}}
 
-      if(p.fill)ctx.fill();if(!p.hole&&p.stroke!==false)ctx.stroke();ctx.restore();
+      if(p.fill)this.fillGraphic(p,null,false);if(!p.hole&&p.stroke!==false)ctx.stroke();ctx.restore();
 
     }
 
-    dispose(){if(this.disposed)return;this.disposed=true;if(this.frameRequest!==null&&typeof cancelAnimationFrame==='function')cancelAnimationFrame(this.frameRequest);this.frameRequest=null;if(this.motionTimer!==null)clearTimeout(this.motionTimer);this.motionTimer=null;this.motion?.dispose();this.motion=null;this.observer.disconnect();for(const stop of this.handlers)stop();this.handlers=[];this.primitives=[];this.design=null;this.document=null;this.selected=null;this.netHighlight=null;this.netPrimitives.clear();this.netNames?.clear();this.netClassColors?.clear();this.layerSnapshot=null;this.canvas.width=this.canvas.height=1;this.canvas.remove();}
+    dispose(){if(this.disposed)return;this.disposed=true;this.hatchPatterns?.clear();this.releaseImages();if(this.frameRequest!==null&&typeof cancelAnimationFrame==='function')cancelAnimationFrame(this.frameRequest);this.frameRequest=null;if(this.motionTimer!==null)clearTimeout(this.motionTimer);this.motionTimer=null;this.motion?.dispose();this.motion=null;this.observer.disconnect();for(const stop of this.handlers)stop();this.handlers=[];this.primitives=[];this.design=null;this.document=null;this.selected=null;this.netHighlight=null;this.netPrimitives.clear();this.netNames?.clear();this.netClassColors?.clear();this.layerSnapshot=null;this.canvas.width=this.canvas.height=1;this.canvas.remove();}
 
   }
 
-  root.KiCadOwnedCanvas={netLabels,Camera,arcThrough,bounds,hitPrimitive,schematicColor,objectTypes,objectCategory,objectVisible,canvasViewport,mount:(host,options)=>new Viewport(host,options)};
+  root.KiCadOwnedCanvas={netLabels,Camera,arcThrough,bounds,hitPrimitive,primitiveDistance,schematicColor,objectTypes,objectCategory,objectVisible,canvasViewport,mount:(host,options)=>new Viewport(host,options)};
 
   if(typeof module==='object'&&module.exports)module.exports=root.KiCadOwnedCanvas;
 

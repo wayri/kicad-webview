@@ -102,7 +102,8 @@
     else warnings.push("Default worksheet module is unavailable.");
     warnings.push("Custom .kicad_wks templates are not resolved; the standard KiCad drawing sheet is shown.");
     function base(node, layer, owner = {}) {
-      return { layer, color: colorFor(layer), uuid: uuid(node) || owner.uuid || undefined,
+      const lineStyle=field(child(node,"stroke"),"type");
+      return { layer, color: colorFor(layer), ...(["dash","dot","dash_dot","dash_dot_dot"].includes(lineStyle)?{lineStyle}:{}), uuid: uuid(node) || owner.uuid || undefined,
         ownerUuid: owner.ownerUuid || owner.uuid || undefined,
         reference: owner.reference || undefined, kind: owner.kind || kind(node),
         ...(owner.kind==='pad'?{name:owner.name,pinNumber:owner.pinNumber,pinName:owner.pinName,netName:owner.netName,
@@ -110,7 +111,7 @@
     }
     function isFilled(node) {
       const fill = child(node,"fill");
-      return value(fill?.[1]) === "yes" || field(fill,"type") === "solid";
+      return ["yes","solid"].includes(value(fill?.[1])) || field(fill,"type") === "solid";
     }
     function strokeWidth(node) {
       const stroke = child(node, "stroke");

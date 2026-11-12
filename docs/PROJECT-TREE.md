@@ -72,3 +72,6 @@ Superseded loads and disposal abort pending work and cannot replace newer data. 
 ## Verified beta evidence
 
 Browser checks covered linked schematic selection, tree navigation and SVG export. Host behavior and rendering fidelity can vary.
+## View controls (0.6.0)
+
+The independent tree provides Zoom in/out, Fit and Reset. `getCamera()` / `setCamera({zoom,x,y})` retain bounded zoom (0.35–2) and scroll offsets. `zoomBy`, `fit`, `resetView` and `clear` support host controls. Fit returns false while hidden; background/Alt-drag pans, node clicks remain selections, and touch scroll stays native. `clear()` cancels loading and releases hierarchy data while preserving its camera. Advanced project embeds also expose `openSheetBrowser()` / `closeSheetBrowser()`; search “sheet tree” or “minimap” to reopen the floating panel.

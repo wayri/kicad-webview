@@ -7,3 +7,9 @@ The renderer audit found the web library already ahead of the inspected extensio
 Retained synthetic native Bezier references were copied from the extension tests. Their recorded KiCad CLI version is 10.0.6, exported 2026-11-03. This release checks the retained output; it does not claim a fresh native export. Tests cover bounded cubic flattening, mirrored/rotated transforms, pin/wire connectivity, malformed geometry warnings and agreement with retained SVG coordinates (PCB 0.00501 mm; schematic 0.006 mm). These are geometric checks, not universal font/pixel fidelity or all-version compatibility.
 
 See [BOM semantics and limits](BOM-ANALYTICS.md), [mobile performance](MOBILE-PERFORMANCE.md) and [WayriCAD result limits](WAYRICAD-RESULTS.md). Existing draw/texture/offscreen budgets remain; no new physical-device benchmark is claimed.
+
+## 0.6.0 completed-candidate refresh
+
+The second sync uses the actual 0.12.94 release candidate working tree based at `4a6b9147f165cefa38eb83365aac8d7fdf14f5fe`. Feature work was complete while extension packaging continued. Exact upstream per-file hashes are retained in `SOURCE-PROVENANCE.json` under `extensionRefresh060`; selective library adaptations are tested separately.
+
+Ports include native saved color/fill/dash and bounded text/image previews, terminal/flag connectivity, cap/wall depth precedence, reversible exploded inspection and right-pan selection protection. Library-native additions provide bounded camera memory, parallel listed-sheet loading and the reopenable sheet browser. [Behavior and limits](EXTENSION-REFRESH.md). No extension comments, browser-session authentication, variant editing or Fast PI solver/setup is imported. Saved BOM remains a saved-source summary; saved WayriCAD fields remain independently inspectable.
