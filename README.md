@@ -1,7 +1,7 @@
 <h1 align="center">KiCad WebView</h1>
 <p align="center">Interactive electronics. Anywhere on the web.</p>
 <p align="center"><a href="https://wayri.github.io/kicad-webview/">Live demos</a> · <a href="https://wayri.github.io/kicad-webview/docs/">Documentation</a> · <a href="https://wayri.github.io/kicad-webview/docs/api/">API reference</a> · <a href="https://github.com/wayri/kicad-webview/releases">Releases</a></p>
-<p align="center"><a href="LICENSE"><img alt="License: MPL 2.0" src="https://img.shields.io/badge/license-MPL_2.0-42dbca"></a> <a href="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml"><img alt="Viewer checks" src="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml/badge.svg?branch=main"></a> <a href="https://github.com/wayri/kicad-webview/releases"><img alt="Release 0.6.0" src="https://img.shields.io/badge/version-0.6.0-42dbca"></a> <a href="https://wayri.github.io/kicad-webview/docs/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue"></a></p>
+<p align="center"><a href="LICENSE"><img alt="License: MPL 2.0" src="https://img.shields.io/badge/license-MPL_2.0-42dbca"></a> <a href="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml"><img alt="Viewer checks" src="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml/badge.svg?branch=main"></a> <a href="https://github.com/wayri/kicad-webview/releases"><img alt="Release 0.6.0" src="https://img.shields.io/badge/version-0.6.0-42dbca"></a> <a href="https://wayri.github.io/kicad-webview/docs/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue"></a> <a href="https://wayri.github.io/kicad-webview/sponsor/"><img alt="Sponsor development" src="https://img.shields.io/badge/Sponsor-development-ea4aaa?logo=githubsponsors&amp;logoColor=white"></a></p>
 
 Embed read-only **KiCad schematics, PCB layouts and interactive 3D boards** in websites, blogs and applications. Inspect parts, pads, nets and layers; link views; navigate complete projects; or bundle a design and viewer into one portable HTML file. Gerber and Excellon support brings fabrication files into the same viewer.
 
@@ -127,6 +127,10 @@ Source lives in src/ and engine/; dist/ is generated. [Contributing](CONTRIBUTIN
 ## Scope and fidelity
 
 This is a read-only interpretation of saved design data. It does not edit CAD files, run firmware, execute native ERC/DRC or engineering solvers, or certify manufacturing readiness. Imported analysis is supplied evidence, not a solver run. Unsupported constructs and approximate models have visible diagnostics. Saved UUID relationships do not establish a complete hierarchical electrical netlist. [Compatibility and limitations](docs/KICAD-COMPATIBILITY.md)
+
+## Sponsor development
+
+[Support KiCad WebView](https://wayri.github.io/kicad-webview/sponsor/) to help fund compatibility, mobile performance, rendering fidelity and documentation. Sponsorship is voluntary; the library remains free to use commercially under MPL-2.0. [Funding policy and recognition](SPONSORING.md).
 
 ## License and support
 
