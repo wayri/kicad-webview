@@ -27,7 +27,7 @@ test('unmoved right click, left click, cancelled drags, long press and keyboard 
 });
 test('saved layers and late model groups separate reversibly without changing XY or records',()=>{
  const view=createExplodeView(THREE,plan),before=JSON.stringify(plan),objects=plan.layers.map(layer=>{const object=new THREE.Group();object.position.set(3,4,layer.z);return object;});
- for(const amount of [100,50,100,0]){view.set(amount);objects.forEach((object,index)=>view.layer(object,plan.layers[index].name));assert.deepEqual(objects.map(o=>o.position.x),Array(6).fill(3));assert.deepEqual(objects.map(o=>o.position.y),Array(6).fill(4));assert.deepEqual(objects.map(o=>o.position.z),plan.layers.map((l,i)=>l.z+(2.5-i)*4*amount/100));}
+ for(const [amount,layerFraction]of [[100,1],[35,0],[100,1],[0,0]]){view.set(amount);objects.forEach((object,index)=>view.layer(object,plan.layers[index].name));assert.deepEqual(objects.map(o=>o.position.x),Array(6).fill(3));assert.deepEqual(objects.map(o=>o.position.y),Array(6).fill(4));assert.deepEqual(objects.map(o=>o.position.z),plan.layers.map((l,i)=>l.z+(2.5-i)*4*layerFraction));}
  view.set(100);const late=new THREE.Group();late.position.z=7;view.layer(late,'F.Cu');assert.equal(late.position.z,17);view.set(0);view.layer(late,'F.Cu');assert.equal(late.position.z,7);
  assert.equal(JSON.stringify(plan),before);assert.equal(view.offset('unknown'),0);assert.equal(view.set(200),100);assert.equal(view.set(-1),0);assert.throws(()=>view.set(NaN),/finite/);assert.throws(()=>view.set(Infinity),/finite/);
 });
@@ -36,6 +36,13 @@ test('through via wall endpoints follow separated outer layers and restore their
  mesh.userData.records=[record];mesh.setMatrixAt(0,new THREE.Matrix4().makeTranslation(3,4,span.zMin));const original=Array.from(mesh.instanceMatrix.array),matrix=new THREE.Matrix4();
  for(const amount of [100,25,100,0]){view.set(amount);view.barrels(mesh,span);mesh.getMatrixAt(0,matrix);const low=new THREE.Vector3(0,0,0).applyMatrix4(matrix),high=new THREE.Vector3(0,0,height).applyMatrix4(matrix);assert.ok(Math.abs(low.z-(span.zMin+view.offset('B.Cu')))<1e-5);assert.ok(Math.abs(high.z-(span.zMax+view.offset('F.Cu')))<1e-5);assert.equal(low.x,3);assert.equal(low.y,4);assert.equal(mesh.userData.records[0],record);assert.equal(mesh.geometry,geometry);}
  assert.deepEqual(Array.from(mesh.instanceMatrix.array),original);geometry.dispose();material.dispose();
+});
+
+test('front and back components lift before copper and follow their mounting layers afterwards',()=>{
+ const view=createExplodeView(THREE,plan),front=new THREE.Group(),back=new THREE.Group();front.position.set(3,4,1);back.position.set(5,6,-1);
+ view.set(35);view.component(front,'F.Cu');view.component(back,'B.Cu');assert.equal(front.position.z,9);assert.equal(back.position.z,-9);assert.equal(view.offset('F.Cu'),0);assert.equal(view.offset('B.Cu'),0);
+ view.set(100);view.component(front,'F.Cu');view.component(back,'B.Cu');assert.equal(front.position.z,19);assert.equal(back.position.z,-19);
+ view.set(0);view.component(front,'F.Cu');view.component(back,'B.Cu');assert.deepEqual(front.position.toArray(),[3,4,1]);assert.deepEqual(back.position.toArray(),[5,6,-1]);
 });
 test('registered overlays and probes suspend together and restore visibility without touching ownership or opacity',()=>{
  const guard=createExplodeOverlayGuard(),group=new THREE.Group(),mesh=new THREE.Mesh(),probe=new THREE.Group(),owner=Symbol('result');group.add(mesh,probe);mesh.visible=false;const overlay={group,mesh,owner};

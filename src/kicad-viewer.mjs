@@ -322,6 +322,7 @@ export class KiCadViewer extends EventTarget {
           sourceSnapshot: state.sourceSnapshot, sourceKey: state.sourceKey, sourceParser: state.sourceParser,
           boardPath: state.path, dark: this.theme === 'dark', embedded: true, externalInspector: true,
           onAppearanceChange: value => { if (mounted()) {this.modelOptions.appearance = value;this.updateControls();} },
+          onExplodeChange: amount => {if(mounted())this.emit('expandchange',{amount,path:this.path,view:'3d'});},
           onLayersChange: () => {if(mounted()){this.updateControls();this.emit('layerschange',this.getLayerState());}},
           onDiagnostics: value => { notes = value; if (mounted()) { this.renderingNotes = notes; this.updateStatus(); } },
           onSelect: item => { if (mounted()) this.handleSelection({ item }, '3d'); },
@@ -364,8 +365,11 @@ export class KiCadViewer extends EventTarget {
     return this.renderer.setQuality(quality);
   }
 
-  setExplode(value){this.assertActive();if(!Number.isFinite(value)||value<0||value>100)throw new TypeError('Explode must be a number from 0 to 100.');if(this.view!=='3d'||!this.renderer?.setExplode)throw new Error('Explode requires a loaded 3D board.');return this.renderer.setExplode(value);}
-  getExplode(){this.assertActive();return this.view==='3d'?this.renderer?.getExplode?.()||0:0;}
+  setExpand(value){this.assertActive();if(!Number.isFinite(value)||value<0||value>100)throw new TypeError('Expand must be a number from 0 to 100.');if(this.view!=='3d'||!(this.renderer?.setExpand||this.renderer?.setExplode))throw new Error('Expand requires a loaded 3D board.');return (this.renderer.setExpand||this.renderer.setExplode).call(this.renderer,value);}
+  getExpand(){this.assertActive();return this.view==='3d'?(this.renderer?.getExpand?.()??this.renderer?.getExplode?.()??0):0;}
+  /** Compatibility aliases; use setExpand/getExpand in new integrations. */
+  setExplode(value){return KiCadViewer.prototype.setExpand.call(this,value);}
+  getExplode(){return KiCadViewer.prototype.getExpand.call(this);}
 
   setAppearance(appearance) {
     this.assertActive();

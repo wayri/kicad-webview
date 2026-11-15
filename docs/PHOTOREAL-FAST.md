@@ -1,6 +1,6 @@
 # Fast photoreal presentation
 
-The 0.8.0-preview.1 website SDK adds `photoreal-fast` to the 3D quality menu and `setRenderQuality`. It is opt-in; ordinary embeds retain their existing default. Published 0.7.0 does not contain this preset.
+The 0.8.0-preview.2 website SDK adds `photoreal-fast` to the 3D quality menu and `setRenderQuality`. It is opt-in; ordinary embeds retain their existing default. Published 0.7.0 does not contain this preset.
 
 ```js
 await viewer.load('/designs/project.json', {view: '3d'});

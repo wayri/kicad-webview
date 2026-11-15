@@ -84,6 +84,9 @@ export declare class KiCadViewer extends EventTarget {
   setView(view: DrawingView, options?: {signal?: AbortSignal}): Promise<boolean>; fit(): void;
   /** Optional studio presets: photoreal-fast omits screen-space effects; presentation adds GPU-intensive effects. Returns actual quality after fallback. */
   setRenderQuality(quality: 'low'|'balanced'|'high'|'presentation'|'photoreal-fast'): 'low'|'balanced'|'high'|'presentation'|'photoreal-fast';
+  /** Animate 0–100% expansion: lift components, separate colored copper, fade substrate, stretch vias. */
+  setExpand(value:number):number; getExpand():number;
+  /** @deprecated Use setExpand/getExpand. */
   setExplode(value:number):number;
   getExplode():number;
   setAppearance(appearance: BoardAppearance): BoardAppearance; getAppearance(): BoardAppearance | null; getRenderStats(): RenderStats | null;

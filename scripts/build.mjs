@@ -62,6 +62,7 @@ for (const [source, target] of [
   ['docs/UPSTREAM-SYNC.md','UPSTREAM-SYNC.md'],
   ['docs/PRESENTATION.md','PRESENTATION.md'],
   ['docs/PHOTOREAL-FAST.md','PHOTOREAL-FAST.md'],
+  ['docs/EXPAND-MODE.md','EXPAND-MODE.md'],
   ['docs/WAYRICAD-RESULTS.md','WAYRICAD-RESULTS.md'],
   ['docs/MOBILE-PERFORMANCE.md','MOBILE-PERFORMANCE.md'],
   ['docs/INSPECTION-CONTROLS.md','INSPECTION-CONTROLS.md'],
