@@ -61,6 +61,7 @@ for (const [source, target] of [
   ['docs/BOM-ANALYTICS.md','BOM-ANALYTICS.md'],
   ['docs/UPSTREAM-SYNC.md','UPSTREAM-SYNC.md'],
   ['docs/PRESENTATION.md','PRESENTATION.md'],
+  ['docs/PHOTOREAL-FAST.md','PHOTOREAL-FAST.md'],
   ['docs/WAYRICAD-RESULTS.md','WAYRICAD-RESULTS.md'],
   ['docs/MOBILE-PERFORMANCE.md','MOBILE-PERFORMANCE.md'],
   ['docs/INSPECTION-CONTROLS.md','INSPECTION-CONTROLS.md'],

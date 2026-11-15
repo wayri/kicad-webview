@@ -82,8 +82,8 @@ export declare class KiCadViewer extends EventTarget {
   getNets(): SavedNet[]; selectNet(idOrUniqueName: string, options?: { locate?: boolean }): boolean;
   getSheets(): SheetLink[]; clearSelection(): void; setInspectorOpen(open: boolean): void;
   setView(view: DrawingView, options?: {signal?: AbortSignal}): Promise<boolean>; fit(): void;
-  /** Optional GPU-intensive studio presentation mode; returns the active quality after fallback. */
-  setRenderQuality(quality: 'low'|'balanced'|'high'|'presentation'): 'low'|'balanced'|'high'|'presentation';
+  /** Optional studio presets: photoreal-fast omits screen-space effects; presentation adds GPU-intensive effects. Returns actual quality after fallback. */
+  setRenderQuality(quality: 'low'|'balanced'|'high'|'presentation'|'photoreal-fast'): 'low'|'balanced'|'high'|'presentation'|'photoreal-fast';
   setExplode(value:number):number;
   getExplode():number;
   setAppearance(appearance: BoardAppearance): BoardAppearance; getAppearance(): BoardAppearance | null; getRenderStats(): RenderStats | null;

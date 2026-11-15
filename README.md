@@ -86,7 +86,7 @@ Choose **Display → Appearance → Translucent**, or call viewer.setAppearance(
 | 3D inspection | Orbit, pan, use on-screen camera controls, focus selected parts on their mounting side and highlight nets with dimmed surroundings |
 | Project navigation | Browse listed files and saved child-sheet links in independent split or single panes, without comments or CAD editing |
 | Linked embeds and view links | Cross-select exact saved identities and restore source-bound cameras, layers and selections |
-| Presentation | Build live project/board carousels and opt into enhanced 3D presentation rendering |
+| Presentation | Build live project/board carousels and opt into enhanced 3D presentation rendering. The next source build adds a [fast photoreal studio preset](docs/PHOTOREAL-FAST.md) |
 | Scripted controls | Add virtual LEDs, OLED/LCD/matrix/TFT displays, buttons, knobs and focus-scoped keys |
 | Fabrication files | Inspect the supported Gerber/Excellon subset, overlay layers and measure distances |
 | Analysis results | Display supplied scalar fields with units, assumptions, provenance and exact source-hash binding |

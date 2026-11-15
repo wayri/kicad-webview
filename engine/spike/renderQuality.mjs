@@ -9,7 +9,7 @@ export function viewportPixelRatio(width, height, deviceRatio = 1, maxDimension 
   return Math.min(dpr, 3, Math.sqrt(4_000_000 / w / h), dimension / w, dimension / h);
 }
 
-export function qualityName(value){return ['low','balanced','high','presentation'].includes(value)?value:'balanced';}
+export function qualityName(value){return ['low','balanced','high','presentation','photoreal-fast'].includes(value)?value:'balanced';}
 // Touch input says nothing about GPU capacity. Use reported capabilities and
 // memory only; unknown devices retain the normal, bounded allocation policy.
 export function graphicsProfile({maxTextureSize=4096,maxRenderbufferSize=maxTextureSize,deviceMemory,hardwareConcurrency=0,floatTargets=false,android=false}={}){
@@ -26,7 +26,7 @@ export function qualityViewport(width,height,deviceRatio=1,maxDimension=4096,qua
  const mode=qualityName(quality),w=Number.isFinite(width)&&width>0?width:1,h=Number.isFinite(height)&&height>0?height:1;
  const profile=constrained&&typeof constrained==='object'?constrained:null,limited=profile?profile.constrained:constrained;
  const enhanced=mode==='high'||mode==='presentation';
- const maxPixels=mode==='presentation'?(limited?1_000_000:profile?.premium?4_000_000:3_000_000):mode==='high'?(profile?profile.highMaxPixels:limited?1_000_000:2_000_000):mode==='low'?1_000_000:limited?3_000_000:4_000_000;
+ const maxPixels=mode==='photoreal-fast'?(limited?1_000_000:2_000_000):mode==='presentation'?(limited?1_000_000:profile?.premium?4_000_000:3_000_000):mode==='high'?(profile?profile.highMaxPixels:limited?1_000_000:2_000_000):mode==='low'?1_000_000:limited?3_000_000:4_000_000;
  const ratio=Math.min(viewportPixelRatio(w,h,mode==='presentation'&&!limited?Math.max(1.5,deviceRatio):deviceRatio,maxDimension),Math.sqrt(maxPixels/w/h));
  const pixels=Math.floor(w*ratio)*Math.floor(h*ratio),bytesPerPixel=enhanced?96:mode==='low'?12:24;
  return {quality:mode,ratio,width:Math.max(1,Math.floor(w*ratio)),height:Math.max(1,Math.floor(h*ratio)),pixels,maxPixels,estimatedBytes:pixels*bytesPerPixel+(mode==='low'?0:2*(mode==='presentation'&&!limited?2048:1024)**2*4)};

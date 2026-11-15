@@ -359,7 +359,7 @@ export class KiCadViewer extends EventTarget {
   /** Explicit opt-in; presentation quality is never the embedded default. */
   setRenderQuality(quality) {
     this.assertActive();
-    if (!['low','balanced','high','presentation'].includes(quality)) throw new TypeError('Choose low, balanced, high or presentation rendering.');
+    if (!['low','balanced','high','presentation','photoreal-fast'].includes(quality)) throw new TypeError('Choose low, balanced, high, presentation or photoreal-fast rendering.');
     if (this.view !== '3d' || typeof this.renderer?.setQuality !== 'function') throw new Error('Rendering quality requires a loaded 3D view.');
     return this.renderer.setQuality(quality);
   }

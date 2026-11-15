@@ -11,6 +11,31 @@ test('presentation supersampling is bounded on standard, premium and constrained
  assert.ok(qualityViewport(800,600,1,8192,'presentation').ratio>qualityViewport(800,600,1,8192,'balanced').ratio);
  assert.equal(boardOcclusion(1.6,'presentation').samples,24);assert.equal(boardOcclusion().samples,12);
 });
+
+test('fast photoreal framebuffer remains bounded below the enhanced presentation budget',()=>{
+ assert.equal(qualityName('photoreal-fast'),'photoreal-fast');
+ for(const constrained of [true,false])for(const [w,h,dpr]of [[800,600,1],[3840,2160,3],[200,160,2],[0,0,NaN]]){
+  const profile={constrained,premium:!constrained};
+  const fast=qualityViewport(w,h,dpr,8192,'photoreal-fast',profile);
+  assert.equal(fast.maxPixels,constrained?1_000_000:2_000_000);
+  assert.ok(fast.pixels<=fast.maxPixels);assert.ok(fast.estimatedBytes<60*1024*1024);
+  assert.ok(fast.estimatedBytes<qualityViewport(w,h,dpr,8192,'presentation',profile).estimatedBytes);
+ }
+});
+
+test('fast studio keeps cached 1024 shadows and can switch to enhanced and back',()=>{
+ const scene=new THREE.Scene(),light=new THREE.DirectionalLight();light.castShadow=true;light.shadow.mapSize.set(1024,1024);scene.add(light);
+ let released=0;const map={dispose(){released++;}};light.shadow.map=map;
+ const renderer={shadowMap:{needsUpdate:false},toneMappingExposure:1};
+ const studio=createPresentationStudio(THREE,{scene,renderer,extent:100,bottom:-.8});
+ studio.apply(true,{fast:true});assert.equal(studio.enabled,true);assert.equal(light.shadow.map,map);assert.equal(released,0);assert.equal(light.shadow.mapSize.x,1024);
+ const catcher=scene.getObjectByName('Presentation stage');assert.ok(catcher.material.isShadowMaterial);assert.equal(catcher.material.transparent,true);assert.equal(catcher.material.depthWrite,false);
+ studio.apply(true);assert.equal(light.shadow.mapSize.x,2048);assert.equal(released,1);
+ assert.ok(catcher.material.isShadowMaterial);
+ studio.apply(true,{fast:true});assert.equal(light.shadow.mapSize.x,1024);assert.equal(studio.enabled,true);
+ studio.apply(false);assert.equal(studio.enabled,false);assert.equal(scene.environmentIntensity,.65);assert.equal(renderer.toneMappingExposure,1);
+ studio.dispose();light.dispose();
+});
 test('presentation stage leaves source bounds and picking identity untouched and releases resized shadows',()=>{
  const scene=new THREE.Scene(),board=new THREE.Group(),geometry=new THREE.BoxGeometry(100,80,1.6),material=new THREE.MeshStandardMaterial(),mesh=new THREE.Mesh(geometry,material);board.add(mesh);scene.add(board);
  const light=new THREE.DirectionalLight();light.castShadow=true;light.shadow.mapSize.set(1024,1024);scene.add(light);let released=0;light.shadow.map={dispose(){released++;}};
@@ -23,5 +48,6 @@ test('presentation stage leaves source bounds and picking identity untouched and
 test('public quality control validates view and returns actual renderer fallback without changing camera or selection',()=>{
  const selected={net:'/Pa'},camera={position:[1,2,3]},calls=[],viewer={assertActive(){},view:'3d',selection:selected,camera,renderer:{setQuality(value){calls.push(value);return 'balanced';}}};
  assert.equal(KiCadViewer.prototype.setRenderQuality.call(viewer,'presentation'),'balanced');assert.deepEqual(calls,['presentation']);assert.equal(viewer.selection,selected);assert.equal(viewer.camera,camera);
- assert.throws(()=>KiCadViewer.prototype.setRenderQuality.call(viewer,'unknown'),/Choose/);viewer.view='pcb';assert.throws(()=>KiCadViewer.prototype.setRenderQuality.call(viewer,'high'),/3D/);assert.equal(calls.length,1);
+ assert.equal(KiCadViewer.prototype.setRenderQuality.call(viewer,'photoreal-fast'),'balanced');assert.deepEqual(calls,['presentation','photoreal-fast']);assert.equal(viewer.selection,selected);assert.equal(viewer.camera,camera);
+ assert.throws(()=>KiCadViewer.prototype.setRenderQuality.call(viewer,'unknown'),/Choose/);viewer.view='pcb';assert.throws(()=>KiCadViewer.prototype.setRenderQuality.call(viewer,'high'),/3D/);assert.equal(calls.length,2);
 });

@@ -197,8 +197,8 @@ export function mountBoard3D(container, source, options = {}) {
   try{const saved=localStorage.getItem(qualityKey);if(['low','balanced','high'].includes(saved)){initialQuality=saved;savedQuality=true;}}catch{}
   if(options.quality)initialQuality=qualityName(options.quality);
   const qualityLabel=document.createElement('label');qualityLabel.className='quality-label';const qualityCaption=document.createElement('span');qualityCaption.textContent='Quality';
-  const qualitySelect=document.createElement('select');qualitySelect.setAttribute('aria-label','3D rendering quality');qualitySelect.title='Presentation: studio stage, dense occlusion and enhanced shadows. High: ambient occlusion and enhanced antialiasing. Balanced: responsive studio lighting. Low: reduced memory.';
-  for(const [value,label]of [['low','Low'],['balanced','Balanced'],['high','High'],['presentation','Presentation']]){const option=document.createElement('option');option.value=value;option.textContent=label;qualitySelect.append(option);}qualitySelect.value=initialQuality;qualityLabel.append(qualityCaption,qualitySelect);
+  const qualitySelect=document.createElement('select');qualitySelect.setAttribute('aria-label','3D rendering quality');qualitySelect.title='Photoreal Fast: studio stage, reflections and cached shadows, without screen-space effects. Presentation: studio stage, dense occlusion and enhanced shadows. High: ambient occlusion and enhanced antialiasing. Balanced: responsive studio lighting. Low: reduced memory.';
+  for(const [value,label]of [['low','Low'],['balanced','Balanced'],['high','High'],['photoreal-fast','Photoreal Fast'],['presentation','Presentation']]){const option=document.createElement('option');option.value=value;option.textContent=label;qualitySelect.append(option);}qualitySelect.value=initialQuality;qualityLabel.append(qualityCaption,qualitySelect);
 
   const centerX = (board.bounds.minX + board.bounds.maxX) / 2;
   const centerY = (board.bounds.minY + board.bounds.maxY) / 2;
@@ -221,6 +221,7 @@ export function mountBoard3D(container, source, options = {}) {
   const modelTextureBudget=(graphics.constrained?16:graphics.premium?64:32)*1024*1024;
   if(!savedQuality&&!options.quality)initialQuality=graphics.defaultQuality;
   let active=true,contextLost=false,renderCount=0,pipeline=null,quality=initialQuality,shaderFailure=false;
+  function updateBackground(){scene.background.setHex(host.dataset.theme==='dark'?0x171715:0xf7f5ee);}
   const hasViewportSize=()=>canvasHost.clientWidth>0&&canvasHost.clientHeight>0;
   const renderActivity=createRenderActivity({request:callback=>requestAnimationFrame(callback),cancel:id=>cancelAnimationFrame(id),render:drawFrame,canRender:()=>active&&!contextLost&&!document.hidden&&hasViewportSize(),state:{documentVisible:!document.hidden,hasSize:hasViewportSize()}});
   function invalidate(){if(!active)return;renderActivity.setState({documentVisible:!document.hidden,hasSize:hasViewportSize()});renderActivity.invalidate();}
@@ -244,10 +245,11 @@ export function mountBoard3D(container, source, options = {}) {
     for(const texture of [smaa.areaTexture,smaa.searchTexture])texture.image?.addEventListener?.('load',invalidate,{once:true});
     passes.push(base,ao,output,smaa);for(const pass of passes)composer.addPass(pass);
   }
-  function fallbackQuality(message){disposePipeline();quality='balanced';qualitySelect.value=quality;host.dataset.quality=quality;shaderFailure=false;renderer.setRenderTarget(null);presentation.apply(false);graphicsNotice(message);sizeViewport();}
+  function fallbackQuality(message){disposePipeline();quality='balanced';qualitySelect.value=quality;host.dataset.quality=quality;shaderFailure=false;renderer.setRenderTarget(null);presentation.apply(false);updateBackground();graphicsNotice(message);sizeViewport();}
   function applyQuality(value,persist=true){quality=qualityName(value);qualitySelect.value=quality;host.dataset.quality=quality;qualityNotice.hidden=true;shaderFailure=false;
-    if(persist)try{localStorage.setItem(qualityKey,quality==='presentation'?'high':quality);}catch{}
-    presentation.apply(quality==='presentation');renderer.shadowMap.enabled=quality!=='low'&&appearance!=='translucent';renderer.shadowMap.needsUpdate=true;
+    updateBackground();
+    if(persist)try{localStorage.setItem(qualityKey,quality==='presentation'?'high':quality==='photoreal-fast'?'balanced':quality);}catch{}
+    presentation.apply(['presentation','photoreal-fast'].includes(quality)&&appearance!=='translucent',{fast:quality==='photoreal-fast'});renderer.shadowMap.enabled=quality!=='low'&&appearance!=='translucent';renderer.shadowMap.needsUpdate=true;
     try{createPipeline();}catch{fallbackQuality('Enhanced quality is unavailable on this graphics device. Balanced rendering is active.');}
     updateClipping();sizeViewport();invalidate();return quality;
   }
@@ -301,7 +303,7 @@ export function mountBoard3D(container, source, options = {}) {
   const appearanceLabel=document.createElement('label');appearanceLabel.append(document.createTextNode('Appearance'));
   const appearanceSelect=document.createElement('select');appearanceSelect.setAttribute('aria-label','3D board appearance');
   for(const [value,label]of [['realistic','Realistic'],['layers','Layer colors'],['translucent','Translucent']]){const option=document.createElement('option');option.value=value;option.textContent=label;appearanceSelect.append(option);}appearanceLabel.append(appearanceSelect);
-  const qualityHelp=document.createElement('p');qualityHelp.className='quality-help';qualityHelp.textContent='Translucent reveals copper in layer colors through the board and models. Fills stay faint; shadows and screen-space occlusion are disabled in this inspection mode. Presentation adds a stage and enhanced shadows in opaque modes.';renderingOptions.append(appearanceLabel,qualityLabel,qualityHelp);
+  const qualityHelp=document.createElement('p');qualityHelp.className='quality-help';qualityHelp.textContent='Translucent reveals copper in layer colors through the board and models. Fills stay faint; shadows and screen-space occlusion are disabled in this inspection mode. Photoreal Fast adds studio reflections and cached shadows without a visible floor with a bounded framebuffer, without ambient occlusion or supersampling. Presentation adds enhanced shadows and screen-space effects. Both render only when needed; source model fidelity is unchanged.';renderingOptions.append(appearanceLabel,qualityLabel,qualityHelp);
   function applyAppearance(value=appearance){
     const next=appearanceName(value),previous=appearance;if(selectionAppearanceReady)selectionAppearance.restore();translucency.setEnabled(false);appearance=next;appearanceSelect.value=next;host.dataset.appearance=next;
     if(next==='translucent'||explode.get()>0)ensureInternalCopper();const realistic=next==='realistic';
@@ -312,7 +314,7 @@ export function mountBoard3D(container, source, options = {}) {
       for(const material of materials){material.metalness=realistic&&role!=='pads'?.08:studioMaterials.copper.metalness;material.roughness=realistic&&role!=='pads'?.52:studioMaterials.copper.roughness;}
     }
     for(const layer of copperPlan){const group=copperGroups.get(layer.name);if(group)group.visible=layerEnabled.get(layer.name)&&(!layer.internal||next==='translucent'||explode.get()>0);}
-    translucency.setEnabled(next==='translucent');renderer.shadowMap.enabled=quality!=='low'&&next!=='translucent';renderer.shadowMap.needsUpdate=true;
+    translucency.setEnabled(next==='translucent');presentation.apply(['presentation','photoreal-fast'].includes(quality)&&next!=='translucent',{fast:quality==='photoreal-fast'});renderer.shadowMap.enabled=quality!=='low'&&next!=='translucent';renderer.shadowMap.needsUpdate=true;
     if((previous==='translucent')!==(next==='translucent'))try{createPipeline();}catch{fallbackQuality('Enhanced quality is unavailable. Balanced rendering is active.');}
     if(selectionAppearanceReady)setSelection(externalSelection);options.onAppearanceChange?.(next);invalidate();return next;
   }
@@ -1022,7 +1024,7 @@ export function mountBoard3D(container, source, options = {}) {
     if(rendered){drawMeasurementLens();notifyView();}
   }
   const onContextLost=event=>{cancelDemoPointer();finishDemoFace(new DOMException('The graphics context was interrupted.','AbortError'));event.preventDefault();contextLost=true;renderActivity.setState({contextAvailable:false});qualitySelect.disabled=true;graphicsNotice('The graphics context was interrupted. The board and selection are retained while the browser recovers.',true);};
-  const onContextRestored=()=>{if(!active)return;contextLost=false;renderActivity.setState({contextAvailable:true});qualitySelect.disabled=false;disposePipeline();environment?.dispose();environment=createEnvironment();scene.environment=environment?.texture||null;renderer.shadowMap.needsUpdate=true;quality='balanced';presentation.apply(false);qualitySelect.value=quality;host.dataset.quality=quality;graphicsNotice('Graphics restored. Balanced rendering is active; High quality can be selected again.');sizeViewport();invalidate();};
+  const onContextRestored=()=>{if(!active)return;contextLost=false;renderActivity.setState({contextAvailable:true});qualitySelect.disabled=false;disposePipeline();environment?.dispose();environment=createEnvironment();scene.environment=environment?.texture||null;renderer.shadowMap.needsUpdate=true;quality='balanced';presentation.apply(false);updateBackground();qualitySelect.value=quality;host.dataset.quality=quality;graphicsNotice('Graphics restored. Balanced rendering is active; High quality can be selected again.');sizeViewport();invalidate();};
   renderer.domElement.addEventListener('webglcontextlost',onContextLost);
   renderer.domElement.addEventListener('webglcontextrestored',onContextRestored);
   const onDocumentVisibility=()=>{if(document.hidden)cancelDemoPointer();renderActivity.setState({documentVisible:!document.hidden});if(!document.hidden)invalidate();};
@@ -1097,7 +1099,7 @@ export function mountBoard3D(container, source, options = {}) {
     setTheme(dark) {
       if (!active) return;
       host.dataset.theme = dark ? "dark" : "light";
-      scene.background.setHex(dark ? 0x151820 : 0xe7ebf1);
+      updateBackground();
       highlight.material.color.setHex(dark ? 0xffdf7d : 0x9b5500);
       groupHighlight.material.color.setHex(dark ? 0xffdf7d : 0x9b5500);
       resize();
