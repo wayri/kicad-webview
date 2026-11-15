@@ -36,3 +36,6 @@ New local integrations also accept initial highlightStyle, highlightColor and ap
 createStandaloneHTML() is available from the main library export as well as its standalone module. It accepts those initial options alongside the classic viewer script, license/source notices and bundled files. Its exported HTML keeps connect-src 'none'; the new controls do not require a network connection.
 
 Advanced project viewers provide a Layers navigator tab for the active pane, reusing each pane's layer API. Layer visibility remains local to that pane even when saved part/net selection is linked.
+
+
+[Stable panels and contextual inset previews](PANELS-AND-INSETS.md) document inspector sizing, selection-linked previews and source/lifetime limits.

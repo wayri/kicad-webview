@@ -617,5 +617,35 @@
         "sha256": "daea0d9149d818120127f272cfbf57f42d5596a5c56dde5fecb747a2f6ab6aaf"
       }
     ]
+  },
+  "extensionRefresh070": {
+    "sourceProject": "KiCad Online",
+    "baseRevision": "ea754b0c16c62134af6e79804a17257163d50586",
+    "workingTreeSnapshot": true,
+    "capturedDate": "2026-11-15",
+    "note": "Selective read-only text/variable/expression/table and orientation ports. Exact file hashes identify unpublished working-tree inputs; WebView-specific transforms and selection fixes are retained. This is not a wholesale source equivalence claim.",
+    "inputs": [
+      {
+        "source": "extension/file-compatibility.js",
+        "target": "engine/file-compatibility.js",
+        "upstreamSha256": "3b87484a9092d2cd96503c44fb6ed675be4fba37822fb6ff94e2d39b5a3f4c48",
+        "librarySha256": "535b447d23e5f87438f491e37ee61cd873731770c76f8346d3d9342388ab2e0f",
+        "transformed": true
+      },
+      {
+        "source": "extension/schematic-renderer.js",
+        "target": "engine/schematic-renderer.js",
+        "upstreamSha256": "233a6e99bc56f9ae302d8e5b553bb039b12744a6067005f84333ea35476b3702",
+        "librarySha256": "a08c7cad929ae66dc734aeed4f87dfe9fede854dd1e9587b454ffb148a5c9c67",
+        "transformed": true
+      },
+      {
+        "source": "extension/pcb-renderer.js",
+        "target": "engine/pcb-renderer.js",
+        "upstreamSha256": "d879b9fcc5eaa4c8095f3328c1339c894fc97006de07f0159cd9128526cf3adc",
+        "librarySha256": "000dc3dba988197169ee6e28b91edb5de37a5c2ef22b56000ff550e69577cb6b",
+        "transformed": true
+      }
+    ]
   }
 }

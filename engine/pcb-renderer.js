@@ -81,11 +81,12 @@
     }
     return oval(height, width).map((p) => ({x:p.y,y:p.x}));
   }
-  function build(ast, path = "") {
+  function build(ast, path = "", options = {}) {
     const warnings = [], primitives = [];let curvePoints=0;
     if (kind(ast) !== "kicad_pcb") throw new Error("Expected a KiCad PCB AST.");
     const compatibility=Compatibility?.inspect(ast);
     warnings.push(...(compatibility?.warnings||[]));
+    const variableText=Compatibility?.textResolver(ast,{...options,path},message=>{if(!warnings.includes(message))warnings.push(message);}),variableFields=new Map();
     const page = pageOf(ast, warnings);
     const layerNames = (child(ast, "layers") || []).slice(1).filter(Array.isArray).map((part) => String(value(part[1])));
     const push = (primitive) => {
@@ -156,7 +157,7 @@
         const effects = child(node,"effects"), font = child(effects,"font");
         const fontSize = child(font,"size"), justify = child(effects,"justify");
         const justification = justify?.slice(1).map((part) => String(value(part))) || [];
-        if (at && content != null) push({ type:"text", text:String(content), ...transform(at),
+        if (at && content != null) push({ type:"text", text:variableText?.resolve(content,variableFields.get(owner.uuid)||{})??String(content), ...transform(at),
           size:num(fontSize?.[2],1), angle:-rotation(node), width:.15,
           property:type==="property"?String(value(node[1])):type==="fp_text"&&value(node[1])==="reference"?"Reference":type==="fp_text"&&value(node[1])==="value"?"Value":undefined,
           bold:hasAtom(font,"bold") || !!child(font,"bold"),
@@ -266,7 +267,11 @@
         // flip. Applying another mirror places pads on the wrong side.
         const transform = transformed(origin,angle);
         const properties = children(node,"property");
-        const reference = String(value(properties.find((part) => String(value(part[1])) === "Reference")?.[2]) || "");
+        const local=variableText?.fields(node)||{};
+        for(const sub of children(node,"fp_text")){const name=String(value(sub[1]));if(name==='reference')local.Reference=String(value(sub[2])??'');if(name==='value')local.Value=String(value(sub[2])??'');}
+        if(local.Reference!==undefined)local.REFERENCE=local.Reference;if(local.Value!==undefined)local.VALUE=local.Value;
+        if(uuid(node))variableFields.set(uuid(node),local);
+        const reference = local.Reference||"";
         const owner = { uuid:uuid(node), reference };
         const firstPrimitive = primitives.length;
         for (const sub of node.slice(1)) {
@@ -274,7 +279,7 @@
           const subType = kind(sub), subLayer = String(field(sub,"layer") || layer);
           if (subType === "pad") pad(sub,owner,transform);
           else if (["fp_line","fp_arc","fp_rect","fp_circle","fp_poly","fp_curve","fp_text"].includes(subType)) drawShape(sub,subLayer,transform,owner);
-          else if (subType === "property" && ["Reference","Value"].includes(String(value(sub[1])))) drawShape(sub,subLayer,transform,owner);
+          else if (subType === "property") drawShape(sub,subLayer,transform,owner);
         }
         const padPrimitives = primitives.slice(firstPrimitive).filter((part) => part.type === "pad");
         const coordinates = padPrimitives.flatMap((part) => part.points || (part.r ? [

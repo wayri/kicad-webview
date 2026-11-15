@@ -85,3 +85,19 @@ Events: `ready`, `plotchange`, `framechange`, `sourcechange`, `sourceselection`,
 The public fixtures come from WayriCAD revision `0617fd201c0817d95648cec639744138aa59fe20`, with its retained README, native PCB inputs, project settings, original result JSON and upstream license. They are computed example producer runs under stated assumptions, not measured hardware or production designs. The eye plot is explicitly illustrative. No solver was rerun for this library integration. Original metadata spelling, including legacy encoded unit strings, remains unchanged; known plot labels follow the producer’s declared field conventions. No numeric unit conversion occurs.
 
 Parser/spatial code is ported from owner-written KiCad Online sources, with original hashes and local missing-value/allocation fixes recorded in `SOURCE-PROVENANCE.json`. The full arrays remain available even when a plot/display limit applies. Use source identity, assumptions, units, boundaries, convergence and the producer’s own evidence before interpreting engineering conclusions. A successful view is not ERC/DRC, a protocol sign-off or engineering certification.
+
+## Field palettes
+
+The **Saved field palette** control selects `wayricad` (the existing default), `viridis`, `inferno` or `grayscale`. Viridis and Inferno are four-stop approximations, rather than full scientific lookup tables. The legend shows the active palette and numerical endpoints; missing samples remain transparent. Palette changes use the same stops in the independent 2D raster, standalone 3D scalar shader and fallback colors, and matching-source PCB/3D overlays.
+
+```js
+const results = new WayriCADResultsViewer('#results', {
+  boardViewer: board,
+  palette: 'viridis'
+});
+await results.load(savedResult);
+results.setPalette('grayscale');
+console.log(results.getPalette());
+```
+
+`setPalette(name)` changes presentation only. It retains saved values, source registration, fixed frame ranges, probes and the standalone 3D camera. Invalid names throw before changing the current palette. `palettechange` emits `{palette}`; `getRenderStats()` includes the selected palette. Use matching viewer and 3D runtime versions. Registered fields and probes remain suspended during exploded-board inspection and restored when assembled; changing a palette does not override this policy.

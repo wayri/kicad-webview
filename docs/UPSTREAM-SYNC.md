@@ -13,3 +13,7 @@ See [BOM semantics and limits](BOM-ANALYTICS.md), [mobile performance](MOBILE-PE
 The second sync uses the actual 0.12.94 release candidate working tree based at `4a6b9147f165cefa38eb83365aac8d7fdf14f5fe`. Feature work was complete while extension packaging continued. Exact upstream per-file hashes are retained in `SOURCE-PROVENANCE.json` under `extensionRefresh060`; selective library adaptations are tested separately.
 
 Ports include native saved color/fill/dash and bounded text/image previews, terminal/flag connectivity, cap/wall depth precedence, reversible exploded inspection and right-pan selection protection. Library-native additions provide bounded camera memory, parallel listed-sheet loading and the reopenable sheet browser. [Behavior and limits](EXTENSION-REFRESH.md). No extension comments, browser-session authentication, variant editing or Fast PI solver/setup is imported. Saved BOM remains a saved-source summary; saved WayriCAD fields remain independently inspectable.
+
+## 0.7 file-compatibility refresh
+
+The 0.7 source selectively ports the extension text resolver, text context and bounded expression handling, plus horizontal schematic tables, local-label orientation and visible PCB custom properties. It retains the library's existing rendering and interaction work. This is a selective port, not a claim of complete extension parity or a new upstream commit identity. See [behavior and limits](EXTENSION-REFRESH.md). The full suite recorded 554 passing tests and builds passed; real-browser verification remains pending.

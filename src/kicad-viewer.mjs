@@ -1,5 +1,6 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 import {ViewMemory} from './view-memory.mjs';
+import {createLoadingSurface,paintLoading} from './viewer-loading.mjs';
 import * as inspection from './inspection-api.mjs';
 import {rotatedCamera3D} from './viewer-navigation.mjs';
 /* Public browser entry point; shared renderer sources remain authoritative. */
@@ -64,6 +65,7 @@ export class KiCadViewer extends EventTarget {
     this.inspector = createInspector(this);
     this.createControls();
     this.surface.append(this.chrome.style, this.inspector.style, this.toolbar, this.stage, this.status, this.inspector.panel);
+    this.loading=createLoadingSurface(this);
     host.append(this.root);
     owners.set(host, this);
     this.generation = 0;
@@ -96,18 +98,22 @@ export class KiCadViewer extends EventTarget {
     if (signal?.aborted) abort();
     const operation = { signal: controller.signal, current: () => !this.disposed && ticket === this.generation,
       check() { if (controller.signal.aborted) throw new DOMException('The operation was aborted.', 'AbortError'); } };
-    try { operation.check(); return await action(operation); }
+    this.loading.show(ticket,()=>controller.abort());
+    operation.stage=text=>this.loading.stage(ticket,text);
+    try { operation.check(); if(typeof requestAnimationFrame==='function')await paintLoading(controller.signal); operation.check(); return await action(operation); }
     catch (error) {
       if (!operation.current()) return false;
       this.chrome.setStatus(error.message, true); this.emit('error', error); throw error;
     } finally {
       signal?.removeEventListener('abort', abort);
       if (this.pending === controller) this.pending = null;
+      this.loading.hide(ticket);
     }
   }
 
   loadInput(input, { view, signal, ...options } = {}, preservedProject = null) {
     return this.runOperation(signal, async operation => {
+      operation.stage('Fetching design…');
       const result = await resolveSource(input, { ...options, baseURL: options.baseURL || this.host.ownerDocument.baseURI, signal: operation.signal });
       if (!operation.current()) return false; operation.check();
       if (result.archive) {
@@ -117,7 +123,7 @@ export class KiCadViewer extends EventTarget {
       }
       if (result.files) return this.showManufacturing(result.files, { ...options, view, path: result.path, project: preservedProject || result.project }, operation);
       if (detectManufacturing(result.source, result.path)) return this.showManufacturing([{ source: result.source, path: result.path }], { ...options, view, path: result.path, project: preservedProject || result.project }, operation);
-      return this.showSource(result.source, { path: result.path, view, project: preservedProject || result.project, credentials: options.credentials }, operation);
+      return this.showSource(result.source, { path: result.path, view, project: preservedProject || result.project, credentials: options.credentials, textVariables: options.textVariables, instancePath:options.instancePath }, operation);
     });
   }
 
@@ -133,8 +139,13 @@ export class KiCadViewer extends EventTarget {
     });
   }
   async showFileSet(files, options={}, operation) {
-    const drawings=[],ignored=[];
+    const drawings=[],ignored=[],settings=[];
     for(const file of files){
+      if(/\.kicad_pro$/i.test(file.path)){
+        const source=file.source??new TextDecoder('utf-8',{fatal:true}).decode(file.bytes);
+        if(source.length>8*1024*1024)throw new Error('Project settings exceed the 8 MiB metadata limit.');
+        const saved=JSON.parse(source);settings.push(saved?.text_variables||{});continue;
+      }
       if(!isDrawingPath(file.path)&&!file.path.toLowerCase().endsWith('.txt')){ignored.push(file.path);continue;}
       const source=file.source??new TextDecoder('utf-8',{fatal:true}).decode(file.bytes);
       if(isKiCadPath(file.path)||detectManufacturing(source,file.path))drawings.push({path:file.path,source});else ignored.push(file.path);
@@ -142,7 +153,8 @@ export class KiCadViewer extends EventTarget {
     if(!drawings.length)throw new Error('No supported KiCad, Gerber or Excellon drawings were found.');
     const entry=options.file?drawings.find(file=>file.path===options.file):drawings.find(file=>/\.kicad_pcb$/i.test(file.path))||drawings[0];
     if(!entry)throw new Error('The requested drawing is not in the file set.');
-    const project={files:drawings,entry:entry.path,memory:true,notes:ignored.length?['Ignored '+ignored.length+' unsupported bundle entries: '+ignored.slice(0,12).join(', ')]:[]};
+    const project={files:drawings,entry:entry.path,memory:true,textVariables:settings.length===1?settings[0]:{},notes:ignored.length?['Ignored '+ignored.length+' unsupported bundle entries: '+ignored.slice(0,12).join(', ')]:[]};
+    if(settings.length>1)project.notes.push('Multiple project settings files supplied; text variables require an explicit textVariables option.');
     if(!isKiCadPath(entry.path))return this.showManufacturing(drawings.filter(file=>!isKiCadPath(file.path)),{...options,path:entry.path,project},operation);
     return this.showSource(entry.source,{...options,path:entry.path,project},operation);
   }
@@ -162,9 +174,12 @@ export class KiCadViewer extends EventTarget {
     });
   }
 
-  async showSource(source, { path = '', view, project = null, credentials = 'omit' } = {}, operation) {
+  async showSource(source, { path = '', view, project = null, credentials = 'omit', textVariables = project?.textVariables || {}, instancePath } = {}, operation) {
     this.assertActive();
     if (typeof source === 'string' && detectManufacturing(source,path)) return this.showManufacturing([{source,path}],{path,view,project,credentials},operation);
+    operation.stage?.('Preparing drawing geometry…');
+    if (!textVariables || typeof textVariables!=='object' || Array.isArray(textVariables) || Object.keys(textVariables).length>256 || Object.entries(textVariables).some(([key,value])=>key.length>200 || typeof value!=='string' || value.length>8192)) throw new TypeError('Supply at most 256 text variables with string values (8192 characters each).');
+    textVariables=Object.freeze({...textVariables});
     // Reuse one bounded parse for geometry, connectivity and later 3D mounts.
     // Unnamed sources retain their existing inferred-path behavior.
     const sourceParser = globalThis.KiCadDesignDiff;
@@ -176,7 +191,9 @@ export class KiCadViewer extends EventTarget {
     const kind = ast[0] === 'kicad_pcb' ? 'pcb' : ast[0] === 'kicad_sch' ? 'schematic' : null;
     if (!kind) throw new TypeError('Expected a .kicad_sch or .kicad_pcb design.');
     view ||= kind; this.validateView(view, kind);
-    const design = (kind === 'pcb' ? globalThis.KiCadPCBRenderer : globalThis.KiCadSchematicRenderer).build(ast, path);
+    const loadedSheets=kind==='schematic'&&project?.memory ? project.files.filter(file=>/\.kicad_sch$/i.test(file.path)).map(file=>({path:file.path,content:file.source,...(file.path===path?{ast}:{})})) : [{path,ast}];
+    const textContext=kind==='schematic' ? globalThis.KiCadFileCompatibility.textContext(loadedSheets,path,{instancePath,parse:source=>sourceParser.parse(source)}) : {};
+    const design = (kind === 'pcb' ? globalThis.KiCadPCBRenderer : globalThis.KiCadSchematicRenderer).build(ast, path, {...textContext,textVariables});
     let connectivity = { nets: [], warnings: [] };
     try { connectivity = globalThis.KiCadNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]]), sourceSnapshot); }
     catch (error) { connectivity.warnings.push('Net selection unavailable: ' + error.message); }
@@ -187,7 +204,7 @@ export class KiCadViewer extends EventTarget {
       const property = name => String(atom(form.find(item => Array.isArray(item) && atom(item[0]) === 'property' && String(atom(item[1])).replaceAll(' ', '').toLowerCase() === name.toLowerCase())?.[2]) || '').slice(0, 1000);
       return { uuid: String(atom(form.find(item => Array.isArray(item) && atom(item[0]) === 'uuid')?.[1]) || '').slice(0, 1000), name: property('Sheetname'), file: property('Sheetfile') };
     }) : [];
-    return this.mountView(view, { source, path, kind, design, project, credentials, sheetLinks, inspectionModel, sourceSnapshot, sourceKey, sourceParser }, operation);
+    return this.mountView(view, { source, path, kind, design, project, credentials, sheetLinks, inspectionModel, sourceSnapshot, sourceKey, sourceParser, textVariables, textInstancePath:instancePath }, operation);
   }
 
   /** Display imported scalar results; the viewer never runs an engineering solver. */
@@ -230,8 +247,8 @@ export class KiCadViewer extends EventTarget {
   openFile(path, options = {}) {
     this.assertActive();
     if (!this.project?.memory && !isDrawingPath(path) || !this.project?.files.some(file => file.path === path)) return Promise.reject(new Error('Choose a file from the loaded project.'));
-    if(this.project.memory)return this.runOperation(options.signal,operation=>this.showFileSet(this.project.files,{...options,file:path},operation));
-    return this.loadInput({ files: this.project.files, entry: path }, { credentials: this.credentials, ...options }, this.project);
+    if(this.project.memory)return this.runOperation(options.signal,operation=>this.showFileSet(this.project.files,{textVariables:this.textVariables,...options,file:path},operation));
+    return this.loadInput({ files: this.project.files, entry: path }, { credentials: this.credentials, textVariables:this.textVariables, ...options }, this.project);
   }
 
   createControls() {
@@ -284,6 +301,7 @@ export class KiCadViewer extends EventTarget {
   }
 
   async mountView(view, candidate, operation) {
+    operation.stage?.(view==='3d'?'Preparing 3D view…':'Preparing drawing view…');
     const engine = view === '3d' ? await awaitOperation(loadThree(), operation.signal) : null;
     if (!operation.current()) return false; operation.check();
     const state = candidate || this, token = Symbol('mounted renderer');
@@ -424,6 +442,7 @@ export class KiCadViewer extends EventTarget {
     if (this.view === '3d') this.renderer?.setTheme(theme === 'dark');
     else if (this.renderer) { this.renderer.dark = theme === 'dark'; this.renderer.draw(); }
     this.chrome.setTheme(theme);
+    this.emit('themechange', {theme});
   }
 
   setMeasuring(enabled) {this.assertActive();if(this.view!=='manufacturing')throw new Error('Measurement requires manufacturing view.');this.renderer.setMeasuring(enabled);this.updateControls();}
@@ -439,12 +458,67 @@ export class KiCadViewer extends EventTarget {
   setHighlightStyle(mode,options) { return inspection.setHighlightStyle(this,mode,options); }
   getHighlightStyle() { this.assertActive();return {mode:this.highlightMode,color:this.highlightColor}; }
 
+  /** Inspector dimensions are local to this instance and never refit the drawing. */
+  setInspectorWidth(width) { this.assertActive(); return this.inspector.sizing.setWidth(width); }
+  getPanelState() { this.assertActive(); return this.inspector.sizing.getState(); }
+
+  /** Open a bounded contextual view of an explicitly supplied, already loaded drawing. */
+  async openInset({sourceViewer = this, view, selection, target} = {}) {
+    this.assertActive();
+    const floatingRequest = !target;
+    const request = floatingRequest ? this.floatingInsetRequest = (this.floatingInsetRequest || 0) + 1 : null;
+    if (floatingRequest) this.pendingFloatingInset?.dispose();
+    const {ViewerInset} = await import('./viewer-inset.mjs');
+    this.assertActive();
+    if (floatingRequest && request !== this.floatingInsetRequest) return null;
+    let floating = null, inset = null;
+    if (floatingRequest) {
+      floating = this.host.ownerDocument.createElement('div');
+      floating.style.cssText = 'position:absolute;z-index:8;left:8px;bottom:8px;width:min(360px,calc(100% - 16px));height:min(420px,calc(100% - var(--viewer-toolbar-height,48px) - 16px));min-height:0';
+      // Keep a usable viewport while preparing, without covering the accepted preview.
+      floating.style.visibility = 'hidden';
+      target = floating; this.surface.append(floating);
+    }
+    try {
+      inset = new ViewerInset(target, {parent:this, sourceViewer, view, selection});
+      if (floating) this.pendingFloatingInset = inset;
+      inset.addEventListener('dispose', () => {
+        floating?.remove();
+        if (this.pendingFloatingInset === inset) this.pendingFloatingInset = null;
+        if (this.floatingInset === inset) {
+          this.floatingInset = null;
+          if (this.pendingFloatingInset) {
+            ++this.floatingInsetRequest;
+            this.pendingFloatingInset.dispose();
+          }
+        }
+      }, {once:true});
+      const ready = await inset.ready;
+      if (!ready || floating && request !== this.floatingInsetRequest) { inset.dispose(); return null; }
+      if (floating) {
+        this.pendingFloatingInset = null;
+        this.floatingInset?.dispose();
+        this.floatingInset = inset;
+        floating.style.visibility = '';
+        this.setInspectorOpen(false);
+      }
+      return inset;
+    } catch(error) {
+      inset?.dispose(); floating?.remove();
+      if (floating && request !== this.floatingInsetRequest) return null;
+      throw error;
+    } finally {
+      if (this.pendingFloatingInset === inset) this.pendingFloatingInset = null;
+    }
+  }
+
   dispose() {
     if (this.disposed) return;
     this.clearAnalysis();
     this.stopCamera?.(); this.stopCamera = null;
     this.disposed = true;
     this.emit('dispose', null);
+    this.loading.dispose();
     ++this.generation;
     this.pending?.abort();
     this.assetController?.abort();

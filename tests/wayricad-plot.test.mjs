@@ -5,3 +5,15 @@ test('field preview interpolates only complete saved triangles and leaves unknow
 test('cell fields preserve supplied values, constant scales and transparent missing cells',()=>{const r=rasterizeWayriCADSurface({...surface,nodal:false,values:[25,null]},{maxSize:8});assert.equal(r.drawn,1);assert.equal(r.omitted,1);assert.deepEqual(r.range,[12.5,37.5]);assert.equal(r.pixels[(6*8+6)*4+3],0);});
 test('dense raster workloads fail explicitly instead of returning a partial misleading field',()=>{assert.throws(()=>rasterizeWayriCADSurface(surface,{maxSize:1025}),/budget/);assert.throws(()=>rasterizeWayriCADSurface(surface,{maxSize:32,maxPixelTests:5}),/bounded/);assert.equal(rasterizeWayriCADSurface({...surface,values:[null,null,null,null]}),null);});
 test('bounded waveform display retains missing gaps and repeated time samples in complete source',()=>{const plot={series:[{name:'step',points:[{x:0,y:1},{x:1,y:NaN},{x:1,y:2},{x:2,y:3}]}]},r=waveformWindow(plot,new Set([0]),{maxPoints:3});assert.equal(r.shown,3);assert.equal(r.total,4);assert.equal(r.limited,true);assert.ok(Number.isNaN(r.series[0].points[1].y));assert.equal(r.series[0].points[1].x,r.series[0].points[2].x);assert.equal(plot.series[0].points.length,4);});
+
+test('named palettes change only field colors and retain exact range, geometry and missing coverage',async()=>{
+ const {fieldPalette,fieldRGB}=await import('../engine/spike/fieldColors.mjs');
+ const original=JSON.stringify(surface),base=rasterizeWayriCADSurface(surface,{maxSize:8,range:[0,3]}),gray=rasterizeWayriCADSurface(surface,{maxSize:8,range:[0,3],palette:'grayscale'});
+ assert.deepEqual(gray.range,base.range);assert.equal(gray.drawn,base.drawn);assert.equal(gray.omitted,base.omitted);assert.deepEqual(gray.bounds,base.bounds);assert.equal(gray.pixels[(6*8+6)*4+3],0);assert.notDeepEqual(gray.pixels,base.pixels);assert.equal(gray.pixels[0],gray.pixels[1]);assert.equal(gray.pixels[1],gray.pixels[2]);assert.equal(JSON.stringify(surface),original);
+ for(const name of ['wayricad','viridis','inferno','grayscale']){const stops=fieldPalette(name);assert.ok(Object.isFrozen(stops)&&stops.every(Object.isFrozen));assert.equal(stops.length,4);assert.deepEqual(fieldRGB(0,[0,1],stops),stops[0]);assert.deepEqual(fieldRGB(1,[0,1],stops),stops[3]);}
+ for(const bad of ['toString','__proto__','rainbow',null,[]])assert.throws(()=>fieldPalette(bad),/palette/);
+ assert.throws(()=>rasterizeWayriCADSurface(surface,{palette:'unknown'}),/palette/);
+});
+test('extreme finite field ranges normalize without an overflowing raster color index',()=>{
+ const s={...surface,values:[-1e308,0,1e308,null]},r=rasterizeWayriCADSurface(s,{maxSize:8,palette:'inferno'});assert.ok(r.pixels.some(v=>v!==0));assert.equal(r.drawn,1);assert.equal(r.omitted,1);assert.deepEqual(r.range,[-1e308,1e308]);
+});

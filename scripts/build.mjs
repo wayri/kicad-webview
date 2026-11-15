@@ -57,6 +57,7 @@ for(const name of ['3PD+IB-F_Cu.gtl','3PD+IB-B_Cu.gbl','3PD+IB-F_Silkscreen.gto'
 buildDemoArchive(root,path.join(output,'manufacturing/inverter-fabrication.zip'));
 for (const [source, target] of [
   ['docs/EXTENSION-REFRESH.md','EXTENSION-REFRESH.md'],
+  ['docs/PANELS-AND-INSETS.md','PANELS-AND-INSETS.md'],
   ['docs/BOM-ANALYTICS.md','BOM-ANALYTICS.md'],
   ['docs/UPSTREAM-SYNC.md','UPSTREAM-SYNC.md'],
   ['docs/PRESENTATION.md','PRESENTATION.md'],

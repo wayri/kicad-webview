@@ -1,4 +1,5 @@
 import type {KiCadViewer} from './index.js';
+export type WayriCADPalette = 'wayricad' | 'viridis' | 'inferno' | 'grayscale';
 export type WayriCADSourceState = 'matching' | 'stale' | 'unverified';
 export interface WayriCADPlot {readonly title:string; readonly type?:string; readonly unit?:string; readonly xLabel?:string; readonly series?:readonly {readonly name:string;readonly points:readonly {readonly x:number;readonly y:number|null}[]}[];readonly frames?:readonly unknown[];readonly [key:string]:unknown;}
 export interface WayriCADResults {readonly raw:Readonly<Record<string,unknown>>;readonly path:string;readonly report:{readonly plots:readonly WayriCADPlot[];readonly fields:readonly unknown[];readonly tables:readonly unknown[];readonly warnings:readonly string[];readonly [key:string]:unknown;};readonly sourceBindings:readonly {readonly path:string;readonly sha256:string}[];readonly metadata:{readonly portable:Readonly<Record<string,unknown>>|null;readonly library:Readonly<Record<string,unknown>>|null;readonly libraryIntegrity:'unverified';};}
@@ -11,12 +12,14 @@ export function probeWayriCADPlot(plot:WayriCADPlot,x:number,y?:number,seriesNam
 export function getWayriCADPointHistory(plot:WayriCADPlot,x:number,y:number):WayriCADPlot|null;
 export function getWayriCADSourceLinks(model:WayriCADResults):Readonly<{netName:string|null;objectIds:readonly string[]}>;
 export class WayriCADResultsViewer extends EventTarget {
- constructor(target:string|HTMLElement,options?:{theme?:'light'|'dark';boardViewer?:KiCadViewer|null});
+ constructor(target:string|HTMLElement,options?:{theme?:'light'|'dark';boardViewer?:KiCadViewer|null;palette?:WayriCADPalette});
  load(input:string|Record<string,unknown>,options?:{path?:string;signal?:AbortSignal}):Promise<boolean>;
  loadURL(input:string|URL,options?:{path?:string;signal?:AbortSignal;credentials?:'omit'|'same-origin'}):Promise<boolean>;
  getResults():WayriCADResults|null;
  getSourceState():WayriCADSourceState;
  getView():'2d'|'3d';
+ getPalette():WayriCADPalette;
+ setPalette(palette:WayriCADPalette):WayriCADPalette;
  getResultLayers():string[];
  setLayer(layer:string):boolean;
  setBoardOverlay(enabled:boolean):boolean;

@@ -6,7 +6,7 @@ import {createRenderActivity,observeRenderActivity} from './renderActivity.mjs';
 import {viewportPixelRatio} from './renderQuality.mjs';
 import {sphereFitDistance} from './fitPolicy.mjs';
 import {tapGesture} from './selectionState.mjs';
-import {FIELD_COLOR_STOPS,fieldColorRange} from './fieldColors.mjs';
+import {FIELD_COLOR_STOPS,fieldColorRange,fieldPalette} from './fieldColors.mjs';
 
 const MAX_CONTEXT=10000,MAX_CONTEXT_POINTS=200000;
 const coordinateConvention='Source XYZ translated by the saved bounds center; +Z up; no PCB registration';
@@ -18,8 +18,8 @@ function nondegenerate(points){
   const [a,b,c]=points,u=b.map((n,i)=>n-a[i]),v=c.map((n,i)=>n-a[i]);
   return Math.hypot(u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0])>0;
 }
-export function prepareSavedResult3D(surface,{contextPrimitives=[],coordinateUnit='source units',range}={}){
-  const data=validateResultSurface(surface);
+export function prepareSavedResult3D(surface,{contextPrimitives=[],coordinateUnit='source units',range,palette='wayricad'}={}){
+  const stops=fieldPalette(palette),data=validateResultSurface(surface);
   if(range!==undefined&&(!Array.isArray(range)||range.length!==2||!range.every(Number.isFinite)||range[1]<=range[0]))throw new TypeError('Choose an increasing finite saved-field range.');
   if(data.zKnown!==true)throw fallback('No saved Z coordinates or layer elevation. Use the 2D field view.','SAVED_Z_REQUIRED');
   if(typeof coordinateUnit!=='string'||coordinateUnit.length>80||/[\x00-\x1f]/.test(coordinateUnit))throw new TypeError('Choose a bounded source coordinate unit label.');
@@ -41,16 +41,16 @@ export function prepareSavedResult3D(surface,{contextPrimitives=[],coordinateUni
   if(omittedTriangles)diagnostics.push(omittedTriangles+' triangles with missing values or degenerate geometry remain unrendered.');
   const origin=bounds.min.map((n,i)=>n/2+bounds.max[i]/2);
   if(bounds.max.some((n,i)=>n-bounds.min[i]>1e7))throw fallback('Saved geometry exceeds the bounded 3D coordinate span. Use the 2D field view.','SAVED_GEOMETRY_RANGE');
-  return {surface:data,context,bounds,origin,range:range?[...range]:fieldColorRange(data.values),coordinateUnit:coordinateUnit||'source units',coordinateConvention,renderedTriangles,omittedTriangles,diagnostics};
+  return {surface:data,context,bounds,origin,palette,stops,range:range?[...range]:fieldColorRange(data.values),coordinateUnit:coordinateUnit||'source units',coordinateConvention,renderedTriangles,omittedTriangles,diagnostics};
 }
-export function createSavedScalarAppearance(overlay){
+export function createSavedScalarAppearance(overlay,stops=FIELD_COLOR_STOPS){
   const fallbackMaterial=overlay.mesh.material,material=fallbackMaterial.clone(),originalCompile=fallbackMaterial.onBeforeCompile,originalKey=fallbackMaterial.customProgramCacheKey();
   let disposed=false,shaderMaterial=material;
   material.vertexColors=false;
   material.onBeforeCompile=(shader,renderer)=>{
     originalCompile.call(material,shader,renderer);
     if(!shader.vertexShader.includes('#include <begin_vertex>')||!shader.fragmentShader.includes('#include <color_fragment>'))throw new Error('Unsupported saved-field color shader.');
-    shader.uniforms.savedFieldPalette={value:FIELD_COLOR_STOPS.map(rgb=>new THREE.Vector3(...rgb.map(n=>n/255)))};
+    shader.uniforms.savedFieldPalette={value:stops.map(rgb=>new THREE.Vector3(...rgb.map(n=>n/255)))};
     shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float resultScalar;\nvarying float vSavedResultScalar;').replace('#include <begin_vertex>','#include <begin_vertex>\nvSavedResultScalar = resultScalar;');
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vSavedResultScalar;\nuniform vec3 savedFieldPalette[4];').replace('#include <color_fragment>',`#include <color_fragment>
 float fieldBand = clamp(vSavedResultScalar, 0.0, 1.0) * 3.0;
@@ -68,7 +68,7 @@ diffuseColor.rgb = sRGBTransferEOTF(vec4(fieldRGB, 1.0)).rgb;`);
 }
 export function createSavedResultContent(surface,options={}){
   const prepared=prepareSavedResult3D(surface,options),transform=p=>p.map((n,i)=>n-prepared.origin[i]);
-  const overlay=createResultOverlay(prepared.surface,transform,{palette:FIELD_COLOR_STOPS,range:prepared.range}),scalarAppearance=createSavedScalarAppearance(overlay),group=new THREE.Group(),positions=[];
+  const overlay=createResultOverlay(prepared.surface,transform,{palette:prepared.stops,range:prepared.range}),scalarAppearance=createSavedScalarAppearance(overlay,prepared.stops),group=new THREE.Group(),positions=[];
   if(scalarAppearance.mode==='vertex-color')prepared.diagnostics.push('Scalar values exceed the GPU normalization range; vertex-color interpolation is active. Probe values remain exact.');
   let contextMesh=null,closed=false;
   try{
@@ -150,10 +150,10 @@ export function mountSavedResult3D(container,surface,options={}){
     notice.textContent='Independent saved field · '+prepared.coordinateUnit+' · source XYZ, +Z up · saved Z'+(prepared.surface.zBasis?' ('+String(prepared.surface.zBasis).slice(0,160)+')':'')+' · no PCB registration'+(prepared.context.length?' · retained source context':'')+' · '+prepared.renderedTriangles+' colored triangles'+' · '+prepared.range.map(value=>Number(value.toPrecision(6))).join(' – ')+(prepared.surface.unit?' '+String(prepared.surface.unit).slice(0,80):'')+(content?.scalarAppearance.mode==='vertex-color'?' · vertex-color interpolation fallback':'');
     valueText.textContent='Drag to orbit · right-drag or two fingers to pan · pinch or wheel to zoom · tap a colored triangle to probe.';
   }
-  function setSurface(next){
+  function setSurface(next,{retainCamera=false}={}){
     if(!active)return false;
     const replacement=createSavedResultContent(next,options);replacement.overlay.setOpacity(opacity);scene.add(replacement.group);
-    replacement.sphere=new THREE.Box3().setFromObject(replacement.group).getBoundingSphere(new THREE.Sphere());const previous=content;content=replacement;previous?.dispose();describe(content.prepared);fit();options.onDiagnostics?.([...content.prepared.diagnostics]);invalidate();return true;
+    replacement.sphere=new THREE.Box3().setFromObject(replacement.group).getBoundingSphere(new THREE.Sphere());const previous=content;content=replacement;previous?.dispose();describe(content.prepared);if(retainCamera)updateClipping();else fit();options.onDiagnostics?.([...content.prepared.diagnostics]);invalidate();return true;
   }
   function resize(){
     if(!active)return;const sized=hasSize();activity.setState({hasSize:sized});if(!sized){invalidate();return;}
@@ -187,12 +187,13 @@ export function mountSavedResult3D(container,surface,options={}){
     if(options.signal?.aborted){dispose();throw abortError();}
   }catch(caught){dispose();throw caught;}
   return {host,unavailable:false,setSurface,
+    setPalette(name){fieldPalette(name);if(!active)return false;const previous=options;options={...options,palette:name};try{return setSurface(content.prepared.surface,{retainCamera:true});}catch(error){options=previous;throw error;}},
     setProbes(probes){content?.overlay.setProbes(probes);invalidate();},
     setTheme(dark){if(!active)return;theme(Boolean(dark));scene.background.setHex(dark?0x101d28:0xf3f7f5);invalidate();},
     setOpacity(value){if(!active)return;if(!Number.isFinite(value)||value<0||value>1)throw new TypeError('Choose result opacity between 0 and 1.');opacity=value;content.overlay.setOpacity(value);invalidate();},
     fit,getCameraState(){return {position:camera.position.toArray(),target:controls.target.toArray(),up:camera.up.toArray()};},
     setCameraState(value){if(!active)return false;const next=savedResultCameraState(value);camera.position.fromArray(next.position);controls.target.fromArray(next.target);camera.up.fromArray(next.up);const distance=camera.position.distanceTo(controls.target);controls.minDistance=Math.min(controls.minDistance,distance);controls.maxDistance=Math.max(controls.maxDistance,distance);controls.update();invalidate();return true;},
-    getRenderStats(){const prepared=content?.prepared;return {unavailable:false,renderCount,renderActivity:{...activity.stats(),observesIntersection:Boolean(intersectionObserver)},drawCalls:renderer.info.render.calls,gpuTextures:renderer.info.memory.textures,renderedTriangles:prepared?.renderedTriangles||0,omittedTriangles:prepared?.omittedTriangles||0,contextPrimitives:prepared?.context.length||0,range:prepared?[...prepared.range]:null,colorInterpolation:content?.scalarAppearance.mode||null,scalarColorFallbacks,coordinateUnit:prepared?.coordinateUnit||options.coordinateUnit||'source units',coordinateConvention,sourceOrigin:prepared?[...prepared.origin]:null,sourceBounds:prepared?{min:[...prepared.bounds.min],max:[...prepared.bounds.max]}:null};},
+    getRenderStats(){const prepared=content?.prepared;return {unavailable:false,renderCount,renderActivity:{...activity.stats(),observesIntersection:Boolean(intersectionObserver)},drawCalls:renderer.info.render.calls,gpuTextures:renderer.info.memory.textures,renderedTriangles:prepared?.renderedTriangles||0,omittedTriangles:prepared?.omittedTriangles||0,contextPrimitives:prepared?.context.length||0,range:prepared?[...prepared.range]:null,palette:prepared?.palette||'wayricad',colorInterpolation:content?.scalarAppearance.mode||null,scalarColorFallbacks,coordinateUnit:prepared?.coordinateUnit||options.coordinateUnit||'source units',coordinateConvention,sourceOrigin:prepared?[...prepared.origin]:null,sourceBounds:prepared?{min:[...prepared.bounds.min],max:[...prepared.bounds.max]}:null};},
     dispose
   };
 }

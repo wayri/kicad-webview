@@ -1,17 +1,17 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 /** Source-bound 2D/3D presentation of one selected saved field. No solver or identity inference. */
-export function createWayriCADBoardLayer(viewer,{raster,surface,range,allowed,layer,probe=()=>null,onProbe=()=>{},onState=()=>{},opacity=()=>.65}){
+export function createWayriCADBoardLayer(viewer,{raster,surface,range,allowed,layer,probe=()=>null,onProbe=()=>{},onState=()=>{},opacity=()=>.65,palette=()=>'wayricad'}){
  const canvas=viewer.host.ownerDocument.createElement('canvas');canvas.setAttribute('aria-hidden','true');canvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2';
- const owner=Symbol('WayriCAD saved field');let renderer,frame=null,disposed=false,placedSurface=null,placedRange=null,state={placed:false,reason:'No registered field.'},down=null;
+ const owner=Symbol('WayriCAD saved field');let renderer,frame=null,disposed=false,placedSurface=null,placedRange=null,placedPalette=null,state={placed:false,reason:'No registered field.'},down=null;
  const report=next=>{state=next;onState({...state});};
- const clear=r=>{r?.setAnalysisOverlay?.(null,{owner});placedSurface=placedRange=null;};
+ const clear=r=>{r?.setAnalysisOverlay?.(null,{owner});placedSurface=placedRange=placedPalette=null;};
  const pins=()=>{const p=probe(),s=surface();if(!p||!s||!Number.isFinite(p.x)||!Number.isFinite(p.y))return[];const z=Number.isFinite(p.z)?p.z:s.points?.[0]?.[2];return Number.isFinite(z)?[{x:p.x,y:p.y,z,label:''}]:[];};
  function draw(){frame=null;if(disposed)return;const current=viewer.renderer;if(renderer!==current){renderer?.removeEventListener?.('kicad:viewframe',sync);clear(renderer);renderer=current;renderer?.addEventListener?.('kicad:viewframe',sync);}
   const saved=surface(),name=layer(),known=viewer.getLayers?.();const visible=allowed()&&saved&&(!name||!known||known.includes(name))&&(!name||(viewer.view==='3d'?viewer.getLayerState?.().visible?.includes(name)!==false:viewer.renderer?.visibleLayers?.has(name)!==false));
   canvas.hidden=true;
   if(viewer.view==='3d'){
    if(!visible||!renderer?.setAnalysisOverlay){clear(renderer);report({placed:false,reason:!visible?'Field disabled, hidden layer or unmatched source.':'This renderer cannot register saved fields.'});return;}
-   try{const scale=range();if(placedSurface!==saved||placedRange!==scale){const placed=renderer.setAnalysisOverlay(saved,{owner,range:scale,palette:'wayricad',throughBoard:true,layer:name});if(!placed.placed){clear(renderer);report(placed);return;}placedSurface=saved;placedRange=scale;report({...placed,layer:name,view:'3d',throughBoard:true});}renderer.setAnalysisOpacity?.(opacity(),{owner});renderer.setAnalysisProbes?.(pins(),{owner});}
+   try{const scale=range(),colorMap=palette();if(placedSurface!==saved||placedRange!==scale||placedPalette!==colorMap){const placed=renderer.setAnalysisOverlay(saved,{owner,range:scale,palette:colorMap,throughBoard:true,layer:name});if(!placed.placed){clear(renderer);report(placed);return;}placedSurface=saved;placedRange=scale;placedPalette=colorMap;report({...placed,layer:name,view:'3d',throughBoard:true});}renderer.setAnalysisOpacity?.(opacity(),{owner});renderer.setAnalysisProbes?.(pins(),{owner});}
    catch(error){clear(renderer);report({placed:false,reason:error.message});}return;
   }
   clear(renderer);const camera=viewer.view==='pcb'&&renderer?.viewport?.camera;if(!visible||!camera){report({placed:false,reason:'Field disabled, hidden layer or unmatched source.'});return;}

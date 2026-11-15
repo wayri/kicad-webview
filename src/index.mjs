@@ -1,4 +1,5 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
+export {ViewerInset} from './viewer-inset.mjs';
 export { KiCadViewer as Viewer } from './kicad-viewer.mjs';
 export { parseManufacturing } from './manufacturing/index.mjs';
 export { readZip } from './archive/zip.mjs';

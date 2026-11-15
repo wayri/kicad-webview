@@ -114,3 +114,9 @@ test('explicit fixed ranges are copied exactly and retained scalar attributes cl
   }finally{content.dispose();}
   const extreme=createSavedResultContent(surface({values:[-1e308,0,1e308,null]}),{range:[-1,1]});assert.equal(extreme.scalarAppearance.mode,'vertex-color');assert.match(extreme.prepared.diagnostics.at(-1),/GPU normalization range/);extreme.dispose();
 });
+
+test('named scalar palettes reach the GPU and vertex fallback with unchanged saved range and geometry',async()=>{
+ const {fieldPalette}=await import('../engine/spike/fieldColors.mjs');
+ for(const palette of ['viridis','inferno','grayscale']){const content=createSavedResultContent(surface({values:[0,1,3,null]}),{palette,range:[0,3]});try{assert.equal(content.prepared.palette,palette);assert.deepEqual(content.prepared.range,[0,3]);const shader={uniforms:{},vertexShader:THREE.ShaderLib.basic.vertexShader,fragmentShader:THREE.ShaderLib.basic.fragmentShader};content.scalarAppearance.material.onBeforeCompile(shader,{});assert.deepEqual(shader.uniforms.savedFieldPalette.value.map(v=>v.toArray()),fieldPalette(palette).map(rgb=>rgb.map(n=>n/255)));const rgb=new THREE.Color().fromArray(content.overlay.mesh.geometry.getAttribute('color').array).getStyle(THREE.SRGBColorSpace);assert.equal(rgb,'rgb('+fieldPalette(palette)[0].join(',')+')');assert.equal(content.prepared.renderedTriangles,1);assert.equal(content.prepared.omittedTriangles,1);}finally{content.dispose();}}
+ assert.throws(()=>prepareSavedResult3D(surface(),{palette:'unknown'}),/palette/);
+});

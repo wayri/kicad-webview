@@ -1,7 +1,7 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 import {createResultOverlay,validateResultSurface} from './result3d.js';
 import {createSavedScalarAppearance} from './wayricadResult3d.mjs';
-import {FIELD_COLOR_STOPS,fieldColorRange} from './fieldColors.mjs';
+import {fieldColorRange,fieldPalette} from './fieldColors.mjs';
 
 function registrationError(message){return Object.assign(new Error(message),{code:'UNSUPPORTED_RESULT_REGISTRATION'});}
 /** Register only saved board coordinates; never infer internal layer elevations. */
@@ -12,28 +12,28 @@ export function prepareRegisteredResult3D(surface,{bounds,thickness,layers=[]},o
   if(basis!==undefined&&basis!==null&&!['front-depth','board-center'].includes(basis))throw registrationError('Saved result elevation basis is unsupported; use the standalone result scene.');
   if(data.zKnown===true?!['front-depth','board-center'].includes(basis):!['F.Cu','B.Cu'].includes(data.layer))throw registrationError('Saved elevation requires front-depth or board-center; without saved Z only saved F.Cu/B.Cu layers can be placed.');
   if(!bounds||![bounds.minX,bounds.minY,bounds.maxX,bounds.maxY,thickness].every(Number.isFinite)||bounds.minX>bounds.maxX||bounds.minY>bounds.maxY||thickness<=0)throw new TypeError('Choose finite board bounds and a positive thickness.');
-  if(options.palette!==undefined&&options.palette!=='wayricad')throw new TypeError('Choose the supported WayriCAD palette or omit it for legacy colors.');
+  const stops=options.palette===undefined?null:fieldPalette(options.palette);
   if(options.range!==undefined&&(!Array.isArray(options.range)||options.range.length!==2||!options.range.every(Number.isFinite)||options.range[1]<=options.range[0]))throw new TypeError('Choose an increasing finite result range.');
   const centerX=bounds.minX/2+bounds.maxX/2,centerY=bounds.minY/2+bounds.maxY/2;
   const transform=([x,y,z])=>[x-centerX,centerY-y,data.zKnown===true?(basis==='front-depth'?thickness/2-z:z):(data.layer==='F.Cu'?thickness/2:-thickness/2)];
-  const range=options.range?[...options.range]:options.palette==='wayricad'?fieldColorRange(data.values):null;
-  if(options.palette==='wayricad'&&!range)throw registrationError('No known saved field values are available for placement.');
-  return {surface:data,transform,layer,basis:data.zKnown===true?basis:data.layer,flat:data.zKnown!==true,range,throughBoard:options.throughBoard!==false};
+  const range=options.range?[...options.range]:stops?fieldColorRange(data.values):null;
+  if(stops&&!range)throw registrationError('No known saved field values are available for placement.');
+  return {surface:data,transform,stops,palette:options.palette??null,layer,basis:data.zKnown===true?basis:data.layer,flat:data.zKnown!==true,range,throughBoard:options.throughBoard!==false};
 }
 
 export function createRegisteredResultOverlay(surface,board,options={}){
   const prepared=prepareRegisteredResult3D(surface,board,options);
-  const overlay=createResultOverlay(prepared.surface,prepared.transform,{...(prepared.range?{range:prepared.range}:{}),...(options.palette==='wayricad'?{palette:FIELD_COLOR_STOPS}:{})});
+  const overlay=createResultOverlay(prepared.surface,prepared.transform,{...(prepared.range?{range:prepared.range}:{}),...(prepared.stops?{palette:prepared.stops}:{})});
   const sample=overlay.sample;overlay.sample=hit=>{const probe=sample(hit);return probe?{...probe,overlayOwner:options.owner}:null;};
   let scalarAppearance=null,closed=false;
   try{
     overlay.mesh.material.depthTest=!prepared.throughBoard;overlay.mesh.renderOrder=prepared.throughBoard?20:0;
-    if(options.palette==='wayricad')scalarAppearance=createSavedScalarAppearance(overlay);
+    if(prepared.stops)scalarAppearance=createSavedScalarAppearance(overlay,prepared.stops);
   }catch(error){scalarAppearance?.dispose();overlay.dispose();throw error;}
   const diagnostics=[];
   if(scalarAppearance?.mode==='vertex-color')diagnostics.push('Scalar values exceed the GPU normalization range; vertex-color interpolation is active. Probe values remain exact.');
   return {overlay,prepared,scalarAppearance,diagnostics,
-    state(){return {placed:true,layer:prepared.layer,basis:prepared.basis,flat:prepared.flat,throughBoard:prepared.throughBoard,triangles:overlay.mesh.geometry.getAttribute('position').count/3,range:overlay.range?[...overlay.range]:null,diagnostics:[...diagnostics]};},
+    state(){return {placed:true,palette:prepared.palette,layer:prepared.layer,basis:prepared.basis,flat:prepared.flat,throughBoard:prepared.throughBoard,triangles:overlay.mesh.geometry.getAttribute('position').count/3,range:overlay.range?[...overlay.range]:null,diagnostics:[...diagnostics]};},
     useColorFallback(){if(!scalarAppearance?.useFallback())return false;diagnostics.push('Scalar color mapping is unavailable; vertex-color interpolation is active. Probe values remain exact.');return true;},
     dispose(){if(closed)return;closed=true;scalarAppearance?.dispose();overlay.dispose();}
   };

@@ -1,4 +1,5 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
+import {createPanelSizing,PANEL_STYLE} from './viewer-panels.mjs';
 // Read-only saved-object inspection; supplied connectivity is bounded and source-derived.
 const MAX_PARTS = 10000, MAX_RECORDS = 100000, MAX_FIELDS = 64, MAX_RESULTS = 100, MAX_PRIMITIVES = 200000, MAX_MEMBERS = 400000;
 const value = item => item && typeof item === 'object' && !Array.isArray(item) ? item.quoted : item;
@@ -192,7 +193,7 @@ const STYLE = `
 /** All design-origin text is written with textContent, including field names. */
 export function createInspector(viewer) {
   const doc = viewer.host.ownerDocument, make = (tag, className, value) => { const node = doc.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node; };
-  const style = make('style', '', STYLE), panel = make('aside', 'viewer-inspector'); panel.hidden = true; panel.setAttribute('aria-label', 'Drawing inspector');
+  const style = make('style', '', STYLE + PANEL_STYLE), panel = make('aside', 'viewer-inspector'); panel.hidden = true; panel.setAttribute('aria-label', 'Drawing inspector');
   const heading = make('header', 'inspector-heading'), identity = make('span'), eyebrow = make('small', '', 'INSPECT'), title = make('strong', '', 'Properties'); identity.append(eyebrow, title);
   const button = (label, action) => { const node = make('button', '', label); node.type = 'button'; node.title = label; node.setAttribute('aria-label', label); node.onclick = action; return node; };
   const clearButton = button('Clear selection', () => viewer.clearSelection()), closeButton = button('Close inspector', () => toggle(false));
@@ -212,11 +213,20 @@ export function createInspector(viewer) {
   const autoLabel=make('label'),autoInspect=make('input');autoInspect.type='checkbox';autoInspect.checked=viewer.inspectOnSelect!==false;autoInspect.setAttribute('aria-label','Open properties on selection');autoInspect.onchange=()=>viewer.setInspectOnSelect(autoInspect.checked);autoLabel.append(autoInspect,make('span','','Open properties on selection'));
   footer.append(autoLabel, netLabel, labels, make('div', '', 'READ ONLY · Saved source properties')); panel.append(heading, tabs, properties, partsPanel, netsPanel, footer);
   let model = buildInspectionModel(null, {}), selected = null, activeTab = 'properties', open = false, labelsEnabled = false, layerSignature = '', layerRecords = [];
-  function toggle(enabled = !open) { open = Boolean(enabled); panel.hidden = !open; viewer.inspectorButton?.setAttribute('aria-expanded', String(open)); }
+  const sizing = createPanelSizing(viewer, panel);
+  function toggle(enabled = !open) { open = Boolean(enabled); panel.hidden = !open; sizing.sync(); viewer.inspectorButton?.setAttribute('aria-expanded', String(open)); viewer.emit?.('panelchange', sizing.getState()); }
   function setTab(name) { activeTab = name; properties.hidden = name !== 'properties'; partsPanel.hidden = name !== 'parts'; netsPanel.hidden = name !== 'nets'; netsTab.setAttribute('aria-selected', String(name === 'nets')); propertiesTab.setAttribute('aria-selected', String(name === 'properties')); partsTab.setAttribute('aria-selected', String(name === 'parts')); }
   function section(name) { properties.append(make('h3', 'inspector-section', name)); }
   function renderFields(fields) { const list = make('dl', 'inspector-fields'); for (const row of fields.slice(0, 128)) list.append(make('dt', '', row.name), make('dd', '', row.value)); properties.append(list); }
   function renderProperties() {
+    const scroll = properties.scrollTop || 0, focused = viewer.surface?.activeElement;
+    const focusLabel = focused && properties.contains?.(focused) ? focused.getAttribute?.('aria-label') : null;
+    try { renderPropertyContents(); } finally {
+      if (focusLabel) [...(properties.querySelectorAll?.('button') || [])].find(node => node.getAttribute('aria-label') === focusLabel)?.focus?.({preventScroll:true});
+      properties.scrollTop = scroll;
+    }
+  }
+  function renderPropertyContents() {
     api.layerSection = null; layerSignature = ''; layerRecords = [];
     properties.replaceChildren(); clearButton.disabled = !selected;
     title.textContent = selected ? selected.type === 'pad' || selected.type === 'pin' ? `${selected.part?.reference || ''} ${selected.type} ${selected.number}`.trim() : selected.reference || selected.part?.reference || selected.operation || selected.type : 'Properties';
@@ -225,6 +235,7 @@ export function createInspector(viewer) {
     if (selectedNet && !selected.net) selected = { ...selected, net: selectedNet.name };
     title.textContent = selected.type === 'net' ? 'Net · ' + selected.name : ['segment', 'arc', 'via', 'zone'].includes(selected.type) ? (selected.type === 'segment' ? 'Track' : selected.type) + (selected.net ? ' · ' + selected.net : '') : title.textContent;
     renderFields(inspectionFields(selected));
+    if (['pcb','schematic'].includes(viewer.kind) && typeof viewer.openInset === 'function') properties.append(button('Open contextual preview', () => { viewer.openInset().catch(error => { if (!viewer.disposed) viewer.chrome.setStatus(error.message, true); }); }));
     if (selectedNet && selected.type !== 'net') properties.append(button('Highlight net ' + selectedNet.name, () => selectNet(selectedNet.id, { locate: false })));
     const part = selected.type === 'part' ? selected : selected.part;
     if (part) {
@@ -314,8 +325,8 @@ export function createInspector(viewer) {
   }
   labelToggle.onchange = () => { labelsEnabled = labelToggle.checked; syncRenderer(); };
   const api = { style, panel, search, results, resultCount, clearButton, closeButton, propertiesTab, partsTab, properties, partsPanel, netsTab, netSearch, netResults, netToggle, layerSection: null,
-    toggle, select, refreshLayers, syncRenderer, labelToggle, autoInspect, refreshHighlight() {highlight(selected);},
-    setModel(value) { model = value; selected = null; search.value = ''; netSearch.value = ''; updateResults(); updateNetResults(); renderProperties(); },
+    sizing, toggle, select, refreshLayers, syncRenderer, labelToggle, autoInspect, refreshHighlight() {highlight(selected);},
+    setModel(value) { model = value; selected = null; properties.scrollTop = 0; search.value = ''; netSearch.value = ''; updateResults(); updateNetResults(); renderProperties(); },
     resetSelection() { selected = null; renderProperties(); },
     getSelectionPosition() {const p=selected?.position;if(!p||![p.x,p.y].every(Number.isFinite))return null;const q=selected.type==='segment'?selected.end:null;return {x:q&&Number.isFinite(q.x)?(p.x+q.x)/2:p.x,y:q&&Number.isFinite(q.y)?(p.y+q.y)/2:p.y,layer:selected.layer||selected.layers?.find(l=>/^(F|B|In\d+)\.Cu$/.test(l))||null};},
     getSelection() {if(!selected)return null;const net=selected.type==='net'?selected:model.netFor(selected);return {kind:selected.type,...(selected.uuid?{uuid:selected.uuid}:{}),...(selected.id?{id:selected.id}:{}),...(selected.part?.uuid?{ownerUuid:selected.part.uuid}:{}),...(net?.name||selected.net?{netName:net?.name||selected.net}:{}),...(['pad','pin'].includes(selected.type)?{pinNumber:selected.number}:{})};},
@@ -326,7 +337,7 @@ export function createInspector(viewer) {
     selectNet,
     isOpen() { return open; },
     getWarnings() { return [...(model?.warnings || [])]; },
-    dispose() { viewer.surface.removeEventListener?.('keydown', escape); search.oninput = netSearch.oninput = netToggle.onchange = labelToggle.onchange = autoInspect.onchange = null; for (const node of [clearButton, closeButton, propertiesTab, partsTab, netsTab]) node.onclick = null; model = null; selected = null; panel.remove(); },
+    dispose() { sizing.dispose(); viewer.surface.removeEventListener?.('keydown', escape); search.oninput = netSearch.oninput = netToggle.onchange = labelToggle.onchange = autoInspect.onchange = null; for (const node of [clearButton, closeButton, propertiesTab, partsTab, netsTab]) node.onclick = null; model = null; selected = null; panel.remove(); },
   };
   setTab(activeTab); renderProperties(); updateResults(); return api;
 }

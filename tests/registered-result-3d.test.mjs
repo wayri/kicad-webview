@@ -71,3 +71,8 @@ test('field clicks preserve native PCB selection and emit their exact probe afte
     assert.deepEqual(events,[...(nativeHit?[['select']]:fieldHit?[]:[['clear']]),...(fieldHit?[['probe',sample]]:[])]);
   }
 });
+
+test('registered palette changes keep source coordinates, fixed ranges and exact samples',()=>{
+ for(const palette of ['viridis','inferno','grayscale']){const content=createRegisteredResultOverlay(surface({values:[0,1,3]}),board,{palette,range:[0,3]});try{assert.equal(content.state().palette,palette);assert.deepEqual(content.state().range,[0,3]);const p=content.overlay.mesh.geometry.getAttribute('position'),point=new THREE.Vector3();for(let i=0;i<3;i++)point.add(new THREE.Vector3().fromBufferAttribute(p,i).multiplyScalar(1/3));const sample=content.overlay.sample({object:content.overlay.mesh,faceIndex:0,point});close(sample.value,4/3);close(sample.z,.0175);assert.equal(content.state().triangles,1);}finally{content.dispose();}}
+ assert.throws(()=>prepareRegisteredResult3D(surface(),board,{palette:'unknown'}),/palette/);
+});

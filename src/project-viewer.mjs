@@ -143,7 +143,8 @@ export class AdvancedKiCadViewer extends EventTarget {
     finally{options.signal?.removeEventListener('abort',abort);if(ticket===this.ticket)this.loading=false;}
   }
   async loadPaneFromProject(index,path,options={}){
-    const viewer=this.viewers[index],project=this.source;
+    options={textVariables:this.viewers[0].textVariables,...options};
+      const viewer=this.viewers[index],project=this.source;
     if(project?.memory)return viewer.loadFiles(project.files,{...options,file:path});
     if(project?.files)return viewer.load({files:project.files,entry:path},{...options,credentials:this.viewers[0].credentials});
     if(path===this.viewers[0].path)return viewer.loadSource(this.viewers[0].source,{...options,path});
