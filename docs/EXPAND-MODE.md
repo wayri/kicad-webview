@@ -10,7 +10,7 @@ viewer.addEventListener('expandchange', event => console.log(event.detail.amount
 // viewer.setExpand(0) smoothly reassembles the board.
 ```
 
-The compact **Expand mode** range accepts 0â€“100%. The first 35% lifts front components outwards and back components in the opposite direction, without separating copper. The remaining range separates copper, fades the existing substrate envelope to 2%, and stretches supported through-via barrels between their mounting planes. Separate physical core/prepreg/MCPCB solids are not reconstructed when they are absent from the rendererâ€™s source geometry. Missing saved internal elevations remain explicitly illustrative.
+The compact **Expand mode** range accepts 0–100%. The first 35% lifts front components outwards and back components in the opposite direction, without separating copper. The remaining range separates copper, fades the existing substrate envelope to 2%, and stretches supported through-via barrels between their mounting planes. Separate physical core/prepreg/MCPCB solids are not reconstructed when they are absent from the renderer’s source geometry. Missing saved internal elevations remain explicitly illustrative.
 
 The display is reversible: saved positions, units, identities and electrical connectivity are unchanged. Layers retain their normal palette colors while expanded; clearing a selection restores those colors. Hidden layers remain hidden. Components loaded later join the current pose. Copper and source selection remain linked across views; selecting a part focuses its current displayed geometry.
 
