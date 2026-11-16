@@ -285,3 +285,16 @@ test('copper click defaults to source-colored full net, reports scope and emits 
  assert.ok(!nodes(viewer.inspector.properties).some(n=>n.textContent.startsWith('Full net highlighted')));
  viewer.dispose();
 });
+
+test('lazy 3D parser initialization cannot invalidate the next project net snapshot',async()=>{
+ const parser=globalThis.KiCadDesignDiff,netModel=globalThis.KiCadNetModel;
+ const vm=await import('node:vm');const {viewer}=fixture();
+ try {
+  await viewer.loadSource(pcb,{path:'first.kicad_pcb'});assert.ok(viewer.getNets().some(net=>net.name==='GND'));
+  vm.runInThisContext(fs.readFileSync(new URL('../engine/design-diff.js',import.meta.url),'utf8'));
+  assert.notEqual(globalThis.KiCadDesignDiff,parser);
+  await viewer.loadSource(pcb.replaceAll('GND','VCC'),{path:'second.kicad_pcb'});
+  assert.ok(viewer.getNets().some(net=>net.name==='VCC'));assert.equal(viewer.selectNet('VCC'),true);
+  assert.ok(!viewer.inspector.getWarnings().some(w=>w.includes('Prepared KiCad project differs')));
+ }finally{viewer.dispose();globalThis.KiCadDesignDiff=parser;globalThis.KiCadNetModel=netModel;}
+});

@@ -17,10 +17,10 @@ function element(doc) {
     setAttribute(name, value) { this.attributes[name] = String(value); },
     getAttribute(name) { return this.attributes[name] ?? null; }, remove() { this.removed = true; } };
 }
-function fixture() {
+function fixture(Viewer = KiCadViewer) {
   const doc = { baseURI: 'https://example.test/blog/', createElement() { return element(doc); } };
   const host = element(doc);
-  const viewer = new KiCadViewer(host);
+  const viewer = new Viewer(host);
   return { doc, host, viewer };
 }
 
@@ -276,32 +276,35 @@ test('named sources parse once across geometry, nets and 3D switches; snapshots 
   let parses=0;
   const context={TextEncoder,Map,Set,WeakMap,countParse(){parses++;}};
   runInNewContext(readFileSync(new URL('../engine/design-diff.js',import.meta.url),'utf8').replace('function parse(source) {','function parse(source) { countParse();'),context);
-  const previous=globalThis.KiCadDesignDiff;
-  globalThis.KiCadDesignDiff=context.KiCadDesignDiff;
-  const a=fixture().viewer,b=fixture().viewer;
+  runInNewContext(readFileSync(new URL('../engine/net-model.js',import.meta.url),'utf8'),context);
+  const previous=globalThis.KiCadDesignDiff,previousNets=globalThis.KiCadNetModel;
+  globalThis.KiCadDesignDiff=context.KiCadDesignDiff;globalThis.KiCadNetModel=context.KiCadNetModel;
+  const FreshViewer=(await import('../src/kicad-viewer.mjs?prepared-parser-check')).KiCadViewer;
+  const a=fixture(FreshViewer).viewer,b=fixture(FreshViewer).viewer;
+  const preparedBoard=board.replace('(gr_rect','(net 1 \"GND\") (segment (start 12 22) (end 14 24) (width 0.3) (layer \"F.Cu\") (net 1) (uuid \"track\")) (gr_rect');
   const received=[];
   globalThis.SpikeBoard3D={mountBoard3D(host,source,options){
     received.push(options.sourceParser.preparedFile(options.sourceSnapshot,options.sourceKey,source));
     return {fit(){},dispose(){}};
   }};
   try {
-    await a.loadSource(board,{path:'board.kicad_pcb'});
+    await a.loadSource(preparedBoard,{path:'board.kicad_pcb'});
     assert.equal(parses,1,'geometry and connectivity must consume the same parse');
-    assert.equal(a.getNets().length,0);
+    assert.equal(a.getNets()[0].name,'GND');assert.ok(a.getNets()[0].count>0);assert.ok(!a.inspector.getWarnings().some(w=>w.includes('unavailable')));
     // A lazily bundled 3D engine may install its own parser global.
-    globalThis.KiCadDesignDiff=previous;
+    globalThis.KiCadDesignDiff=previous;globalThis.KiCadNetModel=previousNets;
     await a.setView('3d');await a.setView('pcb');await a.setView('3d');
     globalThis.KiCadDesignDiff=context.KiCadDesignDiff;
     assert.equal(parses,1,'switching back to 3D must reuse the source snapshot');
     assert.equal(received[0],received[1]);
-    await b.loadSource(board,{path:'board.kicad_pcb'});
-    assert.equal(parses,2);assert.notEqual(a.sourceSnapshot,b.sourceSnapshot);
+    await b.loadSource(preparedBoard.replaceAll('GND','VCC'),{path:'board.kicad_pcb'});
+    assert.equal(b.getNets()[0].name,'VCC');assert.ok(!b.inspector.getWarnings().some(w=>w.includes('unavailable')));assert.equal(parses,2);assert.notEqual(a.sourceSnapshot,b.sourceSnapshot);
     const snapshot=a.sourceSnapshot;
-    assert.throws(()=>context.KiCadDesignDiff.preparedFile(snapshot,'board.kicad_pcb',board+' '),/differs/);
+    assert.throws(()=>context.KiCadDesignDiff.preparedFile(snapshot,'board.kicad_pcb',preparedBoard+' '),/differs/);
     await assert.rejects(a.loadSource('(broken)',{path:'bad.kicad_pcb'}));
     assert.equal(a.sourceSnapshot,snapshot,'failed replacements preserve the current snapshot');
     await a.loadSource(schematic);
     assert.equal(a.sourceSnapshot,null,'unnamed replacements cannot retain a previous snapshot');
     a.dispose();assert.equal(a.sourceSnapshot,null);
-  } finally {a.dispose();b.dispose();globalThis.KiCadDesignDiff=previous;delete globalThis.SpikeBoard3D;}
+  } finally {a.dispose();b.dispose();globalThis.KiCadDesignDiff=previous;globalThis.KiCadNetModel=previousNets;delete globalThis.SpikeBoard3D;}
 });

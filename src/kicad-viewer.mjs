@@ -23,6 +23,9 @@ import { detectManufacturing } from './manufacturing/index.mjs';
 import { createViewerChrome } from './viewer-chrome.mjs';
 import { buildInspectionModel, createInspector } from './inspector.mjs';
 
+// Prepared snapshots and connectivity must share the parser that owns their WeakMap.
+const viewerSourceParser=globalThis.KiCadDesignDiff,viewerNetModel=globalThis.KiCadNetModel;
+
 function loadThree() {
   if (globalThis.SpikeBoard3D) return Promise.resolve(globalThis.SpikeBoard3D);
   return import('./three-runtime.mjs').then(runtime => runtime.loadThree());
@@ -182,12 +185,12 @@ export class KiCadViewer extends EventTarget {
     textVariables=Object.freeze({...textVariables});
     // Reuse one bounded parse for geometry, connectivity and later 3D mounts.
     // Unnamed sources retain their existing inferred-path behavior.
-    const sourceParser = globalThis.KiCadDesignDiff;
+    const sourceParser = viewerSourceParser;
     const sourceKey = path;
     const sourceSnapshot = /\.kicad_(?:pcb|sch)$/i.test(path)
-      ? globalThis.KiCadDesignDiff.prepareProject([{path, content: source}]) : null;
-    const ast = sourceSnapshot ? globalThis.KiCadDesignDiff.preparedFile(sourceSnapshot, sourceKey, source)
-      : globalThis.KiCadDesignDiff.parse(source);
+      ? sourceParser.prepareProject([{path, content: source}]) : null;
+    const ast = sourceSnapshot ? sourceParser.preparedFile(sourceSnapshot, sourceKey, source)
+      : sourceParser.parse(source);
     const kind = ast[0] === 'kicad_pcb' ? 'pcb' : ast[0] === 'kicad_sch' ? 'schematic' : null;
     if (!kind) throw new TypeError('Expected a .kicad_sch or .kicad_pcb design.');
     view ||= kind; this.validateView(view, kind);
@@ -195,7 +198,7 @@ export class KiCadViewer extends EventTarget {
     const textContext=kind==='schematic' ? globalThis.KiCadFileCompatibility.textContext(loadedSheets,path,{instancePath,parse:source=>sourceParser.parse(source)}) : {};
     const design = (kind === 'pcb' ? globalThis.KiCadPCBRenderer : globalThis.KiCadSchematicRenderer).build(ast, path, {...textContext,textVariables});
     let connectivity = { nets: [], warnings: [] };
-    try { connectivity = globalThis.KiCadNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]]), sourceSnapshot); }
+    try { connectivity = viewerNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]]), sourceSnapshot); }
     catch (error) { connectivity.warnings.push('Net selection unavailable: ' + error.message); }
     if (kind === 'schematic') connectivity.warnings.push('Schematic nets use per-file saved wires, labels and terminals; buses, implicit hidden power pins and repeated-sheet instance connectivity are not a KiCad netlist.');
     const inspectionModel = buildInspectionModel(ast, { kind, path, design, connectivity });
