@@ -43,7 +43,7 @@ npm users may import the same exports from `@wayrisignals/kicad-webview/bom`. Th
 - Zone areas sum retained polygons. Overlaps count repeatedly and holes are not subtracted. These are not copper-union areas, mass estimates or regenerated fills.
 - Edge bounds are available only for supported saved straight outlines. Origin/envelope placement candidates need review; they do not certify an unplaced component.
 - No DRC, zone refill, solver run or manufacturing certification is performed. Invalid/unsupported geometry is disclosed through warnings; invalid thickness is unavailable.
-- Source limit: 8 MiB UTF-8, 100,000 counted objects, 200,000 retained zone points; at most 64 saved properties per part. CSV preflight limits output to 32 MiB UTF-8. Large source parsing is synchronous; load it outside a gesture handler.
+- Source limit: 256 MiB UTF-8, 100,000 counted objects, 200,000 retained zone points; at most 64 saved properties per part. CSV preflight limits output to 32 MiB UTF-8. Large source parsing is synchronous; load it outside a gesture handler.
 - The UI bounds rows to 50 per page and part buttons to 25 per group page. Board detail previews cap zone/layer rows with visible disclosures; complete accepted data remains accessible through the API.
 
 The library is free to use, including commercially, under MPL-2.0. Paid integration/customization/support is optional. Hardware examples retain their own upstream licenses and attribution.

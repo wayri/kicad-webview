@@ -1,10 +1,10 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
-import '../engine/design-diff.js';
+import { MAX_SOURCE_BYTES } from './project-bounds.mjs';
 import '../engine/bom-analytics.js';
 
 const diff = globalThis.KiCadDesignDiff;
 const analytics = globalThis.KiCadBomAnalytics;
-const MAX_BYTES = 8 * 1024 * 1024, MAX_OBJECTS = 100000, MAX_PROPERTIES = 64, MAX_CSV_BYTES = 32 * 1024 * 1024;
+const MAX_BYTES = MAX_SOURCE_BYTES, MAX_OBJECTS = 100000, MAX_PROPERTIES = 64, MAX_CSV_BYTES = 32 * 1024 * 1024;
 const bomReports = new WeakSet();
 const value = x => x && typeof x === 'object' && !Array.isArray(x) ? x.quoted : x;
 const kind = x => Array.isArray(x) ? String(value(x[0])) : '';
@@ -13,7 +13,7 @@ const child = (x, name) => children(x, name)[0];
 const field = (x, name) => value(child(x, name)?.[1]);
 function checked(source, path) {
   if (typeof source !== 'string') throw new TypeError('Source must be KiCad text.');
-  if (new TextEncoder().encode(source).length > MAX_BYTES) throw new Error('Source exceeds 8 MiB.');
+  if (new TextEncoder().encode(source).length > MAX_BYTES) throw new Error('Source exceeds 256 MiB.');
   if (typeof path !== 'string' || !path || path.length > 1024 || /[\x00-\x1f\x7f]/.test(path)) throw new TypeError('A source path of at most 1024 characters without control characters is required.');
   const ast = diff.parse(source), root = kind(ast);
   if (!['kicad_pcb', 'kicad_sch'].includes(root)) throw new Error('Expected a saved KiCad PCB or schematic.');
@@ -100,7 +100,7 @@ export function buildBOM(source, {path = 'drawing.kicad_pcb'} = {}) {
   }
   const report = analytics.bom(parts);
   const result = freeze({path,sourceKind:root === 'kicad_pcb' ? 'pcb' : 'schematic', ...report, warnings:[...warnings],
-    limits:'BOM counts saved file/reference identities; reused sheet instances are not expanded. Source is limited to 8 MiB and 100,000 objects; part properties are limited to 64 saved fields. CSV export is limited to 32 MiB UTF-8.'});
+    limits:'BOM counts saved file/reference identities; reused sheet instances are not expanded. Source is limited to 256 MiB and 100,000 objects; part properties are limited to 64 saved fields. CSV export is limited to 32 MiB UTF-8.'});
   bomReports.add(result);
   return result;
 }

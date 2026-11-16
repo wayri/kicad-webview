@@ -24,7 +24,8 @@ test('bounds, malformed geometry and unsupported edges remain disclosed',()=>{
  assert.equal(report.edgeBounds,null);assert.equal(report.boardThicknessMm,null);assert.equal(report.zones[0].valid,false);
  assert.match(report.warnings.join(' '),/invalid polygon/);assert.match(report.warnings.join(' '),/no saved filled/);assert.match(report.warnings.join(' '),/envelope unavailable/);
  assert.throws(()=>analyzeBoard('(kicad_sch)'),/saved PCB/);assert.throws(()=>buildBOM('<script>bad</script>'),/KiCad|expression/i);
- assert.throws(()=>buildBOM('x'.repeat(8*1024*1024+1)),/8 MiB/);
+ const Original=globalThis.TextEncoder;globalThis.TextEncoder=class extends Original{encode(){return {length:257*1024*1024};}};
+ try{assert.throws(()=>buildBOM('(kicad_pcb)'),/256 MiB/);}finally{globalThis.TextEncoder=Original;}
 });
 
 test('PCB BOM groups fitted and DNP parts, excludes saved flags and neutralizes CSV',()=>{

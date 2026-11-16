@@ -64,3 +64,11 @@ test('isolate preserves substrate/context and existing layer visibility while hi
   selection.update(matches,true,matches,{mode:'bright',color:'accent'});assert.equal(objects[2].material,base);assert.equal(objects[1].material.opacity,.22);
   selection.update(matches,false);objects.forEach(mesh=>assert.equal(mesh.material,base));assert.equal(layer.visible,false);geometry.dispose();base.dispose();
 });
+
+test('via plating retains gold in dim, bright and isolate styles without accent recoloring',()=>{
+ const geometry=new THREE.BoxGeometry(),material=new THREE.MeshStandardMaterial({color:0xc5aa6c});
+ const via=new THREE.InstancedMesh(geometry,material,2);via.userData={identity:'spike:via-barrel:through:test',records:[{net:'GND'},{net:'OTHER'}]};
+ const selection=createSelectionAppearance(THREE,()=>[via]);
+ for(const mode of ['dim','bright','isolate'])for(const color of ['source','accent']){selection.update(matches,true,matches,{mode,color});assert.equal(via.material.color.getHex(),0xc5aa6c);if(via.instanceColor)assert.ok(via.instanceColor.array[0]>=0);assert.equal(selection.isVisible(via,0),true);if(mode==='isolate')assert.equal(selection.isVisible(via,1),false);}
+ selection.dispose();assert.equal(via.material,material);geometry.dispose();material.dispose();
+});

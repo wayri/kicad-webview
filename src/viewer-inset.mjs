@@ -19,10 +19,10 @@ export class ViewerInset extends EventTarget {
     const doc = host.ownerDocument, make = (tag,text) => { const n=doc.createElement(tag); if(text!==undefined)n.textContent=text; return n; };
     this.root=make('section'); this.root.className='viewer-context-inset'; this.root.setAttribute('aria-label','Contextual design preview');
     this.root.style.cssText='display:flex;flex-direction:column;min-width:0;height:100%;min-height:0;overflow:hidden;border:1px solid var(--viewer-border,#40566a);border-radius:8px;background:var(--viewer-bar,#182330);color:var(--viewer-ink,#e1eaf3)';
-    const header=make('header'); header.style.cssText='display:flex;align-items:center;gap:8px;padding:6px;min-height:40px;flex:0 0 auto;font:12px system-ui';
+    const header=make('header'); header.style.cssText='display:flex;align-items:center;gap:4px;padding:2px 5px;height:34px;min-height:34px;flex:0 0 auto;font:12px/1 system-ui';
     const title=make('strong',sourceViewer.path.split('/').at(-1)||'Design preview');title.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-    const button=(text,fn)=>{const b=make('button',text);b.type='button';b.style.cssText='background:transparent;color:inherit;border:1px solid currentColor;border-radius:5px;min-height:36px;padding:5px 8px;cursor:pointer';b.onclick=fn;return b;};
-    this.closeButton=button('Close',()=>this.dispose()); this.fitButton=button('Fit selection',()=>this.focus()); header.append(title,this.fitButton,this.closeButton);
+    const button=(label,path,fn)=>{const b=make('button'),icon=make('span');b.type='button';b.title=label;b.setAttribute('aria-label',label);icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="'+path+'"/></svg>';b.append(icon);b.style.cssText='appearance:none;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;flex:0 0 30px;width:30px;height:30px;margin:0;padding:0;background:transparent;color:inherit;border:1px solid var(--viewer-border,#40566a);border-radius:5px;font:600 12px/1 system-ui;cursor:pointer';b.onclick=fn;return b;};
+    this.closeButton=button('Close','M5 5l14 14M19 5 5 19',()=>this.dispose()); this.fitButton=button('Fit selection','M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5M8 8h8v8H8z',()=>this.focus()); header.append(title,this.fitButton,this.closeButton);
     this.mount=make('div');this.mount.style.cssText='flex:1;min-height:0;position:relative';this.root.append(header,this.mount);host.append(this.root);
     const snapshots=[...new Set([parent,sourceViewer])].map(v=>({viewer:v,source:v.source,path:v.path}));
     const listen=(v,type,fn)=>{v.addEventListener(type,fn);this.stops.push(()=>v.removeEventListener(type,fn));};
@@ -34,6 +34,7 @@ export class ViewerInset extends EventTarget {
     if(this.disposed)return false;
     const source=this.sourceViewer;
     this.viewer=new KiCadViewer(this.mount,{theme:this.parent.theme,inspectOnSelect:false,highlightStyle:source.getHighlightStyle().mode,highlightColor:source.getHighlightStyle().color,...source.modelOptions});
+    this.viewer.root.setAttribute('data-inset','true');
     const theme = event => { if (!this.disposed) this.viewer.setTheme(event.detail.theme); };
     const highlight = event => { if (!this.disposed) this.viewer.setHighlightStyle(event.detail.mode, {color:event.detail.color}); };
     this.parent.addEventListener('themechange', theme);

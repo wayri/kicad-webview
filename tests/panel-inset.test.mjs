@@ -48,6 +48,9 @@ test('selection preserves inspector scroll and resizing does not change the came
 test('context preview forwards exact identity, suppresses properties, closes on replacement and releases slots',async()=>{
  const d=doc(),v=new KiCadViewer(new Element(d));await v.loadSource(source,{path:'board.kicad_pcb'});v.selectPart('part');v.setInspectorOpen(false);
  const a=new ViewerInset(new Element(d),{parent:v});assert.equal(await a.ready,true);assert.equal(a.viewer.getSelection().uuid,'part');
+ assert.equal(a.viewer.root.getAttribute('data-inset'),'true');
+ assert.equal(a.fitButton.getAttribute('aria-label'),'Fit selection');assert.equal(a.closeButton.getAttribute('aria-label'),'Close');
+ assert.match(a.fitButton.children[0].innerHTML,/<svg[^>]*><path d="M8 3H3v5/);assert.match(a.closeButton.children[0].innerHTML,/<svg[^>]*><path d="M5 5l14 14/);
  v.setTheme('light');assert.equal(a.viewer.theme,'light');v.setHighlightStyle('bright',{color:'source'});assert.deepEqual(a.viewer.getHighlightStyle(),v.getHighlightStyle());
  a.viewer.selectObject('pad');assert.equal(v.getSelection().uuid,'pad');assert.equal(v.inspector.isOpen(),false);assert.equal(v.inspectOnSelect,true);
  const b=new ViewerInset(new Element(d),{parent:v});await b.ready;

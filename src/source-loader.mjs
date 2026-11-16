@@ -2,7 +2,8 @@
 /* Public, browser-only source resolution. No service credentials or filesystem access. */
 import { isDrawingPath, isManufacturingPath, isArchivePath } from './source-types.mjs';
 import { detectManufacturing } from './manufacturing/index.mjs';
-const MAX_SOURCE = 64 * 1024 * 1024;
+import { MAX_SOURCE_BYTES } from './project-bounds.mjs';
+const MAX_SOURCE = MAX_SOURCE_BYTES;
 const MAX_METADATA = 8 * 1024 * 1024;
 const MAX_ASSET = 8 * 1024 * 1024;
 const MAX_FILES = 256;
@@ -38,7 +39,7 @@ async function readResponse(url, { signal, credentials = 'omit', limit = MAX_SOU
     await cancelBody(response);
     throw new Error(`Design request failed (${response.status}).`);
   }
-  const tooLarge = () => new Error(`Design exceeds the ${limit === MAX_SOURCE ? '64 MiB' : limit + ' byte'} download limit.`);
+  const tooLarge = () => new Error(`Design exceeds the ${limit === MAX_SOURCE ? '256 MiB' : limit + ' byte'} download limit.`);
   if (Number(response.headers.get('content-length')) > limit) {
     await cancelBody(response);
     throw tooLarge();

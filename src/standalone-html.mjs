@@ -6,7 +6,7 @@ const escapeHTML=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&l
 const scriptJSON=value=>JSON.stringify(value).replaceAll('<','\\u003c');
 function base64(bytes){let text='';for(let i=0;i<bytes.length;i+=8192)text+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(text);}
 /** Build an offline HTML document locally. No design bytes are uploaded. */
-export function createStandaloneHTML({viewerScript,licenseText,files,title='Interactive design',view,theme='dark',highlightStyle='dim',highlightColor='accent',appearance='realistic'}={}){
+export function createStandaloneHTML({viewerScript,licenseText,files,title='Interactive design',view,theme='dark',highlightStyle='dim',highlightColor='source',appearance='realistic'}={}){
  if(typeof viewerScript!=='string'||!viewerScript.trim()||viewerScript.length>8*1024*1024)throw new TypeError('Supply the full classic viewer script (up to 8 MiB).');
  if(typeof licenseText!=='string'||!licenseText.trim()||licenseText.length>1024*1024)throw new TypeError('Include the viewer license and dependency notices.');
  if(!Array.isArray(files)||!files.length||files.length>256)throw new TypeError('Choose 1 to 256 files, or one project ZIP.');

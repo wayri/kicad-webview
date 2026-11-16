@@ -92,7 +92,7 @@ test('declared file, aggregate, ratio and compressed budgets are enforced', asyn
   await assert.rejects(readZip(bytes, { maxCompressedBytes: bytes.length - 1 }), /compressed input/);
   await assert.rejects(readZip(bytes, { maxFiles: 1 }), /entries/);
   await assert.rejects(readZip(archive([{ path: 'a.gbr', data: 'x'.repeat(5000), method: 8 }]).bytes, { maxRatio: 2 }), /ratio/);
-  await assert.rejects(readZip(bytes, { maxFileBytes: 33 * 1024 * 1024 }), /integer between/);
+  await assert.rejects(readZip(bytes, { maxFileBytes: 257 * 1024 * 1024 }), /integer between/);
 });
 
 test('actual inflation exceeding a dishonest declared size is bounded', async () => {

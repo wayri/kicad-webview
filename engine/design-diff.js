@@ -2,11 +2,12 @@
 /* Saved KiCad object comparison. Browser-only; no geometry renderer required. */
 ((root) => {
   "use strict";
-  const MAX_FILE = 8 * 1024 * 1024;
-  const MAX_PROJECT = 96 * 1024 * 1024;
+  const MAX_FILE = 256 * 1024 * 1024;
+  const MAX_PROJECT = 512 * 1024 * 1024;
   const MAX_FILES = 128;
   const MAX_DEPTH = 96;
-  const MAX_NODES = 1000000;
+  const MAX_NODES = 12000000;
+  const MAX_RENDER_PRIMITIVES = 1500000;
   const SCHEMATIC = new Set(["symbol", "sheet", "wire", "bus", "bus_entry", "label",
     "global_label", "hierarchical_label", "junction", "no_connect", "text", "text_box",
     "polyline", "rectangle", "circle", "arc", "image"]);
@@ -47,9 +48,8 @@
   }
   function parse(source) {
     if (typeof source !== "string") throw new TypeError("KiCad source must be a string.");
-    const board = /^\s*\(kicad_pcb(?:\s|\))/.test(source);
-    if (new TextEncoder().encode(source).length > (board ? 64 * 1024 * 1024 : MAX_FILE)) throw new Error("KiCad file exceeds browser parser size limits.");
-    const nodeLimit = board ? 6000000 : MAX_NODES;
+    if (new TextEncoder().encode(source).length > MAX_FILE) throw new Error("KiCad file exceeds browser parser size limits.");
+    const nodeLimit = MAX_NODES;
     const stack = [], roots = [];
     let i = 0, nodes = 0;
     const append = (item) => {
@@ -262,7 +262,7 @@
       paths.add(file.path);
       const size = new TextEncoder().encode(file.content).length;
       total += size;
-      if (size > (/\.kicad_pcb$/i.test(file.path) ? 64 * 1024 * 1024 : MAX_FILE) || total > MAX_PROJECT) throw new Error("KiCad project exceeds browser comparison size limits.");
+      if (size > MAX_FILE || total > MAX_PROJECT) throw new Error("KiCad project exceeds browser comparison size limits.");
       for (const object of collect(file.path, file.content, ast => onParsed?.(file, ast))) objects.push(object);
     }
     return objects;
@@ -303,6 +303,6 @@
     changes.sort((a, b) => a.path.localeCompare(b.path) || a.id.localeCompare(b.id) || a.status.localeCompare(b.status));
     return { changes, counts };
   }
-  root.KiCadDesignDiff = { compareProjects, projectObjects, parse, prepareProject, preparedFile, cubicBezierPoints, MAX_FILES };
+  root.KiCadDesignDiff = { compareProjects, projectObjects, parse, prepareProject, preparedFile, cubicBezierPoints, MAX_FILES, MAX_FILE_BYTES: MAX_FILE, MAX_PROJECT_BYTES: MAX_PROJECT, MAX_RENDER_PRIMITIVES };
   if (typeof module === "object" && module.exports) module.exports = root.KiCadDesignDiff;
 })(typeof globalThis === "object" ? globalThis : this);

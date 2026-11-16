@@ -13,3 +13,14 @@ test('hidden layers stay hidden, copper fills remain faint, source colors and li
  const scene=new THREE.Scene(),geometry=new THREE.PlaneGeometry(),material=new THREE.MeshBasicMaterial(),zone=new THREE.Mesh(geometry,material);zone.userData.record={type:'Zone',layer:'In1.Cu',net:'GND'};scene.add(zone);let shown=false;
  const glow=createNetGlow(THREE,{scene,objects:()=>[zone],visible:()=>shown,colorForLayer:()=>0xff0000,maxInstances:1});glow.update(new Set(['GND']));assert.equal(glow.stats().instances,0);shown=true;glow.update(new Set(['GND']),{color:'source'});const overlay=scene.getObjectByName('Selected net shine-through').children[0];assert.ok(overlay.material.opacity<.2);assert.equal(overlay.material.color.getHex(),0xff0000);assert.equal(glow.stats().instances,1);shown=false;glow.update(new Set(['GND']),{color:'source'});assert.equal(glow.stats().instances,0);assert.equal(overlay.visible,false);glow.dispose();geometry.dispose();material.dispose();
 });
+
+test('net shine-through uses layer colors while via barrels remain gold in either style',()=>{
+ const scene=new THREE.Scene(),geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial();
+ const track=new THREE.Mesh(geometry,material);track.userData={identity:'spike:copper-track:F.Cu:t',record:{type:'Track',net:'GND'}};
+ const via=new THREE.Mesh(geometry,material);via.userData={identity:'spike:via-barrel:through:v',record:{type:'Via',net:'GND'}};
+ const glow=createNetGlow(THREE,{scene,objects:()=>[track,via],colorForLayer:()=>0xff0000});
+ for(const color of ['source','accent']){glow.update(new Set(['GND']),{color});const children=scene.getObjectByName('Selected net shine-through').children;
+ assert.equal(children[0].material.color.getHex(),color==='source'?0xff0000:0x72f5ff);
+ assert.equal(children[1].material.color.getHex(),0xc5aa6c);}
+ glow.dispose();geometry.dispose();material.dispose();
+});

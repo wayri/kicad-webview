@@ -56,8 +56,9 @@ test('input limits and unsafe/duplicate file paths reject before graph construct
  for(const path of ['../bad.kicad_sch','/bad.kicad_sch','C:/bad.kicad_sch','a//b.kicad_sch','a\\b.kicad_sch','a%20b.kicad_sch'])assert.throws(()=>buildProjectHierarchy([file(path)]),/safe relative paths/);
  assert.throws(()=>buildProjectHierarchy([file('same.kicad_sch'),file('SAME.kicad_sch')]),/unique/);assert.throws(()=>buildProjectHierarchy([file('café.kicad_sch'),file('cafe\u0301.kicad_sch')]),/unique/);
  assert.throws(()=>buildProjectHierarchy(Array.from({length:257},(_,i)=>({path:'asset'+i+'.png'}))),/256/);
- assert.throws(()=>buildProjectHierarchy([{path:'big.kicad_sch',source:' '.repeat(8*1024*1024+1)}]),/8 MiB/);
- const source=' '.repeat(8*1024*1024);assert.throws(()=>buildProjectHierarchy(Array.from({length:9},(_,i)=>({path:'s'+i+'.kicad_sch',source}))),/64 MiB/);
+ assert.equal(buildProjectHierarchy([{path:'big.kicad_sch',source:sch([])+' '.repeat(9*1024*1024)}]).files.length,1);
+ const Original=globalThis.TextEncoder;globalThis.TextEncoder=class extends Original{encode(){return {length:200*1024*1024};}};
+ try{assert.throws(()=>buildProjectHierarchy(Array.from({length:3},(_,i)=>file('s'+i+'.kicad_sch'))),/512 MiB/);}finally{globalThis.TextEncoder=Original;}
 });
 
 test('depth and instance limits are explicit and disconnected roots retain reserved slots',()=>{
@@ -81,7 +82,7 @@ test('retained inverter fixture yields saved child sheets without online resolut
 test('a leaf at the depth boundary is complete rather than a truncated branch',()=>{
  const chain=Array.from({length:33},(_,i)=>file('leaf'+i+'.kicad_sch',i<32?[sheet('leaf'+(i+1)+'.kicad_sch')]:[]));const model=buildProjectHierarchy(chain,{root:'leaf0.kicad_sch'});assert.equal(nodes(model).length,33);assert.equal(nodes(model).at(-1).status,'ok');assert.equal(model.stats.truncated,false);
 });
-test('obviously oversized source rejects before allocating UTF-8 bytes',()=>{
- const Original=globalThis.TextEncoder;let encoded=0;globalThis.TextEncoder=class extends Original{encode(value){encoded++;return super.encode(value);}};
- try{assert.throws(()=>buildProjectHierarchy([{path:'huge.kicad_sch',source:' '.repeat(8*1024*1024+1)}]),/8 MiB/);assert.equal(encoded,0);}finally{globalThis.TextEncoder=Original;}
+test('hierarchy rejects a claimed oversized UTF-8 source before parsing',()=>{
+ const Original=globalThis.TextEncoder;let encoded=0;globalThis.TextEncoder=class extends Original{encode(){encoded++;return {length:256*1024*1024+1};}};
+ try{assert.throws(()=>buildProjectHierarchy([file('huge.kicad_sch')]),/256 MiB/);assert.equal(encoded,1);}finally{globalThis.TextEncoder=Original;}
 });

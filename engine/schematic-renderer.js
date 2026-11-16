@@ -29,7 +29,7 @@
   function textWidth(string, width) {
     return Array.from(overbarText(string).text).reduce((total, c) => total + (TEXT_ADVANCES[c.charCodeAt(0) - 32] ?? 21) * width / 21, 0) + width * 0.16;
   }
-  const MAX_PRIMITIVES = 150000;
+  const MAX_PRIMITIVES = Number.isSafeInteger(Curves?.MAX_RENDER_PRIMITIVES) && Curves.MAX_RENDER_PRIMITIVES > 0 ? Curves.MAX_RENDER_PRIMITIVES : 150000;
   const value = (item) => item && typeof item === "object" && !Array.isArray(item) ? item.quoted : item;
   const typeOf = (form) => Array.isArray(form) ? String(value(form[0])) : "";
   const forms = (node, type) => Array.isArray(node) ? node.filter((item) => Array.isArray(item) && typeOf(item) === type) : [];
@@ -483,16 +483,27 @@
         let string = value(property[2]);
         if (!position) { warn(`Visible property ${value(property[1])} has no position.`); continue; }
         const propertyAngle = value(form(property, "at")?.[3]) || 0;
-        // Saved field positions are world coordinates, but their orientation is
-        // relative to the symbol. KiCad keeps the resulting text upright.
-        const fieldAngle = ((propertyAngle + angle) % 180 + 180) % 180;
+        // Field anchors are sheet coordinates, but their angle and justification
+        // remain relative to the parent symbol. Keep text upright as KiCad does.
+        const totalAngle = angle + propertyAngle;
+        const fieldAngle = ((totalAngle % 180) + 180) % 180;
+        const basis = transform({ x: 0, y: 0 }, totalAngle, mirror);
+        const horizontal = basis({ x: 1, y: 0 }), vertical = basis({ x: 0, y: 1 });
+        const radians = fieldAngle * Math.PI / 180, c = Math.cos(radians), s = Math.sin(radians);
+        const style = fontStyle(property);
+        if (horizontal.x * c - horizontal.y * s < 0) {
+          style.align = ({ left: "right", right: "left" })[style.align] || style.align;
+        }
+        if (vertical.x * s + vertical.y * c < 0) {
+          style.baseline = ({ top: "bottom", bottom: "top" })[style.baseline] || style.baseline;
+        }
         if (value(property[1]) === "Reference" && libraryUnitCount(id) > 1 && Number.isInteger(unit) && unit > 0) {
           let suffix = "", ordinal = unit;
           while (ordinal > 0) { ordinal--; suffix = String.fromCharCode(65 + ordinal % 26) + suffix; ordinal = Math.floor(ordinal / 26); }
           string += suffix;
         }
         text(position, string, fontSize(property), -fieldAngle, COLOR.symbol,
-          { ...owner, kind: "property", property: value(property[1]), ...fontStyle(property) });
+          { ...owner, kind: "property", property: value(property[1]), ...style });
       }
     }
     function renderLabel(node, owner, kind = typeOf(node)) {

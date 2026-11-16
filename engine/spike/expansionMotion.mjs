@@ -17,8 +17,8 @@ export function createExpansionMotion({request,cancel,now=()=>performance.now(),
   if(disposed)return;
   if(value!==target)frame=request(tick);else settle(value);
  }
- return{set(next){if(disposed)return target;target=expansionPhases(next).amount;
-   if(reducedMotion()){if(frame!==null)cancel(frame);frame=null;value=target;update(value);if(!disposed)settle(value);}
+ return{set(next,{immediate=false}={}){if(disposed)return target;target=expansionPhases(next).amount;
+   if(immediate||reducedMotion()){if(frame!==null)cancel(frame);frame=null;value=target;update(value);if(!disposed)settle(value);}
    else schedule();return target;},resume:schedule,get:()=>value,target:()=>target,running:()=>frame!==null,
   dispose(){disposed=true;if(frame!==null)cancel(frame);frame=null;}};
 }

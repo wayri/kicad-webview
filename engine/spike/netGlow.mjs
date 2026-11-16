@@ -5,7 +5,7 @@ export function createNetGlow(THREE,{scene,objects,visible=()=>true,colorForLaye
  const entries=new Map(),materials=new Map(),matrix=new THREE.Matrix4();let key='',instances=0,edgeVertices=0,limited=false;
  function material(layer,zone=false,edge=false,color='accent'){
   const id=[layer,zone,edge,color].join('|');if(materials.has(id))return materials.get(id);
-  const common={color:color==='source'?colorForLayer(layer):0x72f5ff,transparent:true,opacity:zone ? .14 : .95,depthTest:false,depthWrite:false,toneMapped:false};
+  const common={color:layer==='through'?0xc5aa6c:color==='source'?colorForLayer(layer):0x72f5ff,transparent:true,opacity:zone ? .14 : .95,depthTest:false,depthWrite:false,toneMapped:false};
   const value=edge?new THREE.LineBasicMaterial(common):new THREE.MeshBasicMaterial({...common,side:THREE.DoubleSide});materials.set(id,value);return value;
  }
  function clear(){for(const entry of entries.values()){group.remove(entry.mesh);entry.mesh.dispose?.();if(entry.edge){group.remove(entry.edge);entry.edge.geometry.dispose();}}entries.clear();for(const m of materials.values())m.dispose();materials.clear();instances=0;edgeVertices=0;limited=false;key='';}

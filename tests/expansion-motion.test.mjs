@@ -34,3 +34,9 @@ test('disposal from an update callback cannot schedule another frame',()=>{
  motion=createExpansionMotion({request:fn=>{frames.set(++seq,fn);return seq;},cancel:id=>frames.delete(id),now:()=>0,update:()=>motion.dispose()});motion.set(100);
  const callback=frames.values().next().value;frames.clear();callback(16);assert.equal(frames.size,0);assert.equal(motion.running(),false);
 });
+
+test('atomic expansion restore cancels pending motion and settles exactly without an intermediate frame',()=>{
+ let queued=null,cancelled=0;const updates=[],settled=[];
+ const motion=createExpansionMotion({request:fn=>{queued=fn;return 1;},cancel:()=>{queued=null;cancelled++;},update:v=>updates.push(v),settle:v=>settled.push(v)});
+ motion.set(70);assert.equal(motion.running(),true);motion.set(100,{immediate:true});assert.equal(motion.get(),100);assert.equal(motion.target(),100);assert.equal(motion.running(),false);assert.equal(queued,null);assert.equal(cancelled,1);assert.deepEqual(updates,[100]);assert.deepEqual(settled,[100]);motion.dispose();
+});

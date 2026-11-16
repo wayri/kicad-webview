@@ -193,14 +193,14 @@ test('HTTP/CORS errors, bad JSON and hosted project-only files give actionable f
 });
 
 test('download limits apply to streamed bytes as well as Content-Length', async () => {
-  await withFetch(async () => new Response(source, { headers: { 'content-length': String(65 * 1024 * 1024) } }),
-    async () => await assert.rejects(fetchText('https://site.example/board.kicad_pcb'), /64 MiB/));
+  await withFetch(async () => new Response(source, { headers: { 'content-length': String(257 * 1024 * 1024) } }),
+    async () => await assert.rejects(fetchText('https://site.example/board.kicad_pcb'), /256 MiB/));
   let cancelled = false;
   await withFetch(async () => ({ ok: true, headers: new Headers(), body: { getReader: () => ({
-    read: async () => ({ done: false, value: { byteLength: 65 * 1024 * 1024 } }),
+    read: async () => ({ done: false, value: { byteLength: 257 * 1024 * 1024 } }),
     cancel: async () => { cancelled = true; },
   }) } }), async () => {
-    await assert.rejects(fetchText('https://site.example/board.kicad_pcb'), /64 MiB/);
+    await assert.rejects(fetchText('https://site.example/board.kicad_pcb'), /256 MiB/);
     assert.equal(cancelled, true);
   });
 });

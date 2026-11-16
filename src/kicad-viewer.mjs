@@ -40,7 +40,7 @@ function awaitOperation(promise, signal) {
 
 /** Read-only, independently mounted schematic / PCB / 3D viewer. */
 export class KiCadViewer extends EventTarget {
-  constructor(target, { theme = 'light', loadAsset, assetPaths = [], inspectOnSelect = true, appearance = 'realistic', highlightStyle = 'dim', highlightColor = 'accent' } = {}) {
+  constructor(target, { theme = 'light', loadAsset, assetPaths = [], inspectOnSelect = true, appearance = 'realistic', highlightStyle = 'dim', highlightColor = 'source' } = {}) {
     super();
     const host = typeof target === 'string' ? document.querySelector(target) : target;
     if (!host?.append || !host?.ownerDocument) throw new TypeError('Choose a viewer container element.');
@@ -271,7 +271,8 @@ export class KiCadViewer extends EventTarget {
   handleSelection(detail, view = this.view) {
     if (this.disposed) return;
     this.inspector.select(detail.item);
-    this.emit('select', { ...detail, path: this.path, view });
+    const selection = this.inspector.getSelection();
+    this.emit('select', { ...detail, item: detail.item && selection ? { ...detail.item, ...selection } : detail.item, path: this.path, view });
   }
   clearSelection() {
     this.assertActive();
@@ -351,7 +352,7 @@ export class KiCadViewer extends EventTarget {
     }
     this.assetController = assetController; this.renderer = renderer; this.view = view; this.renderingNotes = notes;
     mount.style.visibility = ''; this.stage.replaceChildren(mount);
-    this.analysis?.attach(); this.inspector.syncRenderer(); this.viewMemory.restore(this); this.bindCamera(); this.updateControls(); this.updateStatus();
+    this.analysis?.attach(); this.viewMemory.restore(this); this.inspector.syncRenderer(); this.bindCamera(); this.updateControls(); this.updateStatus();
     this.emit('ready', { view, path: this.path, revision: this.project?.revision || null, warnings: [...(this.design.warnings || [])] });
     this.emit('viewchange', { view, path: this.path }); this.reportCamera();
     return true;
@@ -542,7 +543,7 @@ export function registerKiCadViewer(tag = 'kicad-viewer') {
   customElements.define(tag, class extends HTMLElement {
     connectedCallback() {
       if (this.viewer) return;
-      this.viewer = new KiCadViewer(this, { theme: this.getAttribute('theme') || 'light', inspectOnSelect:this.getAttribute('inspect-on-select')!=='false', highlightStyle:this.getAttribute('highlight-style')||'dim', highlightColor:this.getAttribute('highlight-color')||'accent', appearance:this.getAttribute('appearance')||'realistic' });
+      this.viewer = new KiCadViewer(this, { theme: this.getAttribute('theme') || 'light', inspectOnSelect:this.getAttribute('inspect-on-select')!=='false', highlightStyle:this.getAttribute('highlight-style')||'dim', highlightColor:this.getAttribute('highlight-color')||'source', appearance:this.getAttribute('appearance')||'realistic' });
       for (const name of ['ready', 'select', 'measure', 'analysis', 'error', 'viewchange', 'camerachange']) this.viewer.addEventListener(name,
         event => this.dispatchEvent(new CustomEvent(`kicad:${name}`, { detail: event.detail })));
       if (this.getAttribute('src')) this.viewer.load(this.getAttribute('src'), {

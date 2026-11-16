@@ -28,9 +28,9 @@ test('hierarchy metadata resolution skips PCB downloads and retains failed root 
  const original=globalThis.fetch,requested=[];globalThis.fetch=async input=>{const url=String(input);requested.push(url);if(url.endsWith('/main.kicad_sch'))return new Response('',{status:404});if(url.endsWith('/power.kicad_sch'))return new Response(sch());throw Error('Unexpected drawing fetch '+url);};
  try{const model=await loadProjectHierarchy({entry:'main.kicad_pcb',files:[{path:'main.kicad_pcb',url:'https://example.test/main.kicad_pcb'},{path:'main.kicad_sch',url:'https://example.test/main.kicad_sch'},{path:'power.kicad_sch',url:'https://example.test/power.kicad_sch'}]});assert.equal(model.rootPath,'main.kicad_sch');assert.equal(model.roots[0].status,'error');assert.equal(model.files.length,2);assert.equal(requested.length,2);assert.ok(!requested.some(url=>url.endsWith('.kicad_pcb')));}finally{globalThis.fetch=original;}
 });
-test('direct hierarchy schematics enforce the 8 MiB download budget',async()=>{
- const original=globalThis.fetch;globalThis.fetch=async()=>new Response('',{headers:{'content-length':String(8*1024*1024+1)}});
- try{const model=await loadProjectHierarchy('https://example.test/main.kicad_sch');assert.equal(model.roots[0].status,'error');assert.match(model.files[0].error,/8388608 byte/);}finally{globalThis.fetch=original;}
+test('direct hierarchy schematics enforce the 256 MiB download budget',async()=>{
+ const original=globalThis.fetch;globalThis.fetch=async()=>new Response('',{headers:{'content-length':String(256*1024*1024+1)}});
+ try{const model=await loadProjectHierarchy('https://example.test/main.kicad_sch');assert.equal(model.roots[0].status,'error');assert.match(model.files[0].error,/256 MiB/);}finally{globalThis.fetch=original;}
 });
 
 test('remote hierarchy reads at most three listed files concurrently and preserves listing order',async()=>{const original=globalThis.fetch;let active=0,peak=0;globalThis.fetch=async()=>{active++;peak=Math.max(active,peak);await new Promise(r=>setTimeout(r,8));active--;return new Response(sch());};try{const files=Array.from({length:8},(_,i)=>({path:'sheet'+i+'.kicad_sch',url:'https://example.test/sheet'+i+'.kicad_sch'}));const model=await loadProjectHierarchy({files,entry:files[0].path});assert.equal(peak,3);assert.deepEqual(model.files.map(f=>f.path),files.map(f=>f.path));}finally{globalThis.fetch=original;}});

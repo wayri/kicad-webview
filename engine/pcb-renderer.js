@@ -5,6 +5,7 @@
   const Compatibility=root.KiCadFileCompatibility||(typeof module==="object"&&module.exports?require("./file-compatibility.js"):null);
   const Worksheet=root.KiCadWorksheet||(typeof module==="object"&&module.exports?require("./worksheet.js"):null);
   const Curves=root.KiCadDesignDiff||(typeof module==="object"&&module.exports?require("./design-diff.js"):null);
+  const MAX_RENDER_PRIMITIVES = Number.isSafeInteger(Curves?.MAX_RENDER_PRIMITIVES) && Curves.MAX_RENDER_PRIMITIVES > 0 ? Curves.MAX_RENDER_PRIMITIVES : 250000;
   const value = (item) => item && typeof item === "object" && !Array.isArray(item) ? item.quoted : item;
   const kind = (node) => Array.isArray(node) ? String(value(node[0])) : "";
   const children = (node, name) => Array.isArray(node) ? node.filter((part) => Array.isArray(part) && kind(part) === name) : [];
@@ -90,7 +91,7 @@
     const page = pageOf(ast, warnings);
     const layerNames = (child(ast, "layers") || []).slice(1).filter(Array.isArray).map((part) => String(value(part[1])));
     const push = (primitive) => {
-      if (primitives.length >= 250000) throw new Error("PCB has too many render primitives.");
+      if (primitives.length >= MAX_RENDER_PRIMITIVES) throw new Error("PCB has too many render primitives.");
       primitives.push(primitive);
     };
     const warned = new Set();
@@ -254,7 +255,7 @@
           if (first >= 0 && last >= 0) plated = copperOrder.slice(Math.min(first,last),Math.max(first,last)+1);
         }
         for (const copper of (plated.length ? plated : ["F.Cu","B.Cu"])) {
-          push({ type:"circle", ...at, r:diameter/2, layer:copper, color:colorFor(copper), fill:true,
+          push({ type:"circle", ...at, r:diameter/2, layer:copper, color:"#c5aa6c", fill:true,
             uuid:uuid(node) || undefined, kind:"via" });
           if (drill > 0) push({ type:"circle", ...at, r:drill/2, layer:copper, color:"#111b25", fill:true,
             hole:true, uuid:uuid(node) || undefined, kind:"drill", objectCategory:"vias" });
@@ -288,6 +289,7 @@
           const xs = coordinates.map((p) => p.x), ys = coordinates.map((p) => p.y),
             minX = Math.min(...xs)-.3, maxX = Math.max(...xs)+.3,
             minY = Math.min(...ys)-.3, maxY = Math.max(...ys)+.3;
+          if (primitives.length >= MAX_RENDER_PRIMITIVES) throw new Error("PCB has too many render primitives.");
           primitives.splice(firstPrimitive,0,{ type:"polygon", points:[{x:minX,y:minY},{x:maxX,y:minY},
             {x:maxX,y:maxY},{x:minX,y:maxY}], layer, color:"#000000", fill:false, stroke:false,
             pick:true, uuid:owner.uuid, ownerUuid:owner.uuid, reference, kind:"footprint-hit" });

@@ -3,9 +3,9 @@
  * Format reference: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
  * Inflation: https://compression.spec.whatwg.org/#deflate-raw
  */
-const MiB = 1024 * 1024;
-const DEFAULTS = Object.freeze({ maxCompressedBytes: 64 * MiB, maxExpandedBytes: 128 * MiB,
-  maxFileBytes: 32 * MiB, maxFiles: 256, maxRatio: 1000 });
+import { MAX_SOURCE_BYTES, MAX_PROJECT_BYTES } from '../project-bounds.mjs';
+const DEFAULTS = Object.freeze({ maxCompressedBytes: MAX_SOURCE_BYTES, maxExpandedBytes: MAX_PROJECT_BYTES,
+  maxFileBytes: MAX_SOURCE_BYTES, maxFiles: 256, maxRatio: 1000 });
 const decoder = new TextDecoder('utf-8', { fatal: true });
 const crcTable = Uint32Array.from({ length: 256 }, (_, n) => {
   for (let bit = 0; bit < 8; bit++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1;

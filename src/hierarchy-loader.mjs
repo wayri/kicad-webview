@@ -3,7 +3,8 @@ import {resolveSource,fetchText} from './source-loader.mjs';
 import {readZip} from './archive/zip.mjs';
 import {safeRelativePath} from './source-types.mjs';
 import {buildProjectHierarchy} from './project-hierarchy.mjs';
-const MAX_FILE=8*1024*1024,MAX_TOTAL=64*1024*1024,schematic=path=>typeof path==='string'&&/\.kicad_sch$/i.test(path);
+import { MAX_SOURCE_BYTES, MAX_PROJECT_BYTES } from './project-bounds.mjs';
+const MAX_FILE=MAX_SOURCE_BYTES,MAX_TOTAL=MAX_PROJECT_BYTES,schematic=path=>typeof path==='string'&&/\.kicad_sch$/i.test(path);
 const size=text=>new TextEncoder().encode(text).byteLength;
 async function localSchematics(input,signal){
  if(!input||!Number.isSafeInteger(input.length)||input.length<1||input.length>256)throw new Error('Choose between 1 and 256 project files.');
@@ -12,7 +13,7 @@ async function localSchematics(input,signal){
   signal?.throwIfAborted();const path=file?.path||file?.webkitRelativePath||file?.name;
   if(!safeRelativePath(path))throw new TypeError('Project files need safe relative names.');
   if(!schematic(path))continue;let source;
-  if(typeof file.source==='string'){if(file.source.length>MAX_FILE)throw new Error('Schematic exceeds 8 MiB.');source=file.source;}
+  if(typeof file.source==='string'){if(file.source.length>MAX_FILE)throw new Error('Schematic exceeds 256 MiB.');source=file.source;}
   else {
    let bytes=file.bytes;
    if(bytes instanceof ArrayBuffer)bytes=new Uint8Array(bytes);
@@ -20,9 +21,9 @@ async function localSchematics(input,signal){
     if(typeof file.arrayBuffer!=='function'||!Number.isSafeInteger(file.size)||file.size<0||file.size>MAX_FILE)throw new TypeError('A schematic needs bounded source text, bytes or a browser File.');
     bytes=new Uint8Array(await file.arrayBuffer());if(bytes.byteLength!==file.size)throw new Error('File size changed while reading.');
    }
-   if(bytes.byteLength>MAX_FILE)throw new Error('Schematic exceeds 8 MiB.');source=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+   if(bytes.byteLength>MAX_FILE)throw new Error('Schematic exceeds 256 MiB.');source=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
   }
-  signal?.throwIfAborted();const count=size(source);total+=count;if(count>MAX_FILE||total>MAX_TOTAL)throw new Error('Hierarchy exceeds 8 MiB per schematic or 64 MiB total.');files.push({path,source});
+  signal?.throwIfAborted();const count=size(source);total+=count;if(count>MAX_FILE||total>MAX_TOTAL)throw new Error('Hierarchy exceeds 256 MiB per schematic or 512 MiB total.');files.push({path,source});
  }
  return files;
 }
@@ -43,7 +44,7 @@ export async function loadProjectHierarchy(input,options={}){
    async function worker(){while(next<schematics.length){controller.signal.throwIfAborted();const index=next++,file=schematics[index];let source;
     try{source=file.path===resolved.path&&typeof resolved.source==='string'?resolved.source:await fetchText(file.url,{signal:controller.signal,credentials,limit:MAX_FILE});}
     catch(error){controller.signal.throwIfAborted();if(error?.name==='AbortError')throw error;files[index]={path:file.path,error:String(error.message||error).slice(0,512)};continue;}
-    controller.signal.throwIfAborted();const count=size(source);total+=count;if(count>MAX_FILE||total>MAX_TOTAL)throw new Error('Hierarchy exceeds 8 MiB per schematic or 64 MiB total.');files[index]={path:file.path,source};
+    controller.signal.throwIfAborted();const count=size(source);total+=count;if(count>MAX_FILE||total>MAX_TOTAL)throw new Error('Hierarchy exceeds 256 MiB per schematic or 512 MiB total.');files[index]={path:file.path,source};
    }}
    try{await Promise.all(Array.from({length:Math.min(3,schematics.length)},()=>worker().catch(error=>{controller.abort(error);throw error;})));}
    finally{signal?.removeEventListener('abort',abort);}

@@ -55,10 +55,12 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
     const style=selectionStyle(options),key=style.mode+':'+style.color;
     if(!enabled){restore();return;}
     if(currentStyle&&currentStyle!==key)restore();currentStyle=key;
-    const legacy=style.mode==='dim'&&style.color==='accent';
+    const accentLegacy=style.mode==='dim'&&style.color==='accent';
     for(const object of objects()){
       if(!object.material)continue;
       const state=capture(object),records=object.userData.records;
+      const via=object.userData.identity?.startsWith('spike:via-barrel:'),legacy=accentLegacy&&!via;
+      if(via && style.mode!=='isolate'){object.material=state.material;if(object.instanceColor!==state.instanceColor)object.instanceColor=state.instanceColor;continue;}
       if(object.isInstancedMesh&&records){
         if(!legacy){
           if(!state.instances){
@@ -75,7 +77,7 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
             if(state.instanceColor)color.fromArray(state.instanceColor.array,index*3);else color.setHex(0xffffff);
             const record=records[index],matched=matches(record);
             if(!matched&&style.mode==='isolate')color.setRGB(-1e30,-1e30,-1e30);
-            else if(style.color==='accent'&&accentMatches?.(record))color.setRGB(-1e20,-1e20,-1e20);
+            else if(!via&&style.color==='accent'&&accentMatches?.(record))color.setRGB(-1e20,-1e20,-1e20);
             else if(!matched&&style.mode==='dim')color.setRGB(-color.r-1,-color.g-1,-color.b-1);
             object.setColorAt(index,color);
           }
@@ -94,7 +96,7 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
       }else if(style.mode==='isolate'&&object.userData.record&&object.userData.record.type!=='Board'&&!matches(object.userData.record)){
         if(!state.hidden)state.hidden=list(state.material).map(source=>{const material=own(source,state);material.visible=false;return material;});
         object.material=Array.isArray(state.material)?state.hidden:state.hidden[0];
-      }else if(style.color==='accent'&&accentMatches?.(object.userData.record))object.material=accentMaterials(state);
+      }else if(!via&&style.color==='accent'&&accentMatches?.(object.userData.record))object.material=accentMaterials(state);
       else if(matches(object.userData.record)||style.mode!=='dim')object.material=state.material;
       else {if(!state.dim)state.dim=list(state.material).map(source=>dimMaterial(source,state));object.material=Array.isArray(state.material)?state.dim:state.dim[0];}
     }

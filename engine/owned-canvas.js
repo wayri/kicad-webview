@@ -428,12 +428,12 @@
 
         if(dim&&this.isolateNet&&!p.hole&&p.layer!=='Edge.Cuts')continue;
 
-        this.paint(p,{color:dim&&this.highlightMode!=='bright'&&!p.hole?(this.dark?'#87919d':'#8b919a'):matches&&!p.hole&&this.selectionColor!=='source'?(this.pcb?'#ffe18b':this.dark?'#78d5ff':'#006ca8'):this.netClassColors?.get(p)||null,opacity:Math.min(dim&&!p.hole&&this.highlightMode!=='bright'&&p.layer!=='Edge.Cuts'?(this.pcb?.42:.38):1,layerDim&&!p.hole?.18:1)});
+        this.paint(p,{color:p.kind==='via'?'#c5aa6c':dim&&this.highlightMode!=='bright'&&!p.hole?(this.dark?'#87919d':'#8b919a'):matches&&!p.hole&&this.selectionColor!=='source'?(this.pcb?'#ffe18b':this.dark?'#78d5ff':'#006ca8'):this.netClassColors?.get(p)||null,opacity:Math.min(dim&&!p.hole&&this.highlightMode!=='bright'&&p.layer!=='Edge.Cuts'?(this.pcb?.42:.38):1,layerDim&&!p.hole?.18:1)});
 
       }
 
       this.drawNetNames();
-      if(this.selected&&this.geometryVisible(this.selected)&&(!this.selected.layer||this.visibleLayers.has(this.selected.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||this.selected.layer===this.focusedLayer)&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(this.selected))){const b=bounds([this.selected],true);if(b){const a=c.world_to_screen(b);ctx.strokeStyle='#80f0b7';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(a.x-4,a.y-4,(c.flipped?-1:1)*b.w*c.zoom+8,b.h*c.zoom+8);ctx.setLineDash([]);}}
+      if(this.selected&&!this.netHighlight&&this.geometryVisible(this.selected)&&(!this.selected.layer||this.visibleLayers.has(this.selected.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||this.selected.layer===this.focusedLayer)&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(this.selected))){const b=bounds([this.selected],true);if(b){const a=c.world_to_screen(b);ctx.strokeStyle='#80f0b7';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(a.x-4,a.y-4,(c.flipped?-1:1)*b.w*c.zoom+8,b.h*c.zoom+8);ctx.setLineDash([]);}}
 
     }
 

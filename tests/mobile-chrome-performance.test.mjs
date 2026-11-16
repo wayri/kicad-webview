@@ -23,6 +23,10 @@ function fixture() {
 
 test('unchanged layer updates retain file options and theme icon independently',()=>{
   const a=fixture(), b=fixture(); a.chrome.update(); b.chrome.update();
+  assert.equal(a.chrome.moreMenu.open,undefined);
+  assert.equal(a.chrome.moreMenu.children[0].getAttribute('aria-label'),'More viewer tools');
+  assert.equal(a.chrome.themeButton.parentNode,a.chrome.moreMenu.children[1]);
+  assert.equal(a.chrome.fitButton.className,'viewer-fit');
   const options=[...a.chrome.fileSelect.children], icon=a.chrome.themeButton.children[0];
   const fileReplacements=a.chrome.fileSelect.replacements, iconReplacements=a.chrome.themeButton.replacements;
   for(let i=0;i<100;i++) a.chrome.update();
@@ -45,4 +49,10 @@ test('project replacement and file-list mutations rebuild options; selection cha
   const next=chrome.fileSelect.children[0]; viewer.files[0].path='replacement.kicad_pcb'; chrome.update();
   assert.notEqual(chrome.fileSelect.children[0],next); assert.equal(chrome.fileSelect.children[0].textContent,'replacement.kicad_pcb');
   chrome.dispose();
+});
+
+test('opening inspector closes More and nested popups before exposing its tabs',async()=>{
+ const {viewer,chrome}=fixture();let opened=false;viewer.setInspectorOpen=value=>{opened=value;};
+ chrome.moreMenu.open=true;chrome.layersMenu.open=true;chrome.inspectorButton.onclick();await Promise.resolve();
+ assert.equal(opened,true);assert.equal(chrome.moreMenu.open,false);assert.equal(chrome.layersMenu.open,false);chrome.dispose();
 });

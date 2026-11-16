@@ -59,6 +59,18 @@ select option{background:var(--viewer-bar);color:var(--viewer-ink)}select option
 @media(pointer:coarse){.viewer-toolbar button,.viewer-toolbar summary{min-width:44px;min-height:44px}.viewer-views button{min-height:44px}.viewer-picker select{font-size:16px;min-height:44px}.viewer-layer-list label{min-height:44px}}
 `;
 
+const COMPACT_STYLE = `
+.viewer-toolbar{flex-wrap:nowrap;align-content:center;gap:4px;min-height:36px;height:36px;padding:2px 5px}
+.viewer-picker{flex:1 1 80px;max-width:none;min-height:0;overflow:hidden;gap:3px}.viewer-picker>.viewer-icon{display:none}.viewer-picker select{font:600 11px/1.2 system-ui;min-height:30px;padding:2px;max-width:100%}.viewer-name{font-size:11px}
+.viewer-views{padding:1px;gap:1px;border-radius:6px}.viewer-views button,.viewer-toolbar button,.viewer-toolbar summary{box-sizing:border-box;min-width:30px;min-height:30px;height:30px;padding:4px;font:600 11px/1 system-ui}.viewer-views button{padding-inline:4px}.viewer-views .viewer-icon{display:inline-flex}.viewer-actions{flex:0 0 auto;flex-wrap:nowrap;gap:2px;margin-left:0}
+.viewer-more{position:static}.viewer-more>summary{gap:2px}.viewer-more>summary::-webkit-details-marker{display:none}.viewer-more[open]>summary{color:var(--viewer-accent);background:var(--viewer-active)}
+.viewer-more-panel{position:absolute;z-index:12;right:5px;top:calc(var(--viewer-toolbar-height,36px) + 3px);display:grid;gap:3px;width:min(252px,calc(100cqw - 10px));max-height:calc(100% - var(--viewer-toolbar-height,36px) - 8px);overflow:auto;overscroll-behavior:contain;padding:6px;border:1px solid var(--viewer-border);border-radius:7px;background:var(--viewer-bar);color:var(--viewer-ink);box-shadow:var(--viewer-shadow)}
+.viewer-more-panel>button,.viewer-more-panel>.viewer-layers>summary{justify-content:flex-start;width:100%;min-height:30px;height:auto}.viewer-more-panel>button::after,.viewer-more-panel>.viewer-layers>summary::after{content:attr(aria-label);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.viewer-more-panel>.viewer-layers{position:static}.viewer-more-panel .viewer-layer-list{position:static;inset:auto;width:100%;min-width:0;max-height:180px;overflow:auto;margin:3px 0;box-shadow:none}.viewer-more-panel .viewer-navigation{position:static;inset:auto;width:100%;max-width:none;max-height:none;overflow:visible;box-shadow:none}.viewer-more-panel .viewer-navigation button{min-width:0;min-height:30px}
+:host([data-inset="true"]) .viewer-picker,:host([data-inset="true"]) .viewer-fit{display:none!important}
+@container (max-width:360px){.viewer-views button span:not(.viewer-icon){display:none}.viewer-views button{min-width:30px;padding:4px}.viewer-views .viewer-icon{display:inline-flex}}
+@media(pointer:coarse){.viewer-toolbar{min-height:36px;height:36px}.viewer-toolbar button,.viewer-toolbar summary,.viewer-views button,.viewer-picker select{min-width:30px;min-height:30px;height:30px;font-size:11px}.viewer-more-panel .viewer-navigation button{min-height:30px}}
+`;
+
 /** Internal DOM module; the viewer keeps source/rendering state authoritative. */
 export function createViewerChrome(viewer) {
   const doc = viewer.host.ownerDocument;
@@ -70,7 +82,7 @@ export function createViewerChrome(viewer) {
     node.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="' + icons[name] + '"/></svg>';
     return node;
   };
-  const style = make('style'); style.textContent = STYLE+NAVIGATION_STYLE+INSPECTION_STYLE;
+  const style = make('style'); style.textContent = STYLE+NAVIGATION_STYLE+INSPECTION_STYLE+COMPACT_STYLE;
   const toolbar = make('div', 'viewer-toolbar');
   toolbar.setAttribute('role', 'toolbar'); toolbar.setAttribute('aria-label', 'Drawing viewer controls');
   const picker = make('div', 'viewer-picker'), fileSelect = make('select'), fileName = make('span', 'viewer-name');
@@ -90,7 +102,7 @@ export function createViewerChrome(viewer) {
   const layoutButton = button('layout', 'PCB layout', () => viewer.setView('pcb'), 'Layout');
   const threeButton = button('cube', '3D view', () => viewer.setView('3d'), '3D');
   views.append(layoutButton, threeButton);
-  const fitButton = button('fit', 'Fit drawing', () => viewer.fit());
+  const fitButton = button('fit', 'Fit drawing', () => viewer.fit()); fitButton.className='viewer-fit';
   const themeButton = button('moon', 'Switch to dark theme', () => viewer.setTheme(viewer.theme === 'light' ? 'dark' : 'light'));
   const layerControls=createLayerControls(viewer,make,icon,fail),highlightControls=createHighlightControls(viewer,make,icon,fail);
   const layersMenu=layerControls.menu,layerList=layerControls.list,layerFilter=layerControls.filter,layersSummary=layerControls.summary;
@@ -98,9 +110,12 @@ export function createViewerChrome(viewer) {
   const noteCount = make('span', 'viewer-note-count'); noteCount.hidden = true; notesButton.append(noteCount);
   notesButton.setAttribute('aria-expanded', 'false');
   const measureButton=button('ruler','Measure distance',()=>viewer.setMeasuring(!viewer.renderer?.measuring));
-  const inspectorButton = button('inspect', 'Inspect properties and parts', () => { toggleNotes(false); viewer.setInspectorOpen(!viewer.inspector.isOpen()); });
+  const inspectorButton = button('inspect', 'Inspect properties and parts', () => { moreMenu.open=false; layersMenu.open=false; highlightControls.menu.open=false; toggleNotes(false); viewer.setInspectorOpen(!viewer.inspector.isOpen()); });
   inspectorButton.setAttribute('aria-expanded', 'false');
-  actions.append(fitButton, measureButton, inspectorButton, themeButton, highlightControls.menu, layersMenu, notesButton);
+  const moreMenu=make('details','viewer-more'),moreSummary=make('summary'),morePanel=make('div','viewer-more-panel');
+  moreSummary.textContent='More';moreSummary.title='More viewer tools';moreSummary.setAttribute('aria-label','More viewer tools');
+  morePanel.append(measureButton,inspectorButton,themeButton,highlightControls.menu,layersMenu,notesButton);moreMenu.append(moreSummary,morePanel);
+  actions.append(fitButton,moreMenu);
   toolbar.append(picker, views, actions);
   const ToolbarObserver=doc.defaultView?.ResizeObserver||globalThis.ResizeObserver;
   const toolbarObserver=ToolbarObserver?new ToolbarObserver(()=>{const height=toolbar.getBoundingClientRect().height;viewer.root.style.setProperty('--viewer-toolbar-height',height+'px');}):null;
@@ -136,6 +151,7 @@ export function createViewerChrome(viewer) {
   }
   function update() {
     navigation.update();
+    if(navigation.panel.parentNode!==morePanel)morePanel.append(navigation.panel);
     fileSelect.hidden = !viewer.project; fileName.hidden = Boolean(viewer.project);
     fileName.textContent = viewer.path?.split('/').at(-1) || 'KiCad viewer'; fileName.title = viewer.path || 'Read-only KiCad viewer';
     const files = viewer.getFiles().filter(file => !/\.(wrl|glb)$/i.test(file.path)).map(file => file.path);
@@ -157,10 +173,10 @@ export function createViewerChrome(viewer) {
   layerControls.menu.ontoggle=()=>{if(layerControls.menu.open){highlightControls.menu.open=false;toggleNotes(false);viewer.inspector.toggle(false);}};
   highlightControls.menu.ontoggle=()=>{if(highlightControls.menu.open){layerControls.menu.open=false;toggleNotes(false);viewer.inspector.toggle(false);}};
   fileSelect.onchange = () => viewer.openFile(fileSelect.value).catch(fail);
-  const escape = event => { if (event.key === 'Escape') { toggleNotes(false); layersMenu.open = false; highlightControls.menu.open=false; } };
+  const escape = event => { if (event.key === 'Escape') { toggleNotes(false); layersMenu.open = false; highlightControls.menu.open=false; moreMenu.open=false; } };
   viewer.surface.addEventListener?.('keydown', escape);
   return {
-    style, toolbar, fileSelect, layoutButton, threeButton, fitButton, themeButton, layersMenu, layerList, notesButton, measureButton, inspectorButton, layerFilter,
+    style, toolbar, fileSelect, layoutButton, threeButton, fitButton, moreMenu, themeButton, layersMenu, layerList, notesButton, measureButton, inspectorButton, layerFilter,
     update, setTheme, setStatus, toggleNotes,
     dispose() {
       navigation.dispose();

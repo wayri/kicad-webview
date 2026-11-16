@@ -171,10 +171,11 @@ test('lookup truncation and ambiguity are explicit in the viewer rendering notes
   const { viewer } = fixture();
   await viewer.loadSource(pcb.replace('(uuid "part-b")', '(uuid "part-a")'));
   assert.match(viewer.status.textContent, /duplicated saved UUIDs/);
-  const operations = Array.from({ length: 100001 }, (_, i) => ({ id: 'op-' + i, kind: 'flash', polarity: 'dark', metadata: {}, bounds: { x: 0, y: 0, w: 1, h: 1 } }));
+  const operation = { id: 'op-0', kind: 'flash', polarity: 'dark', metadata: {}, bounds: { x: 0, y: 0, w: 1, h: 1 } };
+  const operations = { length: 500001, *[Symbol.iterator]() { yield operation; } };
   const model = buildInspectionModel(null, { kind: 'manufacturing', design: { camLayers: [{ id: 'copper.gtl', operations }] } });
-  assert.match(model.warnings.join(' '), /100,000/);
-  viewer.inspector.setModel(model); viewer.updateStatus(); assert.match(viewer.status.textContent, /100,000/);
+  assert.match(model.warnings.join(' '), /500,000/);
+  viewer.inspector.setModel(model); viewer.updateStatus(); assert.match(viewer.status.textContent, /500,000/);
   viewer.dispose();
 });
 
@@ -267,5 +268,20 @@ test('3D part search and clicks locate once; explicit suppression, renderer refr
  viewer.inspector.select({uuid:'pad-a',ownerUuid:'part-a',kind:'pad'});assert.equal(calls.at(-1),'part-a');
  viewer.selectNet('GND');viewer.clearSelection();assert.equal(calls.length,3);
  viewer.inspector.partsTab.onclick();viewer.inspector.search.value='Driver';viewer.inspector.search.oninput();viewer.inspector.results.children[0].onclick();assert.equal(calls.length,4);assert.equal(calls.at(-1),'part-a');
+ viewer.dispose();
+});
+
+test('copper click defaults to source-colored full net, reports scope and emits net identity', async () => {
+ const {viewer}=fixture(); await viewer.loadSource(pcb,{path:'board.kicad_pcb'});
+ assert.equal(viewer.getHighlightStyle().color,'source'); let event;
+ viewer.addEventListener('select',e=>{event=e.detail;});
+ const trace=viewer.design.primitives.find(p=>p.uuid==='track-a');
+ viewer.renderer.select({primitive:trace,context:{uuid:'track-a',kind:'track'}});
+ assert.equal(event.item.netName,'GND');assert.equal(event.item.uuid,'track-a');
+ assert.ok(viewer.renderer.highlight.primitives.some(p=>p.uuid==='pad-b'));
+ assert.ok(nodes(viewer.inspector.properties).some(n=>n.textContent.startsWith('Full net highlighted · GND')));
+ viewer.inspector.netToggle.checked=false;viewer.inspector.netToggle.onchange();
+ assert.ok(viewer.renderer.highlight.primitives.every(p=>p.uuid==='track-a'));
+ assert.ok(!nodes(viewer.inspector.properties).some(n=>n.textContent.startsWith('Full net highlighted')));
  viewer.dispose();
 });

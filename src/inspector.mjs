@@ -1,7 +1,8 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 import {createPanelSizing,PANEL_STYLE} from './viewer-panels.mjs';
+import { MAX_RENDER_PRIMITIVES } from './project-bounds.mjs';
 // Read-only saved-object inspection; supplied connectivity is bounded and source-derived.
-const MAX_PARTS = 10000, MAX_RECORDS = 100000, MAX_FIELDS = 64, MAX_RESULTS = 100, MAX_PRIMITIVES = 200000, MAX_MEMBERS = 400000;
+const MAX_PARTS = 50000, MAX_RECORDS = 500000, MAX_FIELDS = 64, MAX_RESULTS = 100, MAX_PRIMITIVES = MAX_RENDER_PRIMITIVES, MAX_MEMBERS = 3000000;
 const value = item => item && typeof item === 'object' && !Array.isArray(item) ? item.quoted : item;
 const kind = node => Array.isArray(node) ? value(node[0]) : '';
 const children = (node, name) => Array.isArray(node) ? node.filter(item => kind(item) === name) : [];
@@ -39,25 +40,25 @@ export function buildInspectionModel(ast, { kind: documentKind, path = '', desig
   const ambiguous = new Set([...identityCounts].filter(([, count]) => count > 1).map(([uuid]) => uuid));
   if (ambiguous.size) warnings.push(`${ambiguous.size} duplicated saved UUIDs: ambiguous object lookup and owner-group highlighting are disabled.`);
   if (candidateCount > MAX_RECORDS || documentKind === 'manufacturing' && (design?.camLayers || []).reduce((count, layer) => count + (layer.operations?.length || 0), 0) > MAX_RECORDS)
-    warnings.push('Object lookup is limited to 100,000 saved records.');
+    warnings.push('Object lookup is limited to 500,000 saved records.');
   let memberCount = 0;
   function boundedMembers(groups, owner) {
     const result = [], seen = new Set();
     for (const group of groups) for (const primitive of group) {
       if (seen.has(primitive) || owner && primitive.ownerUuid !== owner) continue;
-      if (memberCount >= MAX_MEMBERS) { if (!warnings.includes('Inspection membership is limited to 400,000 geometry references.')) warnings.push('Inspection membership is limited to 400,000 geometry references.'); return result; }
+      if (memberCount >= MAX_MEMBERS) { if (!warnings.includes('Inspection membership is limited to 3,000,000 geometry references.')) warnings.push('Inspection membership is limited to 3,000,000 geometry references.'); return result; }
       seen.add(primitive); result.push(primitive); memberCount++;
     }
     return result;
   }
   let records = 0;
   const add = record => {
-    if (records++ >= MAX_RECORDS) { if (!warnings.includes('Object lookup is limited to 100,000 saved records.')) warnings.push('Object lookup is limited to 100,000 saved records.'); return record; }
+    if (records++ >= MAX_RECORDS) { if (!warnings.includes('Object lookup is limited to 500,000 saved records.')) warnings.push('Object lookup is limited to 500,000 saved records.'); return record; }
     byId.set(record.id, record);
     if (record.uuid) byUuid.set(record.uuid, ambiguous.has(record.uuid) || byUuid.has(record.uuid) ? null : record);
     return record;
   };
-  if ((design?.primitives?.length || 0) > MAX_PRIMITIVES) warnings.push('Inspection geometry lookup is limited to the first 200,000 primitives.');
+  if ((design?.primitives?.length || 0) > MAX_PRIMITIVES) warnings.push('Inspection geometry lookup is limited to the first 1,500,000 primitives.');
   for (const primitive of (design?.primitives || []).slice(0, MAX_PRIMITIVES)) {
     if (primitive.frame) continue;
     if (primitive.uuid && !ambiguous.has(primitive.uuid)) { const list = primitiveByUuid.get(primitive.uuid) || []; list.push(primitive); primitiveByUuid.set(primitive.uuid, list); }
@@ -68,7 +69,7 @@ export function buildInspectionModel(ast, { kind: documentKind, path = '', desig
   const members = uuid => uuid && !ambiguous.has(uuid) ? boundedMembers([primitiveByUuid.get(uuid) || [], primitiveByOwner.get(uuid) || []]) : [];
   if (documentKind === 'pcb' || documentKind === 'schematic') {
     const nodes = partNodes;
-    if (nodes.length > MAX_PARTS) warnings.push('Part search is limited to the first 10,000 saved parts.');
+    if (nodes.length > MAX_PARTS) warnings.push('Part search is limited to the first 50,000 saved parts.');
     for (const [index, node] of nodes.slice(0, MAX_PARTS).entries()) {
       if (records >= MAX_RECORDS) break;
       const uuid = identity(node), fields = savedFields(node), primitives = members(uuid), at = point(node);
@@ -234,6 +235,8 @@ export function createInspector(viewer) {
     const selectedNet = model.netFor(selected);
     if (selectedNet && !selected.net) selected = { ...selected, net: selectedNet.name };
     title.textContent = selected.type === 'net' ? 'Net · ' + selected.name : ['segment', 'arc', 'via', 'zone'].includes(selected.type) ? (selected.type === 'segment' ? 'Track' : selected.type) + (selected.net ? ' · ' + selected.net : '') : title.textContent;
+    const activeNet = selected.type === 'net' ? selected : netToggle.checked && selected.type !== 'part' ? selectedNet : null;
+    if (activeNet) properties.append(make('p', 'inspector-help', `Full net highlighted · ${activeNet.name} · ${activeNet.primitives.length} copper/drawing primitives`));
     renderFields(inspectionFields(selected));
     if (['pcb','schematic'].includes(viewer.kind) && typeof viewer.openInset === 'function') properties.append(button('Open contextual preview', () => { viewer.openInset().catch(error => { if (!viewer.disposed) viewer.chrome.setStatus(error.message, true); }); }));
     if (selectedNet && selected.type !== 'net') properties.append(button('Highlight net ' + selectedNet.name, () => selectNet(selectedNet.id, { locate: false })));
@@ -282,9 +285,9 @@ export function createInspector(viewer) {
     const owner = record?.part || record;
     const net = record?.type === 'net' ? record : netToggle.checked && record?.type !== 'part' ? model.netFor(record) : null;
     const primitives = net?.primitives || (record?.type === 'pad' || record?.type === 'pin' ? record.primitives : owner?.primitives) || [];
-    if (viewer.view === '3d') { if(viewer.renderer?.setSelectionStyle)viewer.renderer.setSelectionStyle({mode:viewer.highlightMode||'dim',color:viewer.highlightColor||'accent'});else viewer.renderer?.setSelectionDim?.(viewer.highlightMode!=='bright'); viewer.renderer?.setSelection?.(net ? { netNames: [net.name] } : record ? { uuids: unique([model.find(owner.uuid) === owner ? owner.uuid : '', ...(owner.pads || []).filter(pad => model.find(pad.uuid) === pad).map(pad => pad.uuid), model.find(record.uuid) === record ? record.uuid : '']) } : {}); if (locate && owner?.type === 'part' && model.find(owner.uuid) === owner) viewer.renderer?.focusPart?.(owner.uuid); return; }
+    if (viewer.view === '3d') { if(viewer.renderer?.setSelectionStyle)viewer.renderer.setSelectionStyle({mode:viewer.highlightMode||'dim',color:viewer.highlightColor||'source'});else viewer.renderer?.setSelectionDim?.(viewer.highlightMode!=='bright'); viewer.renderer?.setSelection?.(net ? { netNames: [net.name] } : record ? { uuids: unique([model.find(owner.uuid) === owner ? owner.uuid : '', ...(owner.pads || []).filter(pad => model.find(pad.uuid) === pad).map(pad => pad.uuid), model.find(record.uuid) === record ? record.uuid : '']) } : {}); if (locate && owner?.type === 'part' && model.find(owner.uuid) === owner) viewer.renderer?.focusPart?.(owner.uuid); return; }
     if (viewer.view === 'manufacturing') return;
-    viewer.renderer?.setNetHighlight?.(record && primitives.length ? { primitives } : null, { mode: viewer.highlightMode||'dim', selectionColor: viewer.highlightColor||'accent' });
+    viewer.renderer?.setNetHighlight?.(record && primitives.length ? { primitives } : null, { mode: viewer.highlightMode||'dim', selectionColor: viewer.highlightColor||'source' });
     if (locate && record?.primitives?.length && viewer.renderer?.viewport?.camera) {
       const bounds = globalThis.KiCadOwnedCanvas?.bounds(record.primitives); if (bounds) { const margin = Math.max(1, Math.max(bounds.w, bounds.h) * 0.15); viewer.renderer.viewport.camera.bbox = { x: bounds.x - margin, y: bounds.y - margin, w: Math.max(bounds.w, 1) + margin * 2, h: Math.max(bounds.h, 1) + margin * 2 }; }
     }
@@ -314,7 +317,7 @@ export function createInspector(viewer) {
   function select(item, { locate = true } = {}) { selected = model.resolve(item); highlight(selected, locate && viewer.view === '3d'); renderProperties(); if (selected && viewer.inspectOnSelect !== false) { setTab('properties'); toggle(true); } }
   const escape = event => { if (event.key === 'Escape' && open) { toggle(false); viewer.inspectorButton?.focus?.(); } };
   viewer.surface.addEventListener?.('keydown', escape);
-  search.oninput = updateResults; netSearch.oninput = updateNetResults; netToggle.onchange = () => highlight(selected);
+  search.oninput = updateResults; netSearch.oninput = updateNetResults; netToggle.onchange = () => { highlight(selected); renderProperties(); };
   function syncRenderer() {
     highlight(selected);
     updateNetResults();

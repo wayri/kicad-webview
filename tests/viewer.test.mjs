@@ -104,8 +104,8 @@ test('URL loads omit credentials and reject oversized or unsafe sources', async 
     assert.equal(await viewer.load('board.kicad_pcb'), true);
     await assert.rejects(viewer.load('file:///private.kicad_pcb'), /HTTP/);
     await assert.rejects(viewer.load('https://user:password@example.test/board'), /credentials/);
-    globalThis.fetch = async () => new Response(board, { headers: { 'content-length': String(65 * 1024 * 1024) } });
-    await assert.rejects(viewer.load('board.kicad_pcb'), /64 MiB/);
+    globalThis.fetch = async () => new Response(board, { headers: { 'content-length': String(257 * 1024 * 1024) } });
+    await assert.rejects(viewer.load('board.kicad_pcb'), /256 MiB/);
     globalThis.fetch = async () => new Response('', { status: 404 });
     await assert.rejects(viewer.load('board.kicad_pcb'), /404/);
   } finally { globalThis.fetch = original; viewer.dispose(); }
@@ -135,10 +135,10 @@ test('streamed size is bounded even when the server omits content-length', async
   let cancelled = false;
   try {
     globalThis.fetch = async () => ({ ok: true, headers: new Headers(), body: { getReader: () => ({
-      read: async () => ({ done: false, value: { byteLength: 65 * 1024 * 1024 } }),
+      read: async () => ({ done: false, value: { byteLength: 257 * 1024 * 1024 } }),
       cancel: async () => { cancelled = true; },
     }) } });
-    await assert.rejects(viewer.load('oversized.kicad_pcb'), /64 MiB/);
+    await assert.rejects(viewer.load('oversized.kicad_pcb'), /256 MiB/);
     assert.equal(cancelled, true);
     assert.equal(viewer.source, null);
   } finally { globalThis.fetch = original; viewer.dispose(); }

@@ -1,8 +1,8 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
-import '../engine/design-diff.js';
+import { MAX_SOURCE_BYTES, MAX_PROJECT_BYTES } from './project-bounds.mjs';
 import {safeRelativePath} from './source-types.mjs';
 
-const MAX_FILES=256,MAX_FILE_BYTES=8*1024*1024,MAX_BYTES=64*1024*1024,MAX_NODES=4096,MAX_DEPTH=32,MAX_WARNINGS=128;
+const MAX_FILES=256,MAX_FILE_BYTES=MAX_SOURCE_BYTES,MAX_BYTES=MAX_PROJECT_BYTES,MAX_NODES=4096,MAX_DEPTH=32,MAX_WARNINGS=128;
 const atom=value=>value&&typeof value==='object'&&!Array.isArray(value)?value.quoted:value;
 const kind=node=>Array.isArray(node)?atom(node[0]):null;
 const forms=(node,name)=>node.filter(item=>kind(item)===name);
@@ -29,8 +29,8 @@ export function buildProjectHierarchy(files,{root,entry}={}){
   if(file.error!==undefined){if(typeof file.error!=='string')throw new TypeError('A schematic read error must be text.');model.error=short(file.error||'The schematic could not be read.',512);}
   else{
    if(typeof file.source!=='string')throw new TypeError('A schematic needs source text or an explicit read error.');
-   if(file.source.length>MAX_FILE_BYTES)throw new RangeError('Schematic hierarchy sources exceed 8 MiB per file or 64 MiB per project.');
-   const size=encoder.encode(file.source).length;bytes+=size;if(size>MAX_FILE_BYTES||bytes>MAX_BYTES)throw new RangeError('Schematic hierarchy sources exceed 8 MiB per file or 64 MiB per project.');model.source=file.source;
+   if(file.source.length>MAX_FILE_BYTES)throw new RangeError('Schematic hierarchy sources exceed 256 MiB per file or 512 MiB per project.');
+   const size=encoder.encode(file.source).length;bytes+=size;if(size>MAX_FILE_BYTES||bytes>MAX_BYTES)throw new RangeError('Schematic hierarchy sources exceed 256 MiB per file or 512 MiB per project.');model.source=file.source;
   }
   index.set(file.path,model);
  }
