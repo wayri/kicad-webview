@@ -1,6 +1,6 @@
 # Expand mode and net shine-through
 
-Expand mode is available in stable 0.8.0. The current source preview adds context fading for unselected vias while expanded; the published npm/CDN 0.8.0 package is unchanged.
+Expand mode is available in stable 0.8.0. Release 1.0.0 adds context fading for unselected vias while expanded.
 
 ```js
 await viewer.load('/designs/project.json', {view:'3d'});

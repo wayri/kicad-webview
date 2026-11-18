@@ -1,7 +1,7 @@
 <h1 align="center">KiCad WebView</h1>
 <p align="center">Interactive electronics. Anywhere on the web.</p>
 <p align="center"><a href="https://wayri.github.io/kicad-webview/">Live demos</a> · <a href="https://wayri.github.io/kicad-webview/docs/">Documentation</a> · <a href="https://wayri.github.io/kicad-webview/docs/api/">API reference</a> · <a href="https://github.com/wayri/kicad-webview/releases">Releases</a></p>
-<p align="center"><a href="LICENSE"><img alt="License: MPL 2.0" src="https://img.shields.io/badge/license-MPL_2.0-42dbca"></a> <a href="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml"><img alt="Viewer checks" src="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml/badge.svg?branch=main"></a> <a href="https://github.com/wayri/kicad-webview/releases"><img alt="Release 0.8.0" src="https://img.shields.io/badge/version-0.8.0-42dbca"></a> <a href="https://wayri.github.io/kicad-webview/docs/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue"></a> <a href="https://wayri.github.io/kicad-webview/sponsor/"><img alt="Sponsor development" src="https://img.shields.io/badge/Sponsor-development-ea4aaa?logo=githubsponsors&amp;logoColor=white"></a></p>
+<p align="center"><a href="LICENSE"><img alt="License: MPL 2.0" src="https://img.shields.io/badge/license-MPL_2.0-42dbca"></a> <a href="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml"><img alt="Viewer checks" src="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml/badge.svg?branch=main"></a> <a href="https://github.com/wayri/kicad-webview/releases"><img alt="Release 1.0.0" src="https://img.shields.io/badge/version-1.0.0-42dbca"></a> <a href="https://wayri.github.io/kicad-webview/docs/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue"></a> <a href="https://wayri.github.io/kicad-webview/sponsor/"><img alt="Sponsor development" src="https://img.shields.io/badge/Sponsor-development-ea4aaa?logo=githubsponsors&amp;logoColor=white"></a></p>
 
 Embed read-only **KiCad schematics, PCB layouts and interactive 3D boards** in websites, blogs and applications. Inspect parts, pads, nets and layers; link views; navigate complete projects; or bundle a design and viewer into one portable HTML file. Gerber and Excellon support brings fabrication files into the same viewer.
 
@@ -9,15 +9,15 @@ Everything needed for native KiCad viewing runs in the browser. Visitors need no
 
 **Free to use, including commercially, under MPL-2.0.** Paid help with embedding, customization, maintenance, and support is optional; you do not need to buy services to use or integrate the library.
 
-### 0.7 source refresh: text and loading
+## Version 1.0.0
 
-The 0.7 source adds bounded KiCad text-variable and numeric-expression previews, horizontal schematic tables, local-label orientation and visible PCB custom properties. Local project bundles can supply one `.kicad_pro` for `text_variables`; explicit load options take precedence. Repeated-sheet text can use a saved instance path. Unresolved context and rendering approximations remain visible in diagnostics. The loading overlay reports stages and offers Stop. See [compatibility details](docs/EXTENSION-REFRESH.md) and [load options](docs/PUBLIC-API.md).
+The documented core embed API is now version **1.0**. Existing viewer methods, linked selection, saved view-state formats and the `setExplode` compatibility aliases remain available. Code that checks the old `EMBED_API_VERSION === '1.0-beta'` literal should accept `'1.0'`. [API stability and upgrade notes](docs/API-STABILITY.md).
 
-## New in 0.8.0
+This release includes the completed shared drawing refresh: saved text variables and symbol overrides, graphics, sheet navigation and multilayer inspection. Resolved edge smoothing removes the KERO pad/track speckling caused by multisample/logarithmic-depth interference. Expanded net focus keeps only selected-net vias gold and fades unrelated vias gray/translucent. Source geometry and saved identities remain unchanged.
 
-Photoreal Fast adds bounded PBR studio rendering without a visible floor. Expand mode lifts models, separates colored copper layers, fades the substrate and stretches through vias while retaining saved cross-selection. Selected nets shine through the board in their layer colors; plated vias remain gold. Compact controls and contextual previews keep the drawing in focus. Native text placement and bounded large-project source/index handling are improved; the documented ceilings are not device-performance guarantees.
+KERO is the default shipped demonstration; IRCA and credited public hardware remain available on the website. Altium and app adapters retain their separately documented experimental status; a stable library version does not certify every host or device.
 
-[Photoreal Fast](docs/PHOTOREAL-FAST.md) · [Expand mode](docs/EXPAND-MODE.md) · [Large-project limits](docs/LARGE-PROJECTS.md).
+[Release notes](docs/RELEASE-1.0.0.md) · [Validation scope](docs/QA-1.0.0.md) · [Photoreal Fast](docs/PHOTOREAL-FAST.md) · [Expand mode](docs/EXPAND-MODE.md) · [Large-project limits](docs/LARGE-PROJECTS.md).
 
 ## Start here
 
@@ -26,7 +26,7 @@ Photoreal Fast adds bounded PBR studio rendering without a visible floor. Expand
 - [Read the user guide](https://wayri.github.io/kicad-webview/docs/user-guide/) or [API reference](https://wayri.github.io/kicad-webview/docs/api/).
 - [Download a release](https://github.com/wayri/kicad-webview/releases), or build this checkout.
 
-Release **0.8.0** adds stable, resizable inspection panels; bounded contextual previews with exact-source cross-selection; and selectable saved-result palettes shared by 2D and 3D. It retains our ribbon, popup styling and visible viewer controls. Major locate, cross-highlighting, side-aware part focus and Fit actions use saved design identities. [Panels and inset API](docs/PANELS-AND-INSETS.md) · [Saved-result palettes and limits](docs/WAYRICAD-RESULTS.md). Native drawing fidelity, exploded inspection, linked hierarchy, BOM/CSV and registered WayriCAD fields remain available. [Extension sync evidence](docs/UPSTREAM-SYNC.md).
+The 1.0.0 interface includes stable, resizable inspection panels; bounded contextual previews with exact-source cross-selection; and selectable saved-result palettes shared by 2D and 3D. It retains our ribbon, popup styling and visible viewer controls. Major locate, cross-highlighting, side-aware part focus and Fit actions use saved design identities. [Panels and inset API](docs/PANELS-AND-INSETS.md) · [Saved-result palettes and limits](docs/WAYRICAD-RESULTS.md). Native drawing fidelity, exploded inspection, linked hierarchy, BOM/CSV and registered WayriCAD fields remain available. [Extension sync evidence](docs/UPSTREAM-SYNC.md).
 
 WayriCAD results: load retained PI fields, SI graphs and thermal frames alongside an exact-hash-matched PCB, inspect source-linked routes and explore supported independent 3D fields. [WayriCAD result API and limits](docs/WAYRICAD-RESULTS.md).
 
@@ -35,7 +35,7 @@ New inspection controls include configurable highlight styles and source colors,
 ## Install from npm or use a CDN
 
 ~~~sh
-npm install @wayrisignals/kicad-webview@0.8.0
+npm install @wayrisignals/kicad-webview@1.0.0
 ~~~
 
 ~~~js
@@ -48,7 +48,7 @@ For direct browser use, pin the version and load the classic script. No npm inst
 
 ~~~html
 <div id="board" style="height:70dvh;min-height:360px"></div>
-<script src="https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@0.8.0/dist/kicad-webview.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@1.0.0/dist/kicad-webview.min.js"></script>
 <script>
   const viewer = new KiCadWebView.Viewer('#board', { theme:'dark' });
   viewer.load('/designs/project.zip', { view:'3d' }).catch(console.error);
@@ -56,7 +56,7 @@ For direct browser use, pin the version and load the classic script. No npm inst
 </script>
 ~~~
 
-The self-contained ES module is available at [jsDelivr](https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@0.8.0/dist/kivi-viewer.js) or [UNPKG](https://unpkg.com/@wayrisignals/kicad-webview@0.8.0/dist/kivi-viewer.js). The classic script is available from either CDN at the matching path. Self-host the package contents for offline use and keep its license and notices. The npm artifact contains the viewer, matching covered source, types, documentation and source-parameterized iframe entry; legacy board fixtures and fixture-backed example pages are excluded. Current [IRCA and credited public-board demonstrations](https://wayri.github.io/kicad-webview/) remain on the website.
+The self-contained ES module is available at [jsDelivr](https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@1.0.0/dist/kivi-viewer.js) or [UNPKG](https://unpkg.com/@wayrisignals/kicad-webview@1.0.0/dist/kivi-viewer.js). The classic script is available from either CDN at the matching path. Self-host the package contents for offline use and keep its license and notices. The npm artifact contains the viewer, matching covered source, types, documentation and source-parameterized iframe entry; legacy board fixtures and fixture-backed example pages are excluded. Current [KERO, IRCA and credited public-board demonstrations](https://wayri.github.io/kicad-webview/) remain on the website.
 
 The [linked hierarchy demo](https://wayri.github.io/assets/demos/hierarchy.html) combines this library’s selection and 3D focus APIs with a source-bound website sheet adapter. See the [integration guide](https://wayri.github.io/kicad-webview/docs/examples/#link-the-hierarchy-pcb-and-3d-assembly) for that host integration.
 

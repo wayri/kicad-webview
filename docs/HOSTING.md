@@ -3,12 +3,14 @@
 Build once using the existing project esbuild installation:
 
 ```sh
+npm run build:3d
+npm run build:3d
 npm run build
 ```
 
 Publish the contents of `dist/` using your site's existing deployment
 workflow. It includes one `kivi-viewer.js` module containing the 2D/3D engines,
-pure iframe viewer, starter page, synthetic demo project and license notices.
+pure iframe viewer, starter page, pinned KERO demonstration project with separate hardware attribution and license notices.
 The build verifies there are no external JavaScript imports. No parent repository directory, KiCad installation or rendering service is needed.
 The build does not publish anything or change your GitHub Pages settings.
 

@@ -1,6 +1,6 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 export as namespace KiCadWebView;
-export declare const EMBED_API_VERSION: '1.0-beta';
+export declare const EMBED_API_VERSION: '1.0';
 export type Theme = 'light' | 'dark';
 export type HighlightMode = 'dim' | 'bright' | 'isolate';
 export type HighlightColor = 'accent' | 'source';

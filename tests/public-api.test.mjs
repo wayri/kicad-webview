@@ -8,5 +8,5 @@ test('public camera snapshots are copied, validate atomically, and emit changes 
  const state={center:{x:12,y:-3},zoom:10,flipped:true};viewer.setCamera(state);assert.deepEqual(viewer.getCamera(),state);assert.equal(viewer.events.length,1);
  renderer.draw();assert.equal(viewer.events.length,1);viewer.events[0].detail.camera.center.x=999;assert.equal(viewer.getCamera().center.x,12);
  for(const bad of [{...state,zoom:Infinity},{...state,center:{x:NaN,y:0}},{...state,flipped:'yes'},{...state,zoom:10001}])assert.throws(()=>viewer.setCamera(bad));assert.deepEqual(viewer.getCamera(),state);
- viewer.view='3d';assert.equal(viewer.getCamera(),null);assert.throws(()=>viewer.setCamera(state),/2D/);viewer.stopCamera();assert.equal(EMBED_API_VERSION,'1.0-beta');
+ viewer.view='3d';assert.equal(viewer.getCamera(),null);assert.throws(()=>viewer.setCamera(state),/2D/);viewer.stopCamera();assert.equal(EMBED_API_VERSION,'1.0');
 });
