@@ -63,4 +63,4 @@ viewer.load('/designs/project.json', {view:'3d'}).then(() => {
 </script>
 ~~~
 
-Use an exact saved net name in a slide (for example net:'GND' if present) to accent its copper and grey unrelated surroundings. Hidden/back-side/internal copper follows the normal physical 3D visibility and is not projected through the board. The included carousel.html demonstrates both a project story and a board tour using the owner's real inverter design. The npm beta remains pending publication; self-hosted assets can be used now.
+Use an exact saved net name in a slide (for example net:'GND' if present) to accent its copper and grey unrelated surroundings. Hidden/back-side/internal copper follows the normal physical 3D visibility and is not projected through the board. The included carousel.html demonstrates both a project story and a board tour using the owner’s KERO Encoder design. The npm beta remains pending publication; self-hosted assets can be used now.

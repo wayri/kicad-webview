@@ -77,9 +77,9 @@ No connectivity is invented from pixels. Original net/component identity is avai
 
 ## Real-design acceptance fixture
 
-`fixtures/inverter-cam` contains four Gerber layers and PTH/NPTH drill exports from the owner's public three-phase inverter at revision `283f41b65c193abcc7e63c8c919dacdbccc89829`. KiCad 10.0.6 exported the unchanged saved board with no requested zone refill. The source SHA-256, commands and output hashes are in PROVENANCE.json. The original design has no upstream license file; it is an owner-provided authorized demo, not an assertion of a broader open-source hardware license.
+`fixtures/kero-encoder-cam` contains four Gerber layers and PTH/NPTH drill exports from the owner's public KERO Encoder at revision `7be8fef589bc28eee149323e3790ef95b0873032`. KiCad 10.0.6 exported the unchanged saved board with no requested zone refill. The source SHA-256, commands and output hashes are in PROVENANCE.json. Hardware design attribution and source details accompany the demo.
 
-`scripts/build-demo-archive.mjs` creates the demo's deflated ZIP from that manifest. The build publishes the static example at `manufacturing.html`; it loads `manufacturing/inverter-fabrication.zip` through the actual library API. Native Gerber macros are retained in the fixture, including KiCad rounded-rectangle pads. Existing saved-fill limitations remain part of the source evidence.
+`scripts/build-demo-archive.mjs` creates the demo's deflated ZIP from that manifest. The build publishes the static example at `manufacturing.html`; it loads `manufacturing/kero-encoder-fabrication.zip` through the actual library API. Native Gerber macros are retained in the fixture, including KiCad rounded-rectangle pads. Existing saved-fill limitations remain part of the source evidence.
 
 Test parser coordinates, arcs, polarity, ambiguity and malformed input; test archive bounds/corruption; test source retention and stale-load cancellation. Actual browser checks and live app acceptance are recorded separately. See [application beta setup](APP-INTEGRATIONS-BETA.md).
 

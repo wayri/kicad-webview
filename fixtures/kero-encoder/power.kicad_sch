@@ -1,0 +1,828 @@
+(kicad_sch
+  (version 20250114)
+  (generator "eeschema")
+  (uuid "d23fc87b-804e-5bef-ae40-2c344f10f8fe")
+  (paper "A4")
+  (title_block (title "CR2032 power and quad-op-amp bypass") (date "2026-11-07") (rev "candidate"))
+  (lib_symbols
+    (symbol
+      "Encoder:Device_R"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "R" (at 2.032 0 90) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Value" "R" (at 0 0 90) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at -1.778 0 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Description" "Resistor" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "R res resistor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_fp_filters" "R_*" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (symbol
+        "Device_R_0_1"
+        (rectangle (start -1.016 -2.54) (end 1.016 2.54) (stroke (width 0.254) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_R_1_1"
+        (pin
+          passive
+          line
+          (at 0 3.81 270)
+          (length 1.27)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -3.81 90)
+          (length 1.27)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_C"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0.254))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property
+        "Reference"
+        "C"
+        (at 0.635 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Value" "C" (at 0.635 -2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27)) (justify left)))
+      (property "Footprint" "" (at 0.9652 -3.81 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Unpolarized capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_keywords"
+        "cap capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_fp_filters" "C_*" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (symbol
+        "Device_C_0_1"
+        (polyline (pts (xy -2.032 0.762) (xy 2.032 0.762)) (stroke (width 0.508) (type default)) (fill (type none)))
+        (polyline (pts (xy -2.032 -0.762) (xy 2.032 -0.762)) (stroke (width 0.508) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_C_1_1"
+        (pin
+          passive
+          line
+          (at 0 3.81 270)
+          (length 2.794)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -3.81 90)
+          (length 2.794)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_LED"
+      (pin_numbers (hide yes))
+      (pin_names (offset 1.016) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "D" (at 0 2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Value" "LED" (at 0 -2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Light emitting diode"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Sim.Pins" "1=K 2=A" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "ki_keywords" "LED diode" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_fp_filters"
+        "LED* LED_SMD:* LED_THT:*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "Device_LED_0_1"
+        (polyline
+          (pts (xy -3.048 -0.762) (xy -4.572 -2.286) (xy -3.81 -2.286) (xy -4.572 -2.286) (xy -4.572 -1.524))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy -1.778 -0.762) (xy -3.302 -2.286) (xy -2.54 -2.286) (xy -3.302 -2.286) (xy -3.302 -1.524))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline (pts (xy -1.27 0) (xy 1.27 0)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy -1.27 -1.27) (xy -1.27 1.27)) (stroke (width 0.254) (type default)) (fill (type none)))
+        (polyline
+          (pts (xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol
+        "Device_LED_1_1"
+        (pin
+          passive
+          line
+          (at -3.81 0 0)
+          (length 2.54)
+          (name "K" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 3.81 0 180)
+          (length 2.54)
+          (name "A" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_Battery_Cell"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property
+        "Reference"
+        "BT"
+        (at 2.54 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property
+        "Value"
+        "Battery_Cell"
+        (at 2.54 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" "" (at 0 1.524 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 1.524 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Single-cell battery"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Sim.Device" "V" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Sim.Type" "DC" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Sim.Pins" "1=+ 2=-" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "battery cell"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "Device_Battery_Cell_0_1"
+        (rectangle (start -2.286 1.778) (end 2.286 1.524) (stroke (width 0) (type default)) (fill (type outline)))
+        (rectangle (start -1.524 1.016) (end 1.524 0.508) (stroke (width 0) (type default)) (fill (type outline)))
+        (polyline (pts (xy 0 1.778) (xy 0 2.54)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy 0 0.762) (xy 0 0)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy 0.762 3.048) (xy 1.778 3.048)) (stroke (width 0.254) (type default)) (fill (type none)))
+        (polyline (pts (xy 1.27 3.556) (xy 1.27 2.54)) (stroke (width 0.254) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_Battery_Cell_1_1"
+        (pin
+          passive
+          line
+          (at 0 5.08 270)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -2.54 90)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:power_PWR_FLAG"
+      (power global)
+      (pin_numbers (hide yes))
+      (pin_names (offset 0) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "#FLG" (at 0 1.905 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Value" "PWR_FLAG" (at 0 3.81 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Special symbol for telling ERC where power comes from"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_keywords"
+        "flag power"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "power_PWR_FLAG_0_0"
+        (pin
+          power_out
+          line
+          (at 0 0 90)
+          (length 0)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "power_PWR_FLAG_0_1"
+        (polyline
+          (pts (xy 0 0) (xy 0 1.27) (xy -1.016 1.905) (xy 0 2.54) (xy 1.016 1.905) (xy 0 1.27))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:TLV9044"
+      (pin_names (offset 0.127))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (symbol
+        "TLV9044_1_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "3" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_2_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "5" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "6" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "7" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_3_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "8" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "9" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "10" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_4_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "12" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "13" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "14" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_5_1"
+        (pin
+          power_in
+          line
+          (at -2.54 7.62 270)
+          (length 3.81)
+          (name "V+" (effects (font (size 1.27 1.27))))
+          (number "4" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          power_in
+          line
+          (at -2.54 -7.62 90)
+          (length 3.81)
+          (name "V-" (effects (font (size 1.27 1.27))))
+          (number "11" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+      (property "Reference" "U" (at 0 5.08 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27)) (justify left)))
+      (property
+        "Value"
+        "TLV9044IPWR"
+        (at 0 -5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" "" (at -1.27 2.54 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Datasheet"
+        "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+        (at 1.27 5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "Description"
+        "TLV9044 quad RRIO low-power op amp; standard TSSOP-14 pin map"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_locked" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "quad opamp"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_fp_filters"
+        "SOIC*3.9x8.7mm*P1.27mm* DIP*W7.62mm* TSSOP*4.4x5mm*P0.65mm* SSOP*5.3x6.2mm*P0.65mm* MSOP*3x3mm*P0.5mm*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_Battery_Cell")
+    (at 38.1 63.5 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "f27631ed-daa2-5cab-82f7-460c6eb59341")
+    (property "Reference" "BT1" (at 45.72 62.23 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "CR2032" (at 45.72 64.77 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:BatteryHolder_Keystone_1058_1x2032" (at 38.1 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 38.1 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Keystone" (at 38.1 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "1058" (at 38.1 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "One CR2032 coin cell, 3 V nominal; holder only"
+      (at 38.1 63.5 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/d23fc87b-804e-5bef-ae40-2c344f10f8fe" (reference "BT1") (unit 1))
+      )
+    )
+  )
+  (wire (pts (xy 38.1 58.42) (xy 38.1 40.64)) (stroke (width 0) (type default)) (uuid "c8a00c19-1656-571e-ac94-4df6f861439f"))
+  (wire (pts (xy 38.1 40.64) (xy 63.5 40.64)) (stroke (width 0) (type default)) (uuid "35f54b19-762d-56b5-88de-aa974cdc1cbe"))
+  (hierarchical_label
+    "VBAT"
+    (at 63.5 40.64 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "0cd799a9-f346-5823-92a6-dc5e78e239ae")
+  )
+  (wire (pts (xy 38.1 66.04) (xy 38.1 88.9)) (stroke (width 0) (type default)) (uuid "dab425ec-c6e0-5f18-8149-8784c381d299"))
+  (wire (pts (xy 38.1 88.9) (xy 63.5 88.9)) (stroke (width 0) (type default)) (uuid "ebde1f1f-48c7-52ab-8a3d-21c3548da600"))
+  (hierarchical_label
+    "GND"
+    (at 63.5 88.9 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "a145780e-f616-5519-896b-48a05a61d5b4")
+  )
+  (symbol
+    (lib_id "Encoder:TLV9044")
+    (at 91.44 63.5 0)
+    (unit 5)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "8a8aceea-313a-5e27-a6f7-3e8537cb74f9")
+    (property "Reference" "U1" (at 91.44 55.88 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${ENCODER_OPAMP_MPN}" (at 91.44 71.12 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:TSSOP-14_4.4x5mm_P0.65mm" (at 91.44 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Datasheet"
+      "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+      (at 91.44 63.5 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Manufacturer" "${OPAMP_MFR}" (at 91.44 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "${ENCODER_OPAMP_MPN}" (at 91.44 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "1.2–5.5 V RRIO quad op amp" (at 91.44 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/d23fc87b-804e-5bef-ae40-2c344f10f8fe" (reference "U1") (unit 5)))
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_C")
+    (at 114.3 63.5 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "58487413-b824-5167-97d8-e6e6059ee39d")
+    (property "Reference" "C12" (at 121.92 62.23 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${BYPASS_C}" (at 121.92 64.77 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:C_0603_1608Metric" (at 114.3 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 114.3 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 114.3 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 114.3 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "10 V, X7R, 0603; exact MPN unverified" (at 114.3 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/d23fc87b-804e-5bef-ae40-2c344f10f8fe" (reference "C12") (unit 1))
+      )
+    )
+  )
+  (wire (pts (xy 88.9 55.88) (xy 88.9 40.64)) (stroke (width 0) (type default)) (uuid "b230afa4-c597-5f66-b7a0-6c1ec29681cf"))
+  (wire (pts (xy 88.9 40.64) (xy 114.3 40.64)) (stroke (width 0) (type default)) (uuid "90dea044-c22e-5ed4-9e00-f1546193029d"))
+  (wire (pts (xy 114.3 40.64) (xy 114.3 59.69)) (stroke (width 0) (type default)) (uuid "9e8dfaa6-2f74-5270-86eb-a1dcd7a4d3a5"))
+  (label
+    "VBAT"
+    (at 88.9 40.64 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "8e454578-5c9b-5eb3-93ed-7feb2352ed85")
+  )
+  (wire (pts (xy 88.9 71.12) (xy 88.9 88.9)) (stroke (width 0) (type default)) (uuid "7fc898e7-4916-5999-a4e5-3d7cbe6fbb19"))
+  (wire (pts (xy 88.9 88.9) (xy 114.3 88.9)) (stroke (width 0) (type default)) (uuid "a3b37ddb-9f63-587c-8f5a-25b363942fb6"))
+  (wire (pts (xy 114.3 88.9) (xy 114.3 67.31)) (stroke (width 0) (type default)) (uuid "56e3b952-6a7d-521f-9cf1-d96daaf85aad"))
+  (label
+    "GND"
+    (at 88.9 88.9 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "41bbf140-f244-53c3-a2ee-08818859a5ff")
+  )
+  (symbol
+    (lib_id "Encoder:TLV9044")
+    (at 149.86 63.5 0)
+    (unit 5)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "eef8e5d5-6d1a-5085-b4aa-8def3e8e7c75")
+    (property "Reference" "U2" (at 149.86 55.88 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${ENCODER_OPAMP_MPN}" (at 149.86 71.12 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:TSSOP-14_4.4x5mm_P0.65mm" (at 149.86 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Datasheet"
+      "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+      (at 149.86 63.5 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Manufacturer" "${OPAMP_MFR}" (at 149.86 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "${ENCODER_OPAMP_MPN}" (at 149.86 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "1.2–5.5 V RRIO quad op amp" (at 149.86 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/d23fc87b-804e-5bef-ae40-2c344f10f8fe" (reference "U2") (unit 5)))
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_C")
+    (at 172.72000000000003 63.5 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "58ad6d77-939c-54a9-bc52-eb81c4dc44a7")
+    (property "Reference" "C13" (at 180.34000000000003 62.23 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${BYPASS_C}" (at 180.34000000000003 64.77 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:C_0603_1608Metric" (at 172.72000000000003 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 172.72000000000003 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 172.72000000000003 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 172.72000000000003 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "10 V, X7R, 0603; exact MPN unverified"
+      (at 172.72000000000003 63.5 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/d23fc87b-804e-5bef-ae40-2c344f10f8fe" (reference "C13") (unit 1))
+      )
+    )
+  )
+  (wire (pts (xy 147.32 55.88) (xy 147.32 40.64)) (stroke (width 0) (type default)) (uuid "f7615a40-ad9a-5868-a661-f1e1bbff1693"))
+  (wire (pts (xy 147.32 40.64) (xy 172.72 40.64)) (stroke (width 0) (type default)) (uuid "8bc6692c-fd52-5e09-a20c-142301e751ff"))
+  (wire (pts (xy 172.72 40.64) (xy 172.72 59.69)) (stroke (width 0) (type default)) (uuid "531e4902-cdfa-5898-aaac-ad4ca6d82162"))
+  (label
+    "VBAT"
+    (at 147.32 40.64 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "682954cd-6a7a-5bbb-b8fb-3d17f8ef1307")
+  )
+  (wire (pts (xy 147.32 71.12) (xy 147.32 88.9)) (stroke (width 0) (type default)) (uuid "65b6e4ff-2d89-5850-9165-33406fb1cfb0"))
+  (wire (pts (xy 147.32 88.9) (xy 172.72 88.9)) (stroke (width 0) (type default)) (uuid "26eb1ac5-c2a8-5d95-b7e7-0f8464702a5a"))
+  (wire (pts (xy 172.72 88.9) (xy 172.72 67.31)) (stroke (width 0) (type default)) (uuid "5b73ad33-1a25-5c4c-9981-06fe7d6cb476"))
+  (label
+    "GND"
+    (at 147.32 88.9 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "f46cea60-3e06-5c7d-b1a8-535abfe62a10")
+  )
+  (symbol
+    (lib_id "Encoder:TLV9044")
+    (at 208.28 63.5 0)
+    (unit 5)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "431000a8-2a17-588a-be9f-2eda4dd15fc0")
+    (property "Reference" "U3" (at 208.28 55.88 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${ENCODER_OPAMP_MPN}" (at 208.28 71.12 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:TSSOP-14_4.4x5mm_P0.65mm" (at 208.28 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Datasheet"
+      "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+      (at 208.28 63.5 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Manufacturer" "${OPAMP_MFR}" (at 208.28 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "${ENCODER_OPAMP_MPN}" (at 208.28 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "1.2–5.5 V RRIO quad op amp" (at 208.28 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/d23fc87b-804e-5bef-ae40-2c344f10f8fe" (reference "U3") (unit 5)))
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_C")
+    (at 231.14 63.5 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "95f10e6f-939e-5ca8-846b-c804c8859c1b")
+    (property "Reference" "C14" (at 238.76 62.23 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${BYPASS_C}" (at 238.76 64.77 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:C_0603_1608Metric" (at 231.14 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 231.14 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 231.14 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 231.14 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "10 V, X7R, 0603; exact MPN unverified" (at 231.14 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/d23fc87b-804e-5bef-ae40-2c344f10f8fe" (reference "C14") (unit 1))
+      )
+    )
+  )
+  (wire (pts (xy 205.74 55.88) (xy 205.74 40.64)) (stroke (width 0) (type default)) (uuid "6485b118-ed1c-5bfd-82e8-1a3689300009"))
+  (wire (pts (xy 205.74 40.64) (xy 231.14 40.64)) (stroke (width 0) (type default)) (uuid "d580ae84-a2de-56f7-a83a-a9ed86e729d3"))
+  (wire (pts (xy 231.14 40.64) (xy 231.14 59.69)) (stroke (width 0) (type default)) (uuid "f68d1d47-5964-55b0-9ed2-4a3d8cc8c689"))
+  (label
+    "VBAT"
+    (at 205.74 40.64 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "40babaae-00bc-582c-882b-a40446be88e3")
+  )
+  (wire (pts (xy 205.74 71.12) (xy 205.74 88.9)) (stroke (width 0) (type default)) (uuid "56ca8f8e-6770-53dd-8cda-deef86cd0399"))
+  (wire (pts (xy 205.74 88.9) (xy 231.14 88.9)) (stroke (width 0) (type default)) (uuid "051a023f-4edb-5549-bafc-1bc47f86fd52"))
+  (wire (pts (xy 231.14 88.9) (xy 231.14 67.31)) (stroke (width 0) (type default)) (uuid "c20688fd-917f-5a63-8e86-4684e95a26da"))
+  (label
+    "GND"
+    (at 205.74 88.9 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "e7d40a80-e157-5daa-892d-a45e8efb7194")
+  )
+  (symbol
+    (lib_id "Encoder:power_PWR_FLAG")
+    (at 38.1 111.76 0)
+    (unit 1)
+    (in_bom no)
+    (on_board no)
+    (dnp no)
+    (uuid "c740f124-fa44-5001-9b35-458907ba355b")
+    (property "Reference" "#FLG01" (at 38.1 111.76 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Value" "PWR_FLAG" (at 38.1 111.76 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/d23fc87b-804e-5bef-ae40-2c344f10f8fe" (reference "#FLG01") (unit 1))
+      )
+    )
+  )
+  (wire (pts (xy 38.1 111.76) (xy 63.5 111.76)) (stroke (width 0) (type default)) (uuid "50d6c1d0-5734-54c5-9e00-fedca9bedcbf"))
+  (label
+    "VBAT"
+    (at 63.5 111.76 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "32fdac27-33fe-5df4-a254-c6e27d3baa50")
+  )
+  (symbol
+    (lib_id "Encoder:power_PWR_FLAG")
+    (at 38.1 127 0)
+    (unit 1)
+    (in_bom no)
+    (on_board no)
+    (dnp no)
+    (uuid "3d2828c5-62e7-5aa8-a9c2-2202cbe757ed")
+    (property "Reference" "#FLG02" (at 38.1 127 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Value" "PWR_FLAG" (at 38.1 127 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/d23fc87b-804e-5bef-ae40-2c344f10f8fe" (reference "#FLG02") (unit 1))
+      )
+    )
+  )
+  (wire (pts (xy 38.1 127) (xy 63.5 127)) (stroke (width 0) (type default)) (uuid "87ea7452-88ac-5d96-a993-5d779823df2b"))
+  (label
+    "GND"
+    (at 63.5 127 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "9fd4a5ec-dfba-560b-8390-7e1c1c3b74c9")
+  )
+  (text
+    "One CR2032: 3 V nominal, evaluated at 2.5–3.3 V.\nRemove cell to switch off. No reverse-cell protection.\nDo not short the cell. Ideal supply model omits cell ESR and capacity effects."
+    (at 139.7 149.86 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "dec16f6b-33c0-5c6c-bc17-9d36038ae0cf")
+  )
+)

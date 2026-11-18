@@ -1,0 +1,1618 @@
+(kicad_sch
+  (version 20250114)
+  (generator "eeschema")
+  (uuid "0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4")
+  (paper "A3")
+  (title_block (title "RC delay bank: ST05–ST08") (date "2026-11-07") (rev "candidate"))
+  (lib_symbols
+    (symbol
+      "Encoder:Device_R"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "R" (at 2.032 0 90) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Value" "R" (at 0 0 90) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at -1.778 0 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Description" "Resistor" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "R res resistor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_fp_filters" "R_*" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (symbol
+        "Device_R_0_1"
+        (rectangle (start -1.016 -2.54) (end 1.016 2.54) (stroke (width 0.254) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_R_1_1"
+        (pin
+          passive
+          line
+          (at 0 3.81 270)
+          (length 1.27)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -3.81 90)
+          (length 1.27)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_C"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0.254))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property
+        "Reference"
+        "C"
+        (at 0.635 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Value" "C" (at 0.635 -2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27)) (justify left)))
+      (property "Footprint" "" (at 0.9652 -3.81 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Unpolarized capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_keywords"
+        "cap capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_fp_filters" "C_*" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (symbol
+        "Device_C_0_1"
+        (polyline (pts (xy -2.032 0.762) (xy 2.032 0.762)) (stroke (width 0.508) (type default)) (fill (type none)))
+        (polyline (pts (xy -2.032 -0.762) (xy 2.032 -0.762)) (stroke (width 0.508) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_C_1_1"
+        (pin
+          passive
+          line
+          (at 0 3.81 270)
+          (length 2.794)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -3.81 90)
+          (length 2.794)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_LED"
+      (pin_numbers (hide yes))
+      (pin_names (offset 1.016) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "D" (at 0 2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Value" "LED" (at 0 -2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Light emitting diode"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Sim.Pins" "1=K 2=A" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "ki_keywords" "LED diode" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_fp_filters"
+        "LED* LED_SMD:* LED_THT:*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "Device_LED_0_1"
+        (polyline
+          (pts (xy -3.048 -0.762) (xy -4.572 -2.286) (xy -3.81 -2.286) (xy -4.572 -2.286) (xy -4.572 -1.524))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy -1.778 -0.762) (xy -3.302 -2.286) (xy -2.54 -2.286) (xy -3.302 -2.286) (xy -3.302 -1.524))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline (pts (xy -1.27 0) (xy 1.27 0)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy -1.27 -1.27) (xy -1.27 1.27)) (stroke (width 0.254) (type default)) (fill (type none)))
+        (polyline
+          (pts (xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol
+        "Device_LED_1_1"
+        (pin
+          passive
+          line
+          (at -3.81 0 0)
+          (length 2.54)
+          (name "K" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 3.81 0 180)
+          (length 2.54)
+          (name "A" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_Battery_Cell"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property
+        "Reference"
+        "BT"
+        (at 2.54 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property
+        "Value"
+        "Battery_Cell"
+        (at 2.54 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" "" (at 0 1.524 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 1.524 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Single-cell battery"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Sim.Device" "V" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Sim.Type" "DC" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Sim.Pins" "1=+ 2=-" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "battery cell"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "Device_Battery_Cell_0_1"
+        (rectangle (start -2.286 1.778) (end 2.286 1.524) (stroke (width 0) (type default)) (fill (type outline)))
+        (rectangle (start -1.524 1.016) (end 1.524 0.508) (stroke (width 0) (type default)) (fill (type outline)))
+        (polyline (pts (xy 0 1.778) (xy 0 2.54)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy 0 0.762) (xy 0 0)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy 0.762 3.048) (xy 1.778 3.048)) (stroke (width 0.254) (type default)) (fill (type none)))
+        (polyline (pts (xy 1.27 3.556) (xy 1.27 2.54)) (stroke (width 0.254) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_Battery_Cell_1_1"
+        (pin
+          passive
+          line
+          (at 0 5.08 270)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -2.54 90)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:power_PWR_FLAG"
+      (power global)
+      (pin_numbers (hide yes))
+      (pin_names (offset 0) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "#FLG" (at 0 1.905 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Value" "PWR_FLAG" (at 0 3.81 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Special symbol for telling ERC where power comes from"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_keywords"
+        "flag power"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "power_PWR_FLAG_0_0"
+        (pin
+          power_out
+          line
+          (at 0 0 90)
+          (length 0)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "power_PWR_FLAG_0_1"
+        (polyline
+          (pts (xy 0 0) (xy 0 1.27) (xy -1.016 1.905) (xy 0 2.54) (xy 1.016 1.905) (xy 0 1.27))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:TLV9044"
+      (pin_names (offset 0.127))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (symbol
+        "TLV9044_1_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "3" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_2_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "5" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "6" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "7" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_3_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "8" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "9" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "10" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_4_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "12" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "13" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "14" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_5_1"
+        (pin
+          power_in
+          line
+          (at -2.54 7.62 270)
+          (length 3.81)
+          (name "V+" (effects (font (size 1.27 1.27))))
+          (number "4" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          power_in
+          line
+          (at -2.54 -7.62 90)
+          (length 3.81)
+          (name "V-" (effects (font (size 1.27 1.27))))
+          (number "11" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+      (property "Reference" "U" (at 0 5.08 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27)) (justify left)))
+      (property
+        "Value"
+        "TLV9044IPWR"
+        (at 0 -5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" "" (at -1.27 2.54 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Datasheet"
+        "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+        (at 1.27 5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "Description"
+        "TLV9044 quad RRIO low-power op amp; standard TSSOP-14 pin map"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_locked" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "quad opamp"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_fp_filters"
+        "SOIC*3.9x8.7mm*P1.27mm* DIP*W7.62mm* TSSOP*4.4x5mm*P0.65mm* SSOP*5.3x6.2mm*P0.65mm* MSOP*3x3mm*P0.5mm*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:TLV9044")
+    (at 109.22 93.98 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "1395f552-8c7c-5409-88ed-e2675b829f74")
+    (property "Reference" "U2" (at 109.22 86.36 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${ENCODER_OPAMP_MPN}" (at 109.22 101.60000000000001 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:TSSOP-14_4.4x5mm_P0.65mm" (at 109.22 93.98 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Datasheet"
+      "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+      (at 109.22 93.98 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Manufacturer" "${OPAMP_MFR}" (at 109.22 93.98 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "${ENCODER_OPAMP_MPN}" (at 109.22 93.98 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "1.2–5.5 V RRIO quad op amp" (at 109.22 93.98 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "U2") (unit 1)))
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 66.03999999999999 96.52000000000001 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "b0adbd0c-b642-599d-98cc-19649e0126b5")
+    (property "Reference" "R17" (at 66.03999999999999 90.17000000000002 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R17_VALUE}" (at 66.03999999999999 92.71000000000001 90) (effects (font (size 1.27 1.27))))
+    (property
+      "Footprint"
+      "Encoder:R_0805_2012Metric"
+      (at 66.03999999999999 96.52000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Datasheet" "" (at 66.03999999999999 96.52000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Manufacturer"
+      "Select to specification"
+      (at 66.03999999999999 96.52000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "MPN"
+      "Select to specification"
+      (at 66.03999999999999 96.52000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "Rating"
+      "0.1%, 0805; exact MPN unverified"
+      (at 66.03999999999999 96.52000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R17") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 71.12 73.66 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "a1a6fe08-668a-5a7f-81b5-d2198b9148a7")
+    (property "Reference" "R18" (at 71.12 67.31 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R18_VALUE}" (at 71.12 69.85 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 71.12 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 71.12 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 71.12 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 71.12 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 71.12 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R18") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 111.76 73.66 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "d093af5c-d568-5824-a6e4-e9978b5adc0a")
+    (property "Reference" "R19" (at 111.76 67.31 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R19_VALUE}" (at 111.76 69.85 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 111.76 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 111.76 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 111.76 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 111.76 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 111.76 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R19") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 86.36 58.42 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "a9cf16b5-e8c9-5f8b-8751-eef68023a433")
+    (property "Reference" "R20" (at 93.98 57.15 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R20_VALUE}" (at 93.98 59.690000000000005 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 86.36 58.42 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 86.36 58.42 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 86.36 58.42 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 86.36 58.42 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 86.36 58.42 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R20") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_C")
+    (at 86.36 114.30000000000001 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "0117e05f-4cf7-5161-81ec-498930156dd2")
+    (property "Reference" "C5" (at 93.98 113.03000000000002 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${TIMING_C}" (at 93.98 115.57000000000001 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:C_0805_2012Metric" (at 86.36 114.30000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 86.36 114.30000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 86.36 114.30000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 86.36 114.30000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "47 nF, C0G, 1%, 0805; exact MPN unverified"
+      (at 86.36 114.30000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "C5") (unit 1)))
+    )
+  )
+  (wire (pts (xy 62.23 96.52) (xy 36.83 96.52)) (stroke (width 0) (type default)) (uuid "9175ae4d-1bd8-541f-9a80-c1e90aedfa17"))
+  (label
+    "ST04_OUT"
+    (at 36.83 96.52 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "c6d2d4d3-1bba-5b5d-9bc0-6841292e9ecd")
+  )
+  (wire (pts (xy 69.85 96.52) (xy 86.36 96.52)) (stroke (width 0) (type default)) (uuid "b6c43650-8d55-500f-8b67-a42587c6f668"))
+  (wire (pts (xy 86.36 96.52) (xy 101.6 96.52)) (stroke (width 0) (type default)) (uuid "0cf748f8-0b24-56df-b84c-6c06100fc769"))
+  (junction (at 86.36 96.52000000000001) (diameter 0) (color 0 0 0 0) (uuid "11377f7f-b254-5a58-8c70-fa51ac96bf34"))
+  (label
+    "ST05_TIMING"
+    (at 86.36 96.52000000000001 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "14bc4c36-0c9e-5dd9-86f1-2eeac235869e")
+  )
+  (wire (pts (xy 86.36 96.52) (xy 86.36 110.49)) (stroke (width 0) (type default)) (uuid "0000967d-0a87-5ef0-8490-7c3d90648371"))
+  (wire (pts (xy 86.36 118.11) (xy 86.36 124.46)) (stroke (width 0) (type default)) (uuid "6cbfb6da-9cbd-5d80-9ca1-534b2069155b"))
+  (label
+    "VBAT"
+    (at 86.36 124.46000000000001 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "860ad1bc-0b27-50cc-8db9-5895dac54cf7")
+  )
+  (wire (pts (xy 67.31 73.66) (xy 41.91 73.66)) (stroke (width 0) (type default)) (uuid "2eca97e9-2f93-5a79-b7a8-a40975a7cce0"))
+  (label
+    "VBAT"
+    (at 41.910000000000004 73.66 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "ba5bf86f-5709-5f69-a7a6-1fe44e7d24bb")
+  )
+  (wire (pts (xy 74.93 73.66) (xy 86.36 73.66)) (stroke (width 0) (type default)) (uuid "a70867ac-af76-5db3-8e45-0ecefd0cc8a3"))
+  (wire (pts (xy 86.36 73.66) (xy 107.95 73.66)) (stroke (width 0) (type default)) (uuid "1cdd34db-43b0-5b0a-b1c4-9772e7f4cf74"))
+  (junction (at 86.36 73.66) (diameter 0) (color 0 0 0 0) (uuid "b6e5469f-dbf7-55fa-91e6-ea0edac2245e"))
+  (wire (pts (xy 86.36 73.66) (xy 86.36 91.44)) (stroke (width 0) (type default)) (uuid "9de76b1b-4334-5509-a59a-26a61e9e0362"))
+  (wire (pts (xy 86.36 91.44) (xy 101.6 91.44)) (stroke (width 0) (type default)) (uuid "d2d4916e-a784-5632-b867-0130a98d8ee5"))
+  (label
+    "ST05_TH"
+    (at 86.36 73.66 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "808e90b7-dc87-5e50-9613-a3499bfc9109")
+  )
+  (wire (pts (xy 86.36 62.23) (xy 86.36 73.66)) (stroke (width 0) (type default)) (uuid "175b56aa-4cca-5705-ba12-f8693e20d539"))
+  (wire (pts (xy 86.36 54.61) (xy 86.36 50.8)) (stroke (width 0) (type default)) (uuid "e7a4668d-c129-5362-b817-e8a76efa891f"))
+  (label
+    "GND"
+    (at 86.36 50.800000000000004 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "d4ccd3bf-18bd-543a-a4aa-db2c61853e40")
+  )
+  (wire (pts (xy 115.57 73.66) (xy 129.54 73.66)) (stroke (width 0) (type default)) (uuid "af768bca-8c7c-5825-be33-90513092e331"))
+  (wire (pts (xy 129.54 73.66) (xy 129.54 93.98)) (stroke (width 0) (type default)) (uuid "00e11446-dcd8-5dfe-b225-11e73ab31f5c"))
+  (wire (pts (xy 129.54 93.98) (xy 116.84 93.98)) (stroke (width 0) (type default)) (uuid "194bf18a-4c80-5113-9fa6-ef7f05b08f65"))
+  (junction (at 129.54 93.98) (diameter 0) (color 0 0 0 0) (uuid "be57b6a3-b39f-57be-bf5b-efe27238130a"))
+  (wire (pts (xy 129.54 93.98) (xy 134.62 93.98)) (stroke (width 0) (type default)) (uuid "257ea557-6500-5385-b63c-abf5797cd9b8"))
+  (label
+    "ST05_OUT"
+    (at 134.62 93.98 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "978840bc-394a-535a-9958-e6c7a2cac94c")
+  )
+  (text "ST05 - U2A" (at 109.22 44.45 0) (effects (font (size 1.65 1.65))) (uuid "a1ef32b0-9dd7-59e0-89d8-98198a27518e"))
+  (symbol
+    (lib_id "Encoder:TLV9044")
+    (at 279.4 93.98 0)
+    (unit 2)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "b56fc19a-dbf0-5e8e-abb6-03c68a8f5742")
+    (property "Reference" "U2" (at 279.4 86.36 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${ENCODER_OPAMP_MPN}" (at 279.4 101.60000000000001 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:TSSOP-14_4.4x5mm_P0.65mm" (at 279.4 93.98 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Datasheet"
+      "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+      (at 279.4 93.98 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Manufacturer" "${OPAMP_MFR}" (at 279.4 93.98 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "${ENCODER_OPAMP_MPN}" (at 279.4 93.98 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "1.2–5.5 V RRIO quad op amp" (at 279.4 93.98 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "U2") (unit 2)))
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 236.21999999999997 96.52000000000001 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "73e9a7ef-2d7f-580c-b4e4-3c5cbcc24659")
+    (property "Reference" "R21" (at 236.21999999999997 90.17000000000002 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R21_VALUE}" (at 236.21999999999997 92.71000000000001 90) (effects (font (size 1.27 1.27))))
+    (property
+      "Footprint"
+      "Encoder:R_0603_1608Metric"
+      (at 236.21999999999997 96.52000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Datasheet" "" (at 236.21999999999997 96.52000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Manufacturer"
+      "Select to specification"
+      (at 236.21999999999997 96.52000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "MPN"
+      "Select to specification"
+      (at 236.21999999999997 96.52000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "Rating"
+      "0.1%, 0603; exact MPN unverified"
+      (at 236.21999999999997 96.52000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R21") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 241.29999999999998 73.66 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "abda7a25-6cbf-50c1-85ac-413935da5cbf")
+    (property "Reference" "R22" (at 241.29999999999998 67.31 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R22_VALUE}" (at 241.29999999999998 69.85 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 241.29999999999998 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 241.29999999999998 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 241.29999999999998 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 241.29999999999998 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "0.1%, 0402; exact MPN unverified"
+      (at 241.29999999999998 73.66 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R22") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 281.94 73.66 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "1ab1b6d3-dec6-55aa-abb5-dce2185678a7")
+    (property "Reference" "R23" (at 281.94 67.31 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R23_VALUE}" (at 281.94 69.85 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 281.94 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 281.94 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 281.94 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 281.94 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 281.94 73.66 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R23") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 256.53999999999996 58.42 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "20f3df7e-0aa2-53ef-9bdc-314cec85a860")
+    (property "Reference" "R24" (at 264.15999999999997 57.15 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R24_VALUE}" (at 264.15999999999997 59.690000000000005 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 256.53999999999996 58.42 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 256.53999999999996 58.42 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 256.53999999999996 58.42 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 256.53999999999996 58.42 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "0.1%, 0402; exact MPN unverified"
+      (at 256.53999999999996 58.42 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R24") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_C")
+    (at 256.53999999999996 114.30000000000001 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "3c5d51d2-062d-58db-a47d-cea62f37f4ff")
+    (property "Reference" "C6" (at 264.15999999999997 113.03000000000002 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${TIMING_C}" (at 264.15999999999997 115.57000000000001 0) (effects (font (size 1.27 1.27))))
+    (property
+      "Footprint"
+      "Encoder:C_0805_2012Metric"
+      (at 256.53999999999996 114.30000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Datasheet" "" (at 256.53999999999996 114.30000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Manufacturer"
+      "Select to specification"
+      (at 256.53999999999996 114.30000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "MPN"
+      "Select to specification"
+      (at 256.53999999999996 114.30000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "Rating"
+      "47 nF, C0G, 1%, 0805; exact MPN unverified"
+      (at 256.53999999999996 114.30000000000001 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "C6") (unit 1)))
+    )
+  )
+  (wire (pts (xy 232.41 96.52) (xy 207.01 96.52)) (stroke (width 0) (type default)) (uuid "b0c74702-6ddd-514c-aada-a5b242fb11d1"))
+  (label
+    "ST05_OUT"
+    (at 207.01 96.52 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "5b370113-53a0-5704-bc46-6126d280e73a")
+  )
+  (wire (pts (xy 240.03 96.52) (xy 256.54 96.52)) (stroke (width 0) (type default)) (uuid "55cb9eea-4487-5e5c-b1b0-07b576dbb6bb"))
+  (wire (pts (xy 256.54 96.52) (xy 271.78 96.52)) (stroke (width 0) (type default)) (uuid "f5c411ed-7b1f-5cbc-abde-60a773fcf144"))
+  (junction (at 256.53999999999996 96.52000000000001) (diameter 0) (color 0 0 0 0) (uuid "35091248-a8f8-5dab-bef5-1c5ce7583dd5"))
+  (label
+    "ST06_TIMING"
+    (at 256.53999999999996 96.52000000000001 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "8567a9ea-d7fd-51ab-b2cc-3e10a50655f8")
+  )
+  (wire (pts (xy 256.54 96.52) (xy 256.54 110.49)) (stroke (width 0) (type default)) (uuid "090c2480-44c3-5557-b9a2-c7d2623b0a7c"))
+  (wire
+    (pts (xy 256.54 118.11) (xy 256.54 124.46))
+    (stroke (width 0) (type default))
+    (uuid "310736f9-bbb8-5707-bc4d-e1cd61862607")
+  )
+  (label
+    "GND"
+    (at 256.54 124.46000000000001 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "9f18c7c1-e28d-5e88-879f-133dfe1aa5bf")
+  )
+  (wire (pts (xy 237.49 73.66) (xy 212.09 73.66)) (stroke (width 0) (type default)) (uuid "3b65a332-bc01-529d-9d4c-7bd8102429d6"))
+  (label
+    "VBAT"
+    (at 212.09 73.66 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "bc041ecb-4e89-5132-8737-e19a6c3445fd")
+  )
+  (wire (pts (xy 245.11 73.66) (xy 256.54 73.66)) (stroke (width 0) (type default)) (uuid "10fd9de4-f89e-5ae6-8aeb-fee7fdeacd48"))
+  (wire (pts (xy 256.54 73.66) (xy 278.13 73.66)) (stroke (width 0) (type default)) (uuid "e8700931-e5b8-5bed-89c9-d3da180039cf"))
+  (junction (at 256.53999999999996 73.66) (diameter 0) (color 0 0 0 0) (uuid "59f61e4f-e677-53c5-a4f9-9e4f31487a23"))
+  (wire (pts (xy 256.54 73.66) (xy 256.54 91.44)) (stroke (width 0) (type default)) (uuid "450bddda-8fa7-5a00-b03e-44f9a133544d"))
+  (wire (pts (xy 256.54 91.44) (xy 271.78 91.44)) (stroke (width 0) (type default)) (uuid "1255ca12-4916-5920-8fe3-8d09433fc8b5"))
+  (label
+    "ST06_TH"
+    (at 256.53999999999996 73.66 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "2cd7bdbf-22a7-5446-94e1-35989c8bfb6b")
+  )
+  (wire (pts (xy 256.54 62.23) (xy 256.54 73.66)) (stroke (width 0) (type default)) (uuid "0a5bd294-d2bc-56c9-83b4-552fdcabe946"))
+  (wire (pts (xy 256.54 54.61) (xy 256.54 50.8)) (stroke (width 0) (type default)) (uuid "8615c779-da6a-5f88-b0fb-6108ea258a28"))
+  (label
+    "GND"
+    (at 256.54 50.800000000000004 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "5becc43b-f04a-5ce7-a681-1400717e74bf")
+  )
+  (wire (pts (xy 285.75 73.66) (xy 299.72 73.66)) (stroke (width 0) (type default)) (uuid "cea4efa0-be78-5996-9561-e3d3c89087d2"))
+  (wire (pts (xy 299.72 73.66) (xy 299.72 93.98)) (stroke (width 0) (type default)) (uuid "bdad53db-0a12-5f3f-8f60-522003c2ac84"))
+  (wire (pts (xy 299.72 93.98) (xy 287.02 93.98)) (stroke (width 0) (type default)) (uuid "d12b7d6e-c35f-5b93-b712-23e4b583919b"))
+  (junction (at 299.71999999999997 93.98) (diameter 0) (color 0 0 0 0) (uuid "262c9719-5a7a-5704-bb87-dd428f98fc04"))
+  (wire (pts (xy 299.72 93.98) (xy 304.8 93.98)) (stroke (width 0) (type default)) (uuid "19ad2ed5-222b-5d2d-94b6-b0bbbaaadb68"))
+  (label
+    "ST06_OUT"
+    (at 304.79999999999995 93.98 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "1e66890a-158f-5eaf-b36d-a20c32e6eabb")
+  )
+  (text "ST06 - U2B" (at 279.4 44.45 0) (effects (font (size 1.65 1.65))) (uuid "d899fc77-e810-5d73-9068-a65df21979a0"))
+  (symbol
+    (lib_id "Encoder:TLV9044")
+    (at 109.22 203.2 0)
+    (unit 3)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "a9c2dab9-cf1f-54d4-8f92-098b2c3110b7")
+    (property "Reference" "U2" (at 109.22 195.57999999999998 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${ENCODER_OPAMP_MPN}" (at 109.22 210.82 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:TSSOP-14_4.4x5mm_P0.65mm" (at 109.22 203.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Datasheet"
+      "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+      (at 109.22 203.2 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Manufacturer" "${OPAMP_MFR}" (at 109.22 203.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "${ENCODER_OPAMP_MPN}" (at 109.22 203.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "1.2–5.5 V RRIO quad op amp" (at 109.22 203.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "U2") (unit 3)))
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 66.03999999999999 205.73999999999998 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "8d52f185-bd85-5a89-855a-02520350afc2")
+    (property "Reference" "R25" (at 66.03999999999999 199.39 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R25_VALUE}" (at 66.03999999999999 201.92999999999998 90) (effects (font (size 1.27 1.27))))
+    (property
+      "Footprint"
+      "Encoder:R_0805_2012Metric"
+      (at 66.03999999999999 205.73999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Datasheet" "" (at 66.03999999999999 205.73999999999998 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Manufacturer"
+      "Select to specification"
+      (at 66.03999999999999 205.73999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "MPN"
+      "Select to specification"
+      (at 66.03999999999999 205.73999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "Rating"
+      "0.1%, 0805; exact MPN unverified"
+      (at 66.03999999999999 205.73999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R25") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 71.12 182.88 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "b58128a3-5168-5966-b087-3c113901dc19")
+    (property "Reference" "R26" (at 71.12 176.53 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R26_VALUE}" (at 71.12 179.07 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 71.12 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 71.12 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 71.12 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 71.12 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 71.12 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R26") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 111.76 182.88 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "cd170a89-cecf-5192-ab9d-baff89b3257b")
+    (property "Reference" "R27" (at 111.76 176.53 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R27_VALUE}" (at 111.76 179.07 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 111.76 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 111.76 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 111.76 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 111.76 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 111.76 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R27") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 86.36 167.64 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "2bdd7065-ac01-5761-8963-c3d42cb3d578")
+    (property "Reference" "R28" (at 93.98 166.36999999999998 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R28_VALUE}" (at 93.98 168.91 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 86.36 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 86.36 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 86.36 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 86.36 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 86.36 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R28") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_C")
+    (at 86.36 223.51999999999998 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "79894ea0-ba9f-591c-ad81-d83718ef3d9b")
+    (property "Reference" "C7" (at 93.98 222.24999999999997 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${TIMING_C}" (at 93.98 224.79 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:C_0805_2012Metric" (at 86.36 223.51999999999998 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 86.36 223.51999999999998 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 86.36 223.51999999999998 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 86.36 223.51999999999998 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "47 nF, C0G, 1%, 0805; exact MPN unverified"
+      (at 86.36 223.51999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "C7") (unit 1)))
+    )
+  )
+  (wire (pts (xy 62.23 205.74) (xy 36.83 205.74)) (stroke (width 0) (type default)) (uuid "1222bb7c-28eb-58c1-82ba-f2035f0f424f"))
+  (label
+    "ST06_OUT"
+    (at 36.83 205.74 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "cf7d4a75-19d5-581a-ab7f-78a537b01910")
+  )
+  (wire (pts (xy 69.85 205.74) (xy 86.36 205.74)) (stroke (width 0) (type default)) (uuid "dc3a526f-ab37-547e-82b8-a2248c510d1c"))
+  (wire (pts (xy 86.36 205.74) (xy 101.6 205.74)) (stroke (width 0) (type default)) (uuid "47d62df1-dced-5c2c-b509-fc5a62ef95e3"))
+  (junction (at 86.36 205.73999999999998) (diameter 0) (color 0 0 0 0) (uuid "6c0a2cf7-f87d-59bd-98ad-9cdaaec3d2be"))
+  (label
+    "ST07_TIMING"
+    (at 86.36 205.73999999999998 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "9b512b9c-948f-540c-b0ab-3b61374ca975")
+  )
+  (wire (pts (xy 86.36 205.74) (xy 86.36 219.71)) (stroke (width 0) (type default)) (uuid "44ac728f-9e22-50cd-9e95-03bdcf655d75"))
+  (wire (pts (xy 86.36 227.33) (xy 86.36 233.68)) (stroke (width 0) (type default)) (uuid "452f4167-1ee0-5437-b8a7-dc6b7eb16ca6"))
+  (label
+    "VBAT"
+    (at 86.36 233.67999999999998 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "a069dfd6-f484-560c-9eb0-8d86150e1fc7")
+  )
+  (wire (pts (xy 67.31 182.88) (xy 41.91 182.88)) (stroke (width 0) (type default)) (uuid "114f9921-b4d9-5a5f-8d4f-05c6723fbc0a"))
+  (label
+    "VBAT"
+    (at 41.910000000000004 182.88 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "b14ac60c-159d-57ec-ab01-7fbce95cc527")
+  )
+  (wire (pts (xy 74.93 182.88) (xy 86.36 182.88)) (stroke (width 0) (type default)) (uuid "4d0efd8d-9a28-5578-9b3e-1ed56a892614"))
+  (wire (pts (xy 86.36 182.88) (xy 107.95 182.88)) (stroke (width 0) (type default)) (uuid "8126abb4-7832-5fce-b391-d433414facca"))
+  (junction (at 86.36 182.88) (diameter 0) (color 0 0 0 0) (uuid "acd09ec4-d77e-5aac-bbed-b082b901d7c1"))
+  (wire (pts (xy 86.36 182.88) (xy 86.36 200.66)) (stroke (width 0) (type default)) (uuid "62a5738a-fe4d-5beb-9ce3-69271a0e8ce6"))
+  (wire (pts (xy 86.36 200.66) (xy 101.6 200.66)) (stroke (width 0) (type default)) (uuid "54d612dc-2def-508e-94e0-cc193585d5e8"))
+  (label
+    "ST07_TH"
+    (at 86.36 182.88 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "7516f84d-6a67-5c16-b205-5a5bdc454790")
+  )
+  (wire (pts (xy 86.36 171.45) (xy 86.36 182.88)) (stroke (width 0) (type default)) (uuid "dca7b89d-f32b-589a-82a3-cdd784f228e0"))
+  (wire (pts (xy 86.36 163.83) (xy 86.36 160.02)) (stroke (width 0) (type default)) (uuid "0d0e1650-72b7-5c0d-a5e7-50769346e040"))
+  (label
+    "GND"
+    (at 86.36 160.01999999999998 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "de960d44-040f-5929-a2db-07cef79ecf5b")
+  )
+  (wire
+    (pts (xy 115.57 182.88) (xy 129.54 182.88))
+    (stroke (width 0) (type default))
+    (uuid "1284df28-51ec-5560-9c8e-56d631f6daaa")
+  )
+  (wire (pts (xy 129.54 182.88) (xy 129.54 203.2)) (stroke (width 0) (type default)) (uuid "2e7d90c8-2d66-53e7-acc3-cf69aad341cd"))
+  (wire (pts (xy 129.54 203.2) (xy 116.84 203.2)) (stroke (width 0) (type default)) (uuid "ee914ddf-3e1d-5756-b36b-3dd090e1aa05"))
+  (junction (at 129.54 203.2) (diameter 0) (color 0 0 0 0) (uuid "5f66a03f-2276-5a4a-a406-f343c9e71c0a"))
+  (wire (pts (xy 129.54 203.2) (xy 134.62 203.2)) (stroke (width 0) (type default)) (uuid "81105611-577a-58d8-94a0-5f702b3c6bae"))
+  (label
+    "ST07_OUT"
+    (at 134.62 203.2 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "9465dae4-ed21-5c07-8a80-7b725c43613e")
+  )
+  (text "ST07 - U2C" (at 109.22 153.67 0) (effects (font (size 1.65 1.65))) (uuid "658570d3-8179-510d-a7fe-0613a9e5fc06"))
+  (symbol
+    (lib_id "Encoder:TLV9044")
+    (at 279.4 203.2 0)
+    (unit 4)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c1f3c227-7ad9-5bd9-b90d-a0dc8c9c4b90")
+    (property "Reference" "U2" (at 279.4 195.57999999999998 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${ENCODER_OPAMP_MPN}" (at 279.4 210.82 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:TSSOP-14_4.4x5mm_P0.65mm" (at 279.4 203.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Datasheet"
+      "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+      (at 279.4 203.2 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Manufacturer" "${OPAMP_MFR}" (at 279.4 203.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "${ENCODER_OPAMP_MPN}" (at 279.4 203.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "1.2–5.5 V RRIO quad op amp" (at 279.4 203.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "U2") (unit 4)))
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 236.21999999999997 205.73999999999998 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "7c92d9c0-c45a-5ae4-90e5-8daed75eeb40")
+    (property "Reference" "R29" (at 236.21999999999997 199.39 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R29_VALUE}" (at 236.21999999999997 201.92999999999998 90) (effects (font (size 1.27 1.27))))
+    (property
+      "Footprint"
+      "Encoder:R_0603_1608Metric"
+      (at 236.21999999999997 205.73999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Datasheet" "" (at 236.21999999999997 205.73999999999998 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Manufacturer"
+      "Select to specification"
+      (at 236.21999999999997 205.73999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "MPN"
+      "Select to specification"
+      (at 236.21999999999997 205.73999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "Rating"
+      "0.1%, 0603; exact MPN unverified"
+      (at 236.21999999999997 205.73999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R29") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 241.29999999999998 182.88 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "8205986f-50a6-5b21-b14b-18c794311055")
+    (property "Reference" "R30" (at 241.29999999999998 176.53 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R30_VALUE}" (at 241.29999999999998 179.07 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 241.29999999999998 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 241.29999999999998 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 241.29999999999998 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 241.29999999999998 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "0.1%, 0402; exact MPN unverified"
+      (at 241.29999999999998 182.88 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R30") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 281.94 182.88 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c633425c-ea09-5fdc-9d0d-e9ce3bedd1b7")
+    (property "Reference" "R31" (at 281.94 176.53 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R31_VALUE}" (at 281.94 179.07 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 281.94 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 281.94 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 281.94 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 281.94 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 281.94 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R31") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 256.53999999999996 167.64 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "5dfe51bb-9f6e-50ab-a184-e8f95ded15b0")
+    (property "Reference" "R32" (at 264.15999999999997 166.36999999999998 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${R32_VALUE}" (at 264.15999999999997 168.91 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 256.53999999999996 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 256.53999999999996 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 256.53999999999996 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 256.53999999999996 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "0.1%, 0402; exact MPN unverified"
+      (at 256.53999999999996 167.64 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "R32") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_C")
+    (at 256.53999999999996 223.51999999999998 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "ad386fb6-a4e7-5626-9a30-c022ee1126a2")
+    (property "Reference" "C8" (at 264.15999999999997 222.24999999999997 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${TIMING_C}" (at 264.15999999999997 224.79 0) (effects (font (size 1.27 1.27))))
+    (property
+      "Footprint"
+      "Encoder:C_0805_2012Metric"
+      (at 256.53999999999996 223.51999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Datasheet" "" (at 256.53999999999996 223.51999999999998 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Manufacturer"
+      "Select to specification"
+      (at 256.53999999999996 223.51999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "MPN"
+      "Select to specification"
+      (at 256.53999999999996 223.51999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property
+      "Rating"
+      "47 nF, C0G, 1%, 0805; exact MPN unverified"
+      (at 256.53999999999996 223.51999999999998 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4" (reference "C8") (unit 1)))
+    )
+  )
+  (wire
+    (pts (xy 232.41 205.74) (xy 207.01 205.74))
+    (stroke (width 0) (type default))
+    (uuid "188a1749-74f3-52be-826a-8e6216bc2718")
+  )
+  (label
+    "ST07_OUT"
+    (at 207.01 205.74 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "89c26aa7-3c1b-5697-9e79-f293c50d8133")
+  )
+  (wire
+    (pts (xy 240.03 205.74) (xy 256.54 205.74))
+    (stroke (width 0) (type default))
+    (uuid "95231b5e-8d48-58d0-a076-15cd43f4498e")
+  )
+  (wire
+    (pts (xy 256.54 205.74) (xy 271.78 205.74))
+    (stroke (width 0) (type default))
+    (uuid "95b41799-431e-5a02-959d-9a1f27164eb9")
+  )
+  (junction (at 256.53999999999996 205.73999999999998) (diameter 0) (color 0 0 0 0) (uuid "cbe87c4a-6525-5152-bcf5-57039ef84336"))
+  (label
+    "ST08_TIMING"
+    (at 256.53999999999996 205.73999999999998 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "7aa5a9a3-a4dd-5c35-8c97-f62bbfbc4a40")
+  )
+  (wire
+    (pts (xy 256.54 205.74) (xy 256.54 219.71))
+    (stroke (width 0) (type default))
+    (uuid "fe57171b-8d39-5254-ae28-d3c52f6a00b0")
+  )
+  (wire
+    (pts (xy 256.54 227.33) (xy 256.54 233.68))
+    (stroke (width 0) (type default))
+    (uuid "ee61a062-2edd-5fdc-8648-d6622c19c120")
+  )
+  (label
+    "GND"
+    (at 256.54 233.67999999999998 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "632d0972-38d4-5a14-9c8f-4a7811e8e3b2")
+  )
+  (wire
+    (pts (xy 237.49 182.88) (xy 212.09 182.88))
+    (stroke (width 0) (type default))
+    (uuid "33215c93-b66a-528d-9ace-0f76f84437a3")
+  )
+  (label
+    "VBAT"
+    (at 212.09 182.88 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "b60e33c7-dfdd-5a92-82f7-d5e599108ecd")
+  )
+  (wire
+    (pts (xy 245.11 182.88) (xy 256.54 182.88))
+    (stroke (width 0) (type default))
+    (uuid "5774b1d6-616a-59de-8557-d89c4894c787")
+  )
+  (wire
+    (pts (xy 256.54 182.88) (xy 278.13 182.88))
+    (stroke (width 0) (type default))
+    (uuid "6e29b89d-6ad5-52d0-bedb-6e6d80b808c1")
+  )
+  (junction (at 256.53999999999996 182.88) (diameter 0) (color 0 0 0 0) (uuid "f7cf254f-cad1-5576-9235-a9b292bccd0b"))
+  (wire
+    (pts (xy 256.54 182.88) (xy 256.54 200.66))
+    (stroke (width 0) (type default))
+    (uuid "435bab24-ce77-5a49-86cc-b555a9d5eca6")
+  )
+  (wire
+    (pts (xy 256.54 200.66) (xy 271.78 200.66))
+    (stroke (width 0) (type default))
+    (uuid "f81cb27d-c74c-57da-9f21-4f9ac6ce29e9")
+  )
+  (label
+    "ST08_TH"
+    (at 256.53999999999996 182.88 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "b8933e54-8abf-5da8-9dd7-68d08aefe5a1")
+  )
+  (wire
+    (pts (xy 256.54 171.45) (xy 256.54 182.88))
+    (stroke (width 0) (type default))
+    (uuid "debc2019-0c3a-5919-aee1-01d81b93d7eb")
+  )
+  (wire
+    (pts (xy 256.54 163.83) (xy 256.54 160.02))
+    (stroke (width 0) (type default))
+    (uuid "cc8f159f-9f57-5744-ab13-59eae5b7f9a7")
+  )
+  (label
+    "GND"
+    (at 256.54 160.01999999999998 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "e88565ce-37d2-5708-91eb-5d58ff971811")
+  )
+  (wire
+    (pts (xy 285.75 182.88) (xy 299.72 182.88))
+    (stroke (width 0) (type default))
+    (uuid "414b1391-fd98-5c60-9c6c-cab7458959cc")
+  )
+  (wire (pts (xy 299.72 182.88) (xy 299.72 203.2)) (stroke (width 0) (type default)) (uuid "515fc592-faac-563c-bfd4-da426708b516"))
+  (wire (pts (xy 299.72 203.2) (xy 287.02 203.2)) (stroke (width 0) (type default)) (uuid "487dd1c4-41c3-5341-9362-d1fa22238767"))
+  (junction (at 299.71999999999997 203.2) (diameter 0) (color 0 0 0 0) (uuid "092bf078-b45a-5916-a44f-94cbe4fa5939"))
+  (wire (pts (xy 299.72 203.2) (xy 304.8 203.2)) (stroke (width 0) (type default)) (uuid "a3721413-d912-5ef9-9697-1ffb7989c7d6"))
+  (label
+    "ST08_OUT"
+    (at 304.79999999999995 203.2 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "959a941d-423b-5f23-9879-ad72e6797059")
+  )
+  (text "ST08 - U2D" (at 279.4 153.67 0) (effects (font (size 1.65 1.65))) (uuid "c208d6b9-f41d-5bb4-a2e1-f17e38ec2408"))
+  (hierarchical_label
+    "VBAT"
+    (at 12.7 30.48 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "63284699-79af-5f51-af41-0e1d7a9a3b62")
+  )
+  (wire (pts (xy 12.7 30.48) (xy 25.4 30.48)) (stroke (width 0) (type default)) (uuid "e0369114-67ac-5865-9996-964092d624ec"))
+  (label
+    "VBAT"
+    (at 25.4 30.48 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "4e1a3169-eb8b-5be3-9708-399ab4a9c413")
+  )
+  (hierarchical_label
+    "GND"
+    (at 12.7 35.56 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "76e03899-b183-5893-baef-4e9ed5b8ff97")
+  )
+  (wire (pts (xy 12.7 35.56) (xy 25.4 35.56)) (stroke (width 0) (type default)) (uuid "bff04898-8ced-5666-be3a-f521e3941794"))
+  (label
+    "GND"
+    (at 25.4 35.56 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "ebcc9633-bfb6-5737-a387-be0aaee6d7ac")
+  )
+  (hierarchical_label
+    "ST04_OUT"
+    (at 12.7 40.64 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "e9c91aa6-790d-5572-bb38-25e76cf66ed7")
+  )
+  (wire (pts (xy 12.7 40.64) (xy 25.4 40.64)) (stroke (width 0) (type default)) (uuid "51437eeb-af3e-5801-a61b-3df3cd4a0a90"))
+  (label
+    "ST04_OUT"
+    (at 25.4 40.64 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "909d5bae-722d-5aa7-ac2d-198d2fc119db")
+  )
+  (hierarchical_label
+    "ST05_OUT"
+    (at 12.7 45.72 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "62509100-9b67-504f-af01-35167172fc9d")
+  )
+  (wire (pts (xy 12.7 45.72) (xy 25.4 45.72)) (stroke (width 0) (type default)) (uuid "53958330-6ef9-5297-b544-6c4e0c15439b"))
+  (label
+    "ST05_OUT"
+    (at 25.4 45.72 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "c5d34455-5772-51d4-9ecc-b09acf5fe2a1")
+  )
+  (hierarchical_label
+    "ST06_OUT"
+    (at 12.7 50.8 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "44234bcc-49c6-5ad9-bbf4-c19be4ee031e")
+  )
+  (wire (pts (xy 12.7 50.8) (xy 25.4 50.8)) (stroke (width 0) (type default)) (uuid "83c27faf-e26b-5d10-82c8-9f4a57e30fbe"))
+  (label
+    "ST06_OUT"
+    (at 25.4 50.8 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "b360b154-e86c-59c5-b954-0f53bbd11ba1")
+  )
+  (hierarchical_label
+    "ST07_OUT"
+    (at 12.7 55.879999999999995 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "d5dfa007-c1c8-5a22-ab59-74de3cf9801e")
+  )
+  (wire (pts (xy 12.7 55.88) (xy 25.4 55.88)) (stroke (width 0) (type default)) (uuid "484a042a-0f8c-5670-910d-4fb40408705f"))
+  (label
+    "ST07_OUT"
+    (at 25.4 55.879999999999995 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "6a66bf8b-c638-56d7-b25e-25565ff29c10")
+  )
+  (hierarchical_label
+    "ST08_OUT"
+    (at 12.7 60.96 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "a7fd91e1-15b0-541a-ab66-2cbf840eac6f")
+  )
+  (wire (pts (xy 12.7 60.96) (xy 25.4 60.96)) (stroke (width 0) (type default)) (uuid "3d36fff1-720b-5b87-8067-fd72b87622b1"))
+  (label
+    "ST08_OUT"
+    (at 25.4 60.96 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "4a052955-5074-58ce-b6b0-5a8754bb9534")
+  )
+  (text
+    "Timing R/C and three threshold resistors program both edge delays.\nAlternating capacitor bottom rails preload startup; all stage outputs feed the majority decoder."
+    (at 210 20.32 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "649a7bad-52a9-5b31-bef0-b6f5126075bd")
+  )
+)

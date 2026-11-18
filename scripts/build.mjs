@@ -50,11 +50,14 @@ buildAnalysisDemo(root,path.join(output,'analysis'));
 copyFileSync(path.join(output, 'example.html'), path.join(output, 'index.html'));
 writeFileSync(path.join(output, '.nojekyll'), '');
 mkdirSync(path.join(output, 'demo'), { recursive: true });
-const demoFiles = ['3PD+IB.kicad_pcb', '3PD+IB.kicad_sch', 'DCL_Sens.kicad_sch', 'HBD21094.kicad_sch', 'HBD21094B.kicad_sch', 'HBD21094C.kicad_sch', 'T_sens.kicad_sch', 'outputFilter.kicad_sch', 'project.json', 'PROVENANCE.json', 'README.md'];
-for (const name of demoFiles) copyFileSync(path.join(root, 'fixtures/inverter', name), path.join(output, 'demo', name));
-mkdirSync(path.join(output,'manufacturing'),{recursive:true});
-for(const name of ['3PD+IB-F_Cu.gtl','3PD+IB-B_Cu.gbl','3PD+IB-F_Silkscreen.gto','3PD+IB-Edge_Cuts.gm1','3PD+IB-PTH.drl','3PD+IB-NPTH.drl','project.json','PROVENANCE.json'])copyFileSync(path.join(root,'fixtures/inverter-cam',name),path.join(output,'manufacturing',name));
-buildDemoArchive(root,path.join(output,'manufacturing/inverter-fabrication.zip'));
+for(const [fixture,directory,extras] of [['kero-encoder','demo',['README.md']],['kero-encoder-cam','manufacturing',[]]]){
+  const source=path.join(root,'fixtures',fixture),destination=path.join(output,directory);
+  const manifest=JSON.parse(readFileSync(path.join(source,'project.json'),'utf8'));
+  mkdirSync(destination,{recursive:true});
+  for(const name of [...manifest.files.map(file=>file.path),'project.json','PROVENANCE.json',...extras])
+    copyFileSync(path.join(source,name),path.join(destination,name));
+}
+buildDemoArchive(root,path.join(output,'manufacturing/kero-encoder-fabrication.zip'));
 for (const [source, target] of [
   ['docs/EXTENSION-REFRESH.md','EXTENSION-REFRESH.md'],
   ['docs/PANELS-AND-INSETS.md','PANELS-AND-INSETS.md'],

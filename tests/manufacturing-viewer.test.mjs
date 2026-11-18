@@ -36,9 +36,9 @@ test('superseded file read and disposed viewer cannot commit late drawing bytes'
     const next=viewer.loadFiles([{name:'late.gbr',size:gerber.length,arrayBuffer:()=>new Promise(resolve=>{finish=resolve;})}]);viewer.dispose();finish(new TextEncoder().encode(gerber).buffer);assert.equal(await next,false);
   }finally{viewer.dispose();}
 });
-test('real inverter ZIP loads through public archive and hosted URL APIs; corruption preserves previous view',async()=>{
-  const bytes=await readFile(new URL('../dist/manufacturing/inverter-fabrication.zip',import.meta.url));const viewer=fixture(),originalFetch=globalThis.fetch;
-  try{await viewer.loadArchive(bytes);assert.equal(viewer.getLayers().length,6);assert.ok(viewer.design.bounds.w>200);const previous=viewer.renderer;let errors=0;viewer.addEventListener('error',()=>errors++);
+test('real KERO Encoder ZIP loads through public archive and hosted URL APIs; corruption preserves previous view',async()=>{
+  const bytes=await readFile(new URL('../dist/manufacturing/kero-encoder-fabrication.zip',import.meta.url));const viewer=fixture(),originalFetch=globalThis.fetch;
+  try{await viewer.loadArchive(bytes);assert.equal(viewer.getLayers().length,6);assert.ok(Math.abs(viewer.design.bounds.w-40)<1);const previous=viewer.renderer;let errors=0;viewer.addEventListener('error',()=>errors++);
     await assert.rejects(viewer.loadArchive(new Uint8Array([1,2,3])),/ZIP/i);assert.equal(viewer.renderer,previous);assert.equal(errors,1);
     globalThis.fetch=async()=>new Response(bytes);await viewer.load('https://example.test/board.zip');assert.equal(viewer.getLayers().length,6);
   }finally{globalThis.fetch=originalFetch;viewer.dispose();}

@@ -1,0 +1,33 @@
+{
+  "entry": "Encoder.kicad_pcb",
+  "files": [
+    {
+      "path": "Encoder.kicad_pcb",
+      "url": "./Encoder.kicad_pcb"
+    },
+    {
+      "path": "Encoder.kicad_sch",
+      "url": "./Encoder.kicad_sch"
+    },
+    {
+      "path": "bank1.kicad_sch",
+      "url": "./bank1.kicad_sch"
+    },
+    {
+      "path": "bank2.kicad_sch",
+      "url": "./bank2.kicad_sch"
+    },
+    {
+      "path": "bank3.kicad_sch",
+      "url": "./bank3.kicad_sch"
+    },
+    {
+      "path": "decoder.kicad_sch",
+      "url": "./decoder.kicad_sch"
+    },
+    {
+      "path": "power.kicad_sch",
+      "url": "./power.kicad_sch"
+    }
+  ]
+}

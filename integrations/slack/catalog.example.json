@@ -5,11 +5,11 @@
   ],
   "entries": [
     {
-      "id": "inverter-283f41b",
-      "title": "Three-phase inverter · 283f41b",
+      "id": "kero-encoder-7be8fef",
+      "title": "KERO Encoder · 7be8fef",
       "public": true,
-      "url": "https://viewer.example.com/design/inverter-283f41b",
-      "source": "https://raw.githubusercontent.com/wayri/3-Phase-inverter-board/283f41b65c193abcc7e63c8c919dacdbccc89829/3PD%2BIB.kicad_pcb",
+      "url": "https://viewer.example.com/design/kero-encoder-7be8fef",
+      "source": "https://raw.githubusercontent.com/wayri/KERO/7be8fef589bc28eee149323e3790ef95b0873032/encoder/Encoder.kicad_pcb",
       "options": {
         "theme": "dark"
       }

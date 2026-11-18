@@ -19,7 +19,7 @@ document.querySelector('#file').onchange = async event => {
     message.textContent=viewer.path;
   }catch(error){showError(error);}
 };
-document.querySelector('#fabrication').onclick=async()=>{try{await viewer.load('./manufacturing/inverter-fabrication.zip');message.textContent='Inverter fabrication beta · toggle layers, inspect geometry or measure in mm.';}catch(error){showError(error);}};
+document.querySelector('#fabrication').onclick=async()=>{try{await viewer.load('./manufacturing/kero-encoder-fabrication.zip');message.textContent='KERO Encoder fabrication beta · toggle layers, inspect geometry or measure in mm.';}catch(error){showError(error);}};
 viewer.addEventListener('measure',event=>{message.textContent=event.detail.distance.toFixed(3)+' mm';});
 viewer.addEventListener('select', event => {
   const item = event.detail.item;
@@ -27,4 +27,4 @@ viewer.addEventListener('select', event => {
 });
 window.addEventListener('pagehide', () => viewer.dispose(), { once: true });
 
-viewer.load(document.querySelector('#source').value).then(() => { message.textContent = 'Three-phase inverter · select a part or pad to inspect, or open Inspect to search parts and layers.'; }).catch(showError);
+viewer.load(document.querySelector('#source').value).then(() => { message.textContent = 'KERO Encoder · select a part or pad to inspect, or open Inspect to search parts and layers.'; }).catch(showError);
