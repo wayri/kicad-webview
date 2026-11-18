@@ -9,7 +9,7 @@ export function createTranslucentAppearance(){
  function displayMaterial(source,role){
   if(!source||!source.clone)return source;
   let roles=clones.get(source);if(!roles){roles=new Map();clones.set(source,roles);}if(roles.has(role))return roles.get(role);
-  const material=source.clone();material.transparent=true;material.opacity=(Number.isFinite(source.opacity)?source.opacity:1)*opacity[role];material.depthWrite=false;material.forceSinglePass=true;material.needsUpdate=true;roles.set(role,material);return material;
+  const material=source.clone();material.onBeforeCompile=source.onBeforeCompile;material.customProgramCacheKey=()=>source.customProgramCacheKey();material.transparent=true;material.opacity=(Number.isFinite(source.opacity)?source.opacity:1)*opacity[role];material.depthWrite=false;material.forceSinglePass=true;material.needsUpdate=true;roles.set(role,material);return material;
  }
  function apply(object,record){const values=materials(record.material).map(source=>displayMaterial(source,record.role));object.material=Array.isArray(record.material)?values:values[0];}
  function restore(){for(const [object,record]of records)object.material=record.material;for(const roles of clones.values())for(const material of roles.values())material.dispose();clones.clear();}

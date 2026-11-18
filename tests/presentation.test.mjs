@@ -17,7 +17,7 @@ test('fast photoreal framebuffer remains bounded below the enhanced presentation
  for(const constrained of [true,false])for(const [w,h,dpr]of [[800,600,1],[3840,2160,3],[200,160,2],[0,0,NaN]]){
   const profile={constrained,premium:!constrained};
   const fast=qualityViewport(w,h,dpr,8192,'photoreal-fast',profile);
-  assert.equal(fast.maxPixels,constrained?1_000_000:2_000_000);
+  assert.equal(fast.maxPixels,1_000_000);
   assert.ok(fast.pixels<=fast.maxPixels);assert.ok(fast.estimatedBytes<60*1024*1024);
   assert.ok(fast.estimatedBytes<qualityViewport(w,h,dpr,8192,'presentation',profile).estimatedBytes);
  }

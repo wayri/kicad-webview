@@ -17,7 +17,7 @@ export function createSelectionAppearance(THREE, objects) {
     if(saved.has(object))return saved.get(object);
     const state={material:object.material,instanceColor:object.instanceColor,depth:object.customDepthMaterial,distance:object.customDistanceMaterial,owned:[]};saved.set(object,state);return state;
   }
-  function own(source,state){const material=source.clone();state.owned.push(material);return material;}
+  function own(source,state){const material=source.clone();material.onBeforeCompile=source.onBeforeCompile;material.customProgramCacheKey=()=>source.customProgramCacheKey();state.owned.push(material);return material;}
   function dimMaterial(source,state){
     const material=own(source,state),originalCompile=source.onBeforeCompile;
     material.userData??={};material.userData.selectionOpacityCap=.24;

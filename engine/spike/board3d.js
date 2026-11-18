@@ -49,7 +49,7 @@ import {selectionGesture} from './selectionGesture.mjs';
 import {createExplodeView,createExplodeOverlayGuard} from './explodeView.mjs';
 import {createExpansionMotion} from './expansionMotion.mjs';
 import {createNetGlow} from './netGlow.mjs';
-import {copperDepthPolicy,copperCapMaterials} from './copperDepth.mjs';
+import {copperDepthPolicy,copperCapMaterials,configureCopperDepth} from './copperDepth.mjs';
 import {createSilkscreenDetail} from "./silkscreenDetail.mjs";
 import {silkscreenSource,silkscreenPlan,paintSilkscreen} from "./surfaceSilkscreen.mjs";
 export { mountResultScene } from "./result3d.js";
@@ -226,7 +226,9 @@ export function mountBoard3D(container, source, options = {}) {
   // OrbitControls captures its up basis at construction. Use the board's
   // thickness axis consistently for orbiting and all fitted camera presets.
   camera.up.set(0,0,1);
-  const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true, alpha: false, powerPreference: "high-performance" });
+  // Multisample depth and fragment-written logarithmic depth disagree at
+  // overlapping copper edges on ANGLE. Smooth resolved color with SMAA instead.
+  const renderer = new THREE.WebGLRenderer({ antialias: false, logarithmicDepthBuffer: true, alpha: false, powerPreference: "high-performance" });
   const gl=renderer.getContext(),graphics=graphicsProfile({maxTextureSize:renderer.capabilities.maxTextureSize,maxRenderbufferSize:gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),deviceMemory:globalThis.navigator?.deviceMemory,hardwareConcurrency:globalThis.navigator?.hardwareConcurrency,floatTargets:renderer.extensions.has('EXT_color_buffer_float'),android:/Android/i.test(globalThis.navigator?.userAgent||'')});
   const modelGeometryBudget=(graphics.constrained?32:graphics.premium?96:64)*1024*1024;
   const modelTextureBudget=(graphics.constrained?16:graphics.premium?64:32)*1024*1024;
@@ -242,19 +244,23 @@ export function mountBoard3D(container, source, options = {}) {
   }
   function disposePipeline(){if(!pipeline)return;for(const pass of pipeline.passes){pass.dispose?.();if(pass instanceof GTAOPass){pass.gtaoMaterial.dispose();pass.blendMaterial.dispose();pass.depthTexture?.dispose();}}pipeline.composer.dispose();pipeline=null;}
   function createPipeline(){
-    disposePipeline();if(!['high','presentation'].includes(quality)||appearance==='translucent'||explode.get()>0)return;
-    if(!renderer.extensions.has('EXT_color_buffer_float'))throw Error('Floating-point render targets are unavailable.');
-    const target=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthBuffer:true,stencilBuffer:false});
-    const composer=new EffectComposer(renderer,target),passes=[];pipeline={composer,passes};
-    const base=new RenderPass(scene,camera),ao=new GTAOPass(scene,camera,1,1,undefined,boardOcclusion(thickness,quality));
+    disposePipeline();if(quality==='low')return;
+    const enhanced=['high','presentation'].includes(quality)&&appearance!=='translucent'&&explode.get()===0;
+    const floatTargets=renderer.extensions.has('EXT_color_buffer_float');
+    if(enhanced&&!floatTargets)throw Error('Floating-point render targets are unavailable.');
+    const target=new THREE.WebGLRenderTarget(1,1,{type:floatTargets?THREE.HalfFloatType:THREE.UnsignedByteType,depthBuffer:true,stencilBuffer:false});
+    const composer=new EffectComposer(renderer,target),passes=[];pipeline={composer,passes,occlusion:enhanced};
+    const base=new RenderPass(scene,camera);passes.push(base);
+    if(enhanced){const ao=new GTAOPass(scene,camera,1,1,undefined,boardOcclusion(thickness,quality));
     configureOcclusionDepth(ao.normalMaterial);
     ao.blendIntensity=.65;ao.updatePdMaterial({radius:4,rings:2,samples:quality==='presentation'?24:12});
     // Translucent solder zones, glass and result overlays must not become
     // opaque occluders when the normal/depth pass substitutes its material.
     const inheritedVisibility=ao.overrideVisibility.bind(ao);ao.overrideVisibility=()=>{inheritedVisibility();scene.traverse(object=>{const materials=Array.isArray(object.material)?object.material:[object.material];if(materials.some(material=>material&&(material.transparent||material.depthTest===false)))object.visible=false;});};
+    passes.push(ao);}
     const output=new OutputPass(),smaa=new SMAAPass(1,1);
     for(const texture of [smaa.areaTexture,smaa.searchTexture])texture.image?.addEventListener?.('load',invalidate,{once:true});
-    passes.push(base,ao,output,smaa);for(const pass of passes)composer.addPass(pass);
+    passes.push(output,smaa);for(const pass of passes)composer.addPass(pass);
   }
   function fallbackQuality(message){disposePipeline();quality='balanced';qualitySelect.value=quality;host.dataset.quality=quality;shaderFailure=false;renderer.setRenderTarget(null);presentation.apply(false);updateBackground();graphicsNotice(message);sizeViewport();}
   function applyQuality(value,persist=true){quality=qualityName(value);qualitySelect.value=quality;host.dataset.quality=quality;qualityNotice.hidden=true;shaderFailure=false;
@@ -432,7 +438,7 @@ export function mountBoard3D(container, source, options = {}) {
     const candidates=refinedTracks.tracks.filter(item=>item.layer===layer&&(isArc(item)?'arcs':'tracks')===category),stroke=copperStrokeBatches(THREE,candidates,{world,z,thickness:placement.thickness});
     if(stroke.invalid)geometryDiagnostics.push(`${layer}: invalid saved track widths or positions omitted.`);
     if(stroke.plan?.limited)geometryDiagnostics.push(`${layer}: large track caps exceed the ${stroke.plan.tolerance} mm tessellation tolerance at the 128-segment display limit.`);
-    const trackMaterial=new THREE.MeshStandardMaterial({color,...studioMaterials.copper,...copperDepthPolicy('track')});
+    const trackMaterial=configureCopperDepth(new THREE.MeshStandardMaterial({color,...studioMaterials.copper,...copperDepthPolicy('track')}),'track');
     for(const batch of stroke.batches){const mesh=makeInstanced(groupFor(layer),batch.geometry,trackMaterial,batch.records,batch.place,viewportSceneIdentity('copper-track',layer,category+'-'+batch.part));if(mesh){visibilityRecord(mesh,category,layer);pickables.push(mesh);appearanceRecords.push({mesh,role:'tracks',layer});}}
     if(!stroke.batches.length)trackMaterial.dispose();
     }
@@ -453,7 +459,7 @@ export function mountBoard3D(container, source, options = {}) {
         if (index === 0) zoneShape.moveTo(point.x, point.y); else zoneShape.lineTo(point.x, point.y);
       });
       const mesh = new THREE.Mesh(new THREE.ShapeGeometry(zoneShape),
-        new THREE.MeshStandardMaterial({color,...studioMaterials.copper,side:THREE.DoubleSide,...copperDepthPolicy('zone')}));
+        configureCopperDepth(new THREE.MeshStandardMaterial({color,...studioMaterials.copper,side:THREE.DoubleSide,...copperDepthPolicy('zone')}),'zone'));
       mesh.position.z=['F.Cu','B.Cu'].includes(layer)?zoneSurfaceZ(layer,placement):z; mesh.userData.record = { ...zone, type: "Zone" };
       groupFor(layer).add(mesh);visibilityRecord(mesh,'fills',layer); pickables.push(mesh);
       appearanceRecords.push({mesh,role:'zone',layer});translucency.add(mesh,'zone');
@@ -1138,7 +1144,7 @@ export function mountBoard3D(container, source, options = {}) {
     getCopperLayers(){return copperPlan.map(layer=>layer.name);},
     getVisibleCopperLayers(){return visibleCopperLayers();},
     setVisibleCopperLayers,
-    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),appearance,netGlow:netGlow.stats(),effectiveLayerColors:Boolean(inspectedLayer)||explode.get()>0||appearance!=='realistic',renderedPixels:renderer.domElement.width*renderer.domElement.height,expansion:{amount:explode.get(),target:expansionMotion.target(),running:expansionMotion.running(),...explode.phases(),frames:expansionFrames,cpuMilliseconds:expansionCPUms,maxFrameMilliseconds:expansionMaxMs,frontComponentOffset:explode.componentOffset('F.Cu'),backComponentOffset:explode.componentOffset('B.Cu'),layerOffsets:copperPlan.map(layer=>({name:layer.name,offset:explode.offset(layer.name)}))},renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline),renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
+    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),appearance,netGlow:netGlow.stats(),effectiveLayerColors:Boolean(inspectedLayer)||explode.get()>0||appearance!=='realistic',renderedPixels:renderer.domElement.width*renderer.domElement.height,expansion:{amount:explode.get(),target:expansionMotion.target(),running:expansionMotion.running(),...explode.phases(),frames:expansionFrames,cpuMilliseconds:expansionCPUms,maxFrameMilliseconds:expansionMaxMs,frontComponentOffset:explode.componentOffset('F.Cu'),backComponentOffset:explode.componentOffset('B.Cu'),layerOffsets:copperPlan.map(layer=>({name:layer.name,offset:explode.offset(layer.name)}))},renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline?.occlusion),antialiasMethod:pipeline?'smaa':'none',renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
     restoreExpand:value=>setExplode(value,true),setExplode,getExplode:()=>explode.get(),setExpand:setExplode,getExpand:()=>explode.get(),
     setAnalysisOverlay(surface,options){const state=analysisController.setAnalysisOverlay(surface,options);syncExplodeAnalysis();return analysisState(state);},
     getAnalysisOverlayState:()=>analysisState(),

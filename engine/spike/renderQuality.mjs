@@ -25,10 +25,12 @@ export function graphicsProfile({maxTextureSize=4096,maxRenderbufferSize=maxText
 export function qualityViewport(width,height,deviceRatio=1,maxDimension=4096,quality='balanced',constrained=false){
  const mode=qualityName(quality),w=Number.isFinite(width)&&width>0?width:1,h=Number.isFinite(height)&&height>0?height:1;
  const profile=constrained&&typeof constrained==='object'?constrained:null,limited=profile?profile.constrained:constrained;
+ // Resolved SMAA replaces multisample depth; lower pixel ceilings retain the
+ // existing fast-mode memory ceiling despite its additional color targets.
  const enhanced=mode==='high'||mode==='presentation';
- const maxPixels=mode==='photoreal-fast'?(limited?1_000_000:2_000_000):mode==='presentation'?(limited?1_000_000:profile?.premium?4_000_000:3_000_000):mode==='high'?(profile?profile.highMaxPixels:limited?1_000_000:2_000_000):mode==='low'?1_000_000:limited?3_000_000:4_000_000;
+ const maxPixels=mode==='photoreal-fast'?1_000_000:mode==='presentation'?(limited?1_000_000:profile?.premium?4_000_000:3_000_000):mode==='high'?(profile?profile.highMaxPixels:limited?1_000_000:2_000_000):mode==='low'?1_000_000:limited?1_000_000:2_000_000;
  const ratio=Math.min(viewportPixelRatio(w,h,mode==='presentation'&&!limited?Math.max(1.5,deviceRatio):deviceRatio,maxDimension),Math.sqrt(maxPixels/w/h));
- const pixels=Math.floor(w*ratio)*Math.floor(h*ratio),bytesPerPixel=enhanced?96:mode==='low'?12:24;
+ const pixels=Math.floor(w*ratio)*Math.floor(h*ratio),bytesPerPixel=enhanced?96:mode==='low'?12:48;
  return {quality:mode,ratio,width:Math.max(1,Math.floor(w*ratio)),height:Math.max(1,Math.floor(h*ratio)),pixels,maxPixels,estimatedBytes:pixels*bytesPerPixel+(mode==='low'?0:2*(mode==='presentation'&&!limited?2048:1024)**2*4)};
 }
 export function boardOcclusion(thickness=1.6,quality='high'){
