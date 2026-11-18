@@ -64,11 +64,12 @@ test('owners cannot clear or change another overlay and rejected replacements re
 
 test('field clicks preserve native PCB selection and emit their exact probe after native selection',async()=>{
   const source=await readFile(new URL('../engine/spike/board3d.js',import.meta.url),'utf8'),start=source.indexOf('  function pick(event) {'),end=source.indexOf("  let selectionMode = 'all';",start),pickSource=source.slice(start,end);
-  for(const nativeHit of [true,false])for(const fieldHit of [true,false]){
-    const events=[],mesh={visible:true},native={userData:{record:{id:'pad'}}},sample={value:2.75};
-    const context={pendingDemoFace:null,renderer:{domElement:{getBoundingClientRect:()=>({left:0,top:0,width:100,height:100})}},pointer:{set(){}},raycaster:{setFromCamera(){},intersectObject:()=>[],intersectObjects:()=>nativeHit?[{object:native,point:{}}]:[]},camera:{},measuring:false,analysisController:{overlay:{mesh,sample:()=>fieldHit?sample:null}},options:{onAnalysisProbe:value=>events.push(['probe',value])},explode:{get:()=>0},inspectionTarget:()=>true,substrate:{},appearance:'realistic',pickables:[native],selectionAppearance:{isVisible:()=>true},selectionMode:'all',selectableRecord:value=>value,clearSelection:()=>events.push(['clear']),select:()=>events.push(['select'])};
+  for(const inspectedLayer of ['','In1.Cu'])for(const nativeHit of [true,false])for(const fieldHit of [true,false]){
+    const events=[],inspectionModes=[],mesh={visible:true},native={userData:{record:{id:'pad'}}},sample={value:2.75};
+    const context={inspectedLayer,pendingDemoFace:null,renderer:{domElement:{getBoundingClientRect:()=>({left:0,top:0,width:100,height:100})}},pointer:{set(){}},raycaster:{setFromCamera(){},intersectObject:()=>[],intersectObjects:()=>nativeHit?[{object:native,point:{}}]:[]},camera:{},measuring:false,analysisController:{overlay:{mesh,sample:()=>fieldHit?sample:null}},options:{onAnalysisProbe:value=>events.push(['probe',value])},explode:{get:()=>0},inspectionTarget:(item,board,mode)=>{inspectionModes.push(mode);return true;},substrate:{},appearance:'realistic',pickables:[native],selectionAppearance:{isVisible:()=>true},selectionMode:'all',selectableRecord:value=>value,clearSelection:()=>events.push(['clear']),select:()=>events.push(['select'])};
     const names=Object.keys(context),pick=Function(...names,pickSource+';return pick;')(...Object.values(context));pick({clientX:50,clientY:50});
     assert.deepEqual(events,[...(nativeHit?[['select']]:fieldHit?[]:[['clear']]),...(fieldHit?[['probe',sample]]:[])]);
+    assert.deepEqual(inspectionModes,[inspectedLayer?'translucent':'realistic'],'layer inspection keeps native reach-through picking and exact probe ordering');
   }
 });
 
