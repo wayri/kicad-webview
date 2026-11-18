@@ -1,0 +1,1167 @@
+(kicad_sch
+  (version 20250114)
+  (generator "eeschema")
+  (uuid "7f5781d0-4eca-50af-9689-3f9d0f72fc67")
+  (paper "A4")
+  (title_block (title "Eleven-input majority decoder and alternating LEDs") (date "2026-11-07") (rev "candidate"))
+  (lib_symbols
+    (symbol
+      "Encoder:Device_R"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "R" (at 2.032 0 90) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Value" "R" (at 0 0 90) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at -1.778 0 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Description" "Resistor" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "R res resistor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_fp_filters" "R_*" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (symbol
+        "Device_R_0_1"
+        (rectangle (start -1.016 -2.54) (end 1.016 2.54) (stroke (width 0.254) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_R_1_1"
+        (pin
+          passive
+          line
+          (at 0 3.81 270)
+          (length 1.27)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -3.81 90)
+          (length 1.27)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_C"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0.254))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property
+        "Reference"
+        "C"
+        (at 0.635 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Value" "C" (at 0.635 -2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27)) (justify left)))
+      (property "Footprint" "" (at 0.9652 -3.81 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Unpolarized capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_keywords"
+        "cap capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_fp_filters" "C_*" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (symbol
+        "Device_C_0_1"
+        (polyline (pts (xy -2.032 0.762) (xy 2.032 0.762)) (stroke (width 0.508) (type default)) (fill (type none)))
+        (polyline (pts (xy -2.032 -0.762) (xy 2.032 -0.762)) (stroke (width 0.508) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_C_1_1"
+        (pin
+          passive
+          line
+          (at 0 3.81 270)
+          (length 2.794)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -3.81 90)
+          (length 2.794)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_LED"
+      (pin_numbers (hide yes))
+      (pin_names (offset 1.016) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "D" (at 0 2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Value" "LED" (at 0 -2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Light emitting diode"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Sim.Pins" "1=K 2=A" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "ki_keywords" "LED diode" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_fp_filters"
+        "LED* LED_SMD:* LED_THT:*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "Device_LED_0_1"
+        (polyline
+          (pts (xy -3.048 -0.762) (xy -4.572 -2.286) (xy -3.81 -2.286) (xy -4.572 -2.286) (xy -4.572 -1.524))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy -1.778 -0.762) (xy -3.302 -2.286) (xy -2.54 -2.286) (xy -3.302 -2.286) (xy -3.302 -1.524))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline (pts (xy -1.27 0) (xy 1.27 0)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy -1.27 -1.27) (xy -1.27 1.27)) (stroke (width 0.254) (type default)) (fill (type none)))
+        (polyline
+          (pts (xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol
+        "Device_LED_1_1"
+        (pin
+          passive
+          line
+          (at -3.81 0 0)
+          (length 2.54)
+          (name "K" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 3.81 0 180)
+          (length 2.54)
+          (name "A" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_Battery_Cell"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property
+        "Reference"
+        "BT"
+        (at 2.54 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property
+        "Value"
+        "Battery_Cell"
+        (at 2.54 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" "" (at 0 1.524 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 1.524 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Single-cell battery"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Sim.Device" "V" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Sim.Type" "DC" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Sim.Pins" "1=+ 2=-" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "battery cell"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "Device_Battery_Cell_0_1"
+        (rectangle (start -2.286 1.778) (end 2.286 1.524) (stroke (width 0) (type default)) (fill (type outline)))
+        (rectangle (start -1.524 1.016) (end 1.524 0.508) (stroke (width 0) (type default)) (fill (type outline)))
+        (polyline (pts (xy 0 1.778) (xy 0 2.54)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy 0 0.762) (xy 0 0)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy 0.762 3.048) (xy 1.778 3.048)) (stroke (width 0.254) (type default)) (fill (type none)))
+        (polyline (pts (xy 1.27 3.556) (xy 1.27 2.54)) (stroke (width 0.254) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_Battery_Cell_1_1"
+        (pin
+          passive
+          line
+          (at 0 5.08 270)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -2.54 90)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:power_PWR_FLAG"
+      (power global)
+      (pin_numbers (hide yes))
+      (pin_names (offset 0) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "#FLG" (at 0 1.905 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Value" "PWR_FLAG" (at 0 3.81 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Special symbol for telling ERC where power comes from"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_keywords"
+        "flag power"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "power_PWR_FLAG_0_0"
+        (pin
+          power_out
+          line
+          (at 0 0 90)
+          (length 0)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "power_PWR_FLAG_0_1"
+        (polyline
+          (pts (xy 0 0) (xy 0 1.27) (xy -1.016 1.905) (xy 0 2.54) (xy 1.016 1.905) (xy 0 1.27))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:TLV9044"
+      (pin_names (offset 0.127))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (symbol
+        "TLV9044_1_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "3" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_2_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "5" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "6" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "7" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_3_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "8" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "9" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "10" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_4_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "12" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "13" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "14" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_5_1"
+        (pin
+          power_in
+          line
+          (at -2.54 7.62 270)
+          (length 3.81)
+          (name "V+" (effects (font (size 1.27 1.27))))
+          (number "4" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          power_in
+          line
+          (at -2.54 -7.62 90)
+          (length 3.81)
+          (name "V-" (effects (font (size 1.27 1.27))))
+          (number "11" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+      (property "Reference" "U" (at 0 5.08 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27)) (justify left)))
+      (property
+        "Value"
+        "TLV9044IPWR"
+        (at 0 -5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" "" (at -1.27 2.54 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Datasheet"
+        "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+        (at 1.27 5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "Description"
+        "TLV9044 quad RRIO low-power op amp; standard TSSOP-14 pin map"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_locked" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "quad opamp"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_fp_filters"
+        "SOIC*3.9x8.7mm*P1.27mm* DIP*W7.62mm* TSSOP*4.4x5mm*P0.65mm* SSOP*5.3x6.2mm*P0.65mm* MSOP*3x3mm*P0.5mm*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 35.56 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "9710d64a-4b73-5f7c-a210-b7b4bd8b7703")
+    (property "Reference" "R45" (at 76.2 29.21 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 31.750000000000004 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 35.56 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 35.56 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 35.56 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 35.56 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 35.56 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R45") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST01_OUT"
+    (at 35.56 35.56 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "263d64a2-bec7-5cad-8d6e-3d8cd63ba073")
+  )
+  (wire (pts (xy 35.56 35.56) (xy 72.39 35.56)) (stroke (width 0) (type default)) (uuid "6090b7d0-180c-5f8c-94b4-7fde70a052dc"))
+  (wire (pts (xy 80.01 35.56) (xy 101.6 35.56)) (stroke (width 0) (type default)) (uuid "0d223ac8-7be8-5c9d-abee-15dce0c2ea8e"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 45.72 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "1f79e59a-756e-5cb0-b1e9-3445a638af9f")
+    (property "Reference" "R46" (at 76.2 39.37 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 41.91 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 45.72 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 45.72 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 45.72 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 45.72 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 45.72 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R46") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST02_OUT"
+    (at 35.56 45.72 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "0598dd9c-6556-564d-8b13-b88418a6eff4")
+  )
+  (wire (pts (xy 35.56 45.72) (xy 72.39 45.72)) (stroke (width 0) (type default)) (uuid "8f3539d1-4301-5867-b30c-7ca3082930f8"))
+  (wire (pts (xy 80.01 45.72) (xy 101.6 45.72)) (stroke (width 0) (type default)) (uuid "c0be202b-065b-54bf-a3a0-fdcbfafc620e"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 55.88 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "ddc1656c-8ae5-5aeb-b0a8-14e5eaa64d2c")
+    (property "Reference" "R47" (at 76.2 49.53 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 52.07 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 55.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 55.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 55.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 55.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 55.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R47") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST03_OUT"
+    (at 35.56 55.88 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "1dcb3c78-aea0-5f03-90d7-8d09f7756a66")
+  )
+  (wire (pts (xy 35.56 55.88) (xy 72.39 55.88)) (stroke (width 0) (type default)) (uuid "5fa17e90-ce8a-5357-ab5e-455598899dfb"))
+  (wire (pts (xy 80.01 55.88) (xy 101.6 55.88)) (stroke (width 0) (type default)) (uuid "71f48104-68df-59aa-b37b-e1bdd19c374c"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 66.04 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "a9af1804-748a-54b4-88df-c149e684b698")
+    (property "Reference" "R48" (at 76.2 59.690000000000005 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 62.230000000000004 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 66.04 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 66.04 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 66.04 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 66.04 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 66.04 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R48") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST04_OUT"
+    (at 35.56 66.04 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "ae1be0c1-8da3-559f-a837-6d552d8428e0")
+  )
+  (wire (pts (xy 35.56 66.04) (xy 72.39 66.04)) (stroke (width 0) (type default)) (uuid "5cdda8a3-5c53-57db-9e47-46902d113cc7"))
+  (wire (pts (xy 80.01 66.04) (xy 101.6 66.04)) (stroke (width 0) (type default)) (uuid "0f8d3400-5e54-5004-b605-27b9c8450f5f"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 76.2 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "19268605-eadf-566c-b952-ff9d5866ecc6")
+    (property "Reference" "R49" (at 76.2 69.85000000000001 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 72.39 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 76.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 76.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 76.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 76.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 76.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R49") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST05_OUT"
+    (at 35.56 76.2 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "ae8f8d7c-e3e0-5a97-a5ab-37e95ed016e8")
+  )
+  (wire (pts (xy 35.56 76.2) (xy 72.39 76.2)) (stroke (width 0) (type default)) (uuid "cb5f31df-b7c0-565b-9a77-8ab2f63fa825"))
+  (wire (pts (xy 80.01 76.2) (xy 101.6 76.2)) (stroke (width 0) (type default)) (uuid "a92b11ff-ebe7-53ef-8be1-9b7ac22eca37"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 86.36 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "4f722ae9-8a38-51e2-9de0-8a2b95ab88dd")
+    (property "Reference" "R50" (at 76.2 80.01 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 82.55 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 86.36 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 86.36 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 86.36 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 86.36 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 86.36 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R50") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST06_OUT"
+    (at 35.56 86.36 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "b4e38d1c-c064-56e2-bc2a-15b689b8166a")
+  )
+  (wire (pts (xy 35.56 86.36) (xy 72.39 86.36)) (stroke (width 0) (type default)) (uuid "aa33b79e-8dd0-5300-a460-46cc86374848"))
+  (wire (pts (xy 80.01 86.36) (xy 101.6 86.36)) (stroke (width 0) (type default)) (uuid "2a355b07-8d4a-543a-9a2d-020988b58367"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 96.52000000000001 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "05e55abf-dcc7-53de-8af5-b64867fbc03e")
+    (property "Reference" "R51" (at 76.2 90.17000000000002 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 92.71000000000001 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 96.52000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 96.52000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 96.52000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 96.52000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 96.52000000000001 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R51") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST07_OUT"
+    (at 35.56 96.52000000000001 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "0004dfc6-eca3-50cf-83f0-249dccbb69a3")
+  )
+  (wire (pts (xy 35.56 96.52) (xy 72.39 96.52)) (stroke (width 0) (type default)) (uuid "1f89359f-ec85-5e3a-a01e-60111a213cf2"))
+  (wire (pts (xy 80.01 96.52) (xy 101.6 96.52)) (stroke (width 0) (type default)) (uuid "880737f1-70c6-568f-8a25-fc48cac236c7"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 106.68 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "1f98d345-c1ab-54d2-86f2-5ad8733b003a")
+    (property "Reference" "R52" (at 76.2 100.33000000000001 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 102.87 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 106.68 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 106.68 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 106.68 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 106.68 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 106.68 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R52") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST08_OUT"
+    (at 35.56 106.68 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "8e1d95fb-e36b-5e50-83d2-0ea6ab42c6a3")
+  )
+  (wire (pts (xy 35.56 106.68) (xy 72.39 106.68)) (stroke (width 0) (type default)) (uuid "b8a6e39f-cda0-598e-a372-8bc65ed657ff"))
+  (wire (pts (xy 80.01 106.68) (xy 101.6 106.68)) (stroke (width 0) (type default)) (uuid "bd27f8bd-c399-53e6-81a1-033feb9ac571"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 116.84 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "bc5fe443-c6dc-53bb-8870-4df9880ce469")
+    (property "Reference" "R53" (at 76.2 110.49000000000001 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 113.03 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 116.84 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 116.84 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 116.84 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 116.84 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 116.84 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R53") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST09_OUT"
+    (at 35.56 116.84 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "28d7b79e-1cd7-5811-a060-ef27ab61e387")
+  )
+  (wire (pts (xy 35.56 116.84) (xy 72.39 116.84)) (stroke (width 0) (type default)) (uuid "c433c3d8-f9fa-51fa-8020-a232a5a4e8be"))
+  (wire (pts (xy 80.01 116.84) (xy 101.6 116.84)) (stroke (width 0) (type default)) (uuid "1a525b7d-9056-5cde-8e0a-3f4fb12e9e84"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 127.0 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "add6284f-14d5-5f14-81ac-30271abb3a5c")
+    (property "Reference" "R54" (at 76.2 120.65 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 123.19 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 127.0 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 127.0 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 127.0 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 127.0 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 127.0 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R54") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST10_OUT"
+    (at 35.56 127.0 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "e23c6369-9481-5ff0-b07c-974c6f193592")
+  )
+  (wire (pts (xy 35.56 127.0) (xy 72.39 127.0)) (stroke (width 0) (type default)) (uuid "7beac75e-c2df-50e3-8a32-becbc8ed8b11"))
+  (wire (pts (xy 80.01 127.0) (xy 101.6 127.0)) (stroke (width 0) (type default)) (uuid "ea7717d8-15e8-5ce6-9f46-f78c2f3047eb"))
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 76.2 137.16 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "f593e387-2a28-56e9-803c-5960b1de9cb1")
+    (property "Reference" "R55" (at 76.2 130.81 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "${SUM_R}" (at 76.2 133.35 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 76.2 137.16 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 76.2 137.16 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 76.2 137.16 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 76.2 137.16 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 76.2 137.16 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R55") (unit 1))
+      )
+    )
+  )
+  (hierarchical_label
+    "ST11_OUT"
+    (at 35.56 137.16 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "1735bf6a-1fba-5ab3-9c97-d39bf82cfc25")
+  )
+  (wire (pts (xy 35.56 137.16) (xy 72.39 137.16)) (stroke (width 0) (type default)) (uuid "835d06e6-6473-5dfa-8e57-24438f8602b9"))
+  (wire (pts (xy 80.01 137.16) (xy 101.6 137.16)) (stroke (width 0) (type default)) (uuid "79586ff5-fa5b-5427-a34e-ed1ad6f246fa"))
+  (wire (pts (xy 101.6 35.56) (xy 101.6 45.72)) (stroke (width 0) (type default)) (uuid "7dc873a1-30b2-58be-a07b-160b22936852"))
+  (wire (pts (xy 101.6 45.72) (xy 101.6 55.88)) (stroke (width 0) (type default)) (uuid "f5102608-a3fa-5cbc-8fbe-4b6c58b81ce5"))
+  (wire (pts (xy 101.6 55.88) (xy 101.6 66.04)) (stroke (width 0) (type default)) (uuid "6f778c54-57e7-55a8-b7d1-a9ac14e8561d"))
+  (wire (pts (xy 101.6 66.04) (xy 101.6 76.2)) (stroke (width 0) (type default)) (uuid "b7a070fc-6941-5429-9a05-15a356863ef1"))
+  (wire (pts (xy 101.6 76.2) (xy 101.6 86.36)) (stroke (width 0) (type default)) (uuid "fc51e16b-ab73-58a1-9799-54ca43d5757e"))
+  (wire (pts (xy 101.6 86.36) (xy 101.6 96.52)) (stroke (width 0) (type default)) (uuid "8646bf14-7c94-54a9-8773-8192fe0aedf3"))
+  (wire (pts (xy 101.6 96.52) (xy 101.6 106.68)) (stroke (width 0) (type default)) (uuid "7a1dadbe-686b-59cb-afb5-198fc1c927c5"))
+  (wire (pts (xy 101.6 106.68) (xy 101.6 116.84)) (stroke (width 0) (type default)) (uuid "33f80c39-3d18-5dd8-8c8a-593442e41c65"))
+  (wire (pts (xy 101.6 116.84) (xy 101.6 127.0)) (stroke (width 0) (type default)) (uuid "f4c995ec-c11e-5104-90a4-7b9fd053d68c"))
+  (wire (pts (xy 101.6 127.0) (xy 101.6 137.16)) (stroke (width 0) (type default)) (uuid "5c1abbcc-b98c-55a9-8629-ec691c6377bc"))
+  (junction (at 101.6 45.72) (diameter 0) (color 0 0 0 0) (uuid "ee36cc49-2241-558a-99c3-ff3a3302ebcf"))
+  (junction (at 101.6 55.88) (diameter 0) (color 0 0 0 0) (uuid "9f87411b-0fd0-58c7-a81a-05069b394e5e"))
+  (junction (at 101.6 66.04) (diameter 0) (color 0 0 0 0) (uuid "1cb07780-350b-58f0-89cb-efcdaf128bfe"))
+  (junction (at 101.6 76.2) (diameter 0) (color 0 0 0 0) (uuid "093e4f07-c3d1-58c0-af8a-27e88d85fd37"))
+  (junction (at 101.6 86.36) (diameter 0) (color 0 0 0 0) (uuid "77da21e7-35be-53b6-920a-22a16baa6a04"))
+  (junction (at 101.6 96.52000000000001) (diameter 0) (color 0 0 0 0) (uuid "a7ce6028-872c-5d08-951a-ecaae733d34d"))
+  (junction (at 101.6 106.68) (diameter 0) (color 0 0 0 0) (uuid "7e168931-2a2b-512c-958a-3433683da1b8"))
+  (junction (at 101.6 116.84) (diameter 0) (color 0 0 0 0) (uuid "8949a849-d80a-5427-941a-b0a3fbc920c8"))
+  (junction (at 101.6 127.0) (diameter 0) (color 0 0 0 0) (uuid "316ac07b-da84-5da5-a393-59258186cb17"))
+  (symbol
+    (lib_id "Encoder:TLV9044")
+    (at 154.94 76.2 0)
+    (unit 4)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c1de6157-1114-5ce5-9b86-d343b6d67ba8")
+    (property "Reference" "U3" (at 154.94 68.58 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${ENCODER_OPAMP_MPN}" (at 154.94 83.82000000000001 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:TSSOP-14_4.4x5mm_P0.65mm" (at 154.94 76.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Datasheet"
+      "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+      (at 154.94 76.2 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (property "Manufacturer" "${OPAMP_MFR}" (at 154.94 76.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "${ENCODER_OPAMP_MPN}" (at 154.94 76.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "1.2–5.5 V RRIO quad op amp" (at 154.94 76.2 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "U3") (unit 4)))
+    )
+  )
+  (wire (pts (xy 101.6 73.66) (xy 147.32 73.66)) (stroke (width 0) (type default)) (uuid "8b10ba0e-176f-5e97-92eb-0147fd5ac2f9"))
+  (junction (at 101.6 73.66) (diameter 0) (color 0 0 0 0) (uuid "fcbea0e2-7b23-575a-a7db-33679a4b2be5"))
+  (label
+    "MAJORITY_SUM"
+    (at 114.3 73.66 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "21b0c7b4-c6f9-595c-b9ed-f76e6626e2b0")
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 129.54 101.6 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "b6a1ccd8-3313-5875-a374-900a2665803f")
+    (property "Reference" "R56" (at 137.16 100.33 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${DIVIDER_R}" (at 137.16 102.86999999999999 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 129.54 101.6 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 129.54 101.6 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 129.54 101.6 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 129.54 101.6 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 129.54 101.6 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R56") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 129.54 124.46 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "b7850818-7428-5512-8802-b1b561a066e5")
+    (property "Reference" "R57" (at 137.16 123.19 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${DIVIDER_R}" (at 137.16 125.72999999999999 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 129.54 124.46 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 129.54 124.46 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 129.54 124.46 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 129.54 124.46 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 129.54 124.46 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R57") (unit 1))
+      )
+    )
+  )
+  (wire (pts (xy 129.54 105.41) (xy 129.54 114.3)) (stroke (width 0) (type default)) (uuid "3988a117-4c6c-5844-8b63-ecd46dc0247f"))
+  (wire (pts (xy 129.54 114.3) (xy 129.54 120.65)) (stroke (width 0) (type default)) (uuid "cfac73ca-55d7-525f-aacc-b770bad2a0b7"))
+  (junction (at 129.54 114.3) (diameter 0) (color 0 0 0 0) (uuid "a9f38d51-5dca-5a94-b1cd-2d4dcfe0ab74"))
+  (wire (pts (xy 129.54 114.3) (xy 139.7 114.3)) (stroke (width 0) (type default)) (uuid "397e134e-c8d1-501b-8f21-dd3195c1129b"))
+  (wire (pts (xy 139.7 114.3) (xy 139.7 78.74)) (stroke (width 0) (type default)) (uuid "f4395b8b-f10c-52b3-a973-fb733cf53733"))
+  (wire (pts (xy 139.7 78.74) (xy 147.32 78.74)) (stroke (width 0) (type default)) (uuid "bf8183fd-dc24-5482-8b50-0c286f6e4743"))
+  (label
+    "MIDREF"
+    (at 132.08 114.3 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "573087d9-7293-5e4f-b446-fe41241ba57f")
+  )
+  (wire (pts (xy 129.54 97.79) (xy 129.54 88.9)) (stroke (width 0) (type default)) (uuid "7fb9e888-287f-5580-a29b-e003c459c5dd"))
+  (label
+    "VBAT"
+    (at 129.54 88.9 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "2f83f5d9-c729-5f0f-afef-9532ff2b9cf7")
+  )
+  (wire (pts (xy 129.54 128.27) (xy 129.54 139.7)) (stroke (width 0) (type default)) (uuid "546efbeb-164c-578a-a79c-376a60e62cdc"))
+  (label
+    "GND"
+    (at 129.54 139.7 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "3a3deacd-4d6c-543c-b920-c04f8106caff")
+  )
+  (wire (pts (xy 162.56 76.2) (xy 185.42 76.2)) (stroke (width 0) (type default)) (uuid "290697b1-0bd2-5af2-b5ff-035771ae35de"))
+  (wire (pts (xy 185.42 76.2) (xy 215.9 76.2)) (stroke (width 0) (type default)) (uuid "496fe04a-7398-55f2-833b-bbb9c32199a6"))
+  (junction (at 185.42 76.2) (diameter 0) (color 0 0 0 0) (uuid "8305e6fe-24ab-5ae3-a08f-bcc799106e63"))
+  (global_label
+    "ENCODED_OUT"
+    (at 185.42 76.2 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "9b686a52-520f-58de-bbb1-1b0f6123797d")
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 185.42 96.52 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "36e8d100-d26d-56ec-a932-e6155cc41144")
+    (property "Reference" "R58" (at 193.04 95.25 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${LED_R}" (at 193.04 97.78999999999999 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 185.42 96.52 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 185.42 96.52 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 185.42 96.52 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 185.42 96.52 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 185.42 96.52 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R58") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_LED")
+    (at 185.42 116.84 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "8cda34fc-63dc-5648-993f-8718e9bf52e6")
+    (property "Reference" "D1" (at 185.42 110.49000000000001 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "RED" (at 185.42 113.03 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:LED_0603_1608Metric" (at 185.42 116.84 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 185.42 116.84 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 185.42 116.84 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 185.42 116.84 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "Low-current red; generic SPICE model, exact MPN unverified"
+      (at 185.42 116.84 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "D1") (unit 1)))
+    )
+  )
+  (wire (pts (xy 185.42 76.2) (xy 185.42 92.71)) (stroke (width 0) (type default)) (uuid "b3a5e448-10d9-5405-8ad0-138f194507e3"))
+  (wire
+    (pts (xy 185.42 100.33) (xy 185.42 113.03))
+    (stroke (width 0) (type default))
+    (uuid "e655ea95-1561-593f-878e-7cdebfd0d244")
+  )
+  (wire
+    (pts (xy 185.42 120.65) (xy 160.02 120.65))
+    (stroke (width 0) (type default))
+    (uuid "d0623846-df83-507a-a875-24feeafceeed")
+  )
+  (label
+    "GND"
+    (at 160.01999999999998 120.65 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "eafe7abc-ce92-524f-b59d-23b1b5873861")
+  )
+  (label
+    "RED_A"
+    (at 185.42 106.68 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "1823a1da-6a9c-5fae-8e34-d6c95ee996d1")
+  )
+  (symbol
+    (lib_id "Encoder:Device_R")
+    (at 215.9 43.18 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "98f20e78-cab0-555c-b1cf-517b1ce7724c")
+    (property "Reference" "R59" (at 223.52 41.91 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${LED_R}" (at 223.52 44.45 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:R_0402_1005Metric" (at 215.9 43.18 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 215.9 43.18 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 215.9 43.18 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 215.9 43.18 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Rating" "0.1%, 0402; exact MPN unverified" (at 215.9 43.18 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (instances
+      (project
+        "Encoder"
+        (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "R59") (unit 1))
+      )
+    )
+  )
+  (symbol
+    (lib_id "Encoder:Device_LED")
+    (at 215.9 63.5 90)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "845e477d-7710-5468-92ab-bed632beaa9b")
+    (property "Reference" "D2" (at 215.9 57.15 90) (effects (font (size 1.27 1.27))))
+    (property "Value" "GREEN" (at 215.9 59.69 90) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Encoder:LED_0603_1608Metric" (at 215.9 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Datasheet" "" (at 215.9 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "Manufacturer" "Select to specification" (at 215.9 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property "MPN" "Select to specification" (at 215.9 63.5 0) (effects (font (size 1.27 1.27)) (hide yes)))
+    (property
+      "Rating"
+      "Low-Vf yellow-green; generic SPICE model, exact MPN unverified"
+      (at 215.9 63.5 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210/7f5781d0-4eca-50af-9689-3f9d0f72fc67" (reference "D2") (unit 1)))
+    )
+  )
+  (wire (pts (xy 215.9 39.37) (xy 190.5 39.37)) (stroke (width 0) (type default)) (uuid "adfbbaf7-f6b7-5128-803d-18ead98d89e4"))
+  (label
+    "VBAT"
+    (at 190.5 39.37 0)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid "a14698ef-e4a3-50dc-9d48-af65a2f61d78")
+  )
+  (wire (pts (xy 215.9 46.99) (xy 215.9 59.69)) (stroke (width 0) (type default)) (uuid "d1859a73-025a-5aef-a818-da177043e7b8"))
+  (wire (pts (xy 215.9 67.31) (xy 215.9 76.2)) (stroke (width 0) (type default)) (uuid "7d2b88ed-fcd6-544e-8104-27a5537cb824"))
+  (label
+    "GREEN_A"
+    (at 215.9 53.34 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "3bbad44f-ffbb-5a2a-8b66-3cd34d71a838")
+  )
+  (hierarchical_label
+    "VBAT"
+    (at 167.64 152.4 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "ee8af041-b240-5baa-ae15-e9c9cf5297df")
+  )
+  (wire (pts (xy 167.64 152.4) (xy 167.64 144.78)) (stroke (width 0) (type default)) (uuid "92479f0c-2567-5b66-89c9-0802ed5ab268"))
+  (label
+    "VBAT"
+    (at 167.64 144.78 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "62bd6265-ba56-5e79-8b4d-498b59b44732")
+  )
+  (hierarchical_label
+    "GND"
+    (at 193.04 152.4 0)
+    (shape bidirectional)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "5e5a3f1e-28d9-57e9-8974-4315298b8e37")
+  )
+  (wire (pts (xy 193.04 152.4) (xy 193.04 144.78)) (stroke (width 0) (type default)) (uuid "aa4c966a-a9f9-5f00-aea7-1d1a1222d2ec"))
+  (label
+    "GND"
+    (at 193.04 144.78 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "aad2036a-1398-57f4-a528-29e4d47c6b8e")
+  )
+  (text
+    "RED = encoded output HIGH; GREEN = LOW.\n11 equal resistors sum the delay-ring states.\nU3D compares with VBAT/2. Custom PWM alphabet.\nElectrical/visible output; no radio."
+    (at 101.6 172.72 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "0629366a-2739-5e68-aa4a-cbbef95757c1")
+  )
+)

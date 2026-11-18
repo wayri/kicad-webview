@@ -4,16 +4,16 @@ const viewer=new KiCadViewer('#viewer',{theme:'dark'}),message=document.querySel
 const manifest=new URL('./demo/project.json',location.href).href;
 let carousel;
 const projectSlides=[
- {label:'The complete inverter · layout',input:manifest,view:'pcb',clearSelection:true},
- {label:'The main schematic',input:manifest,options:{file:'3PD+IB.kicad_sch'},view:'schematic',clearSelection:true},
- {label:'Gate-driver sheet · saved project source',input:manifest,options:{file:'HBD21094.kicad_sch'},view:'schematic',clearSelection:true},
+ {label:'KERO Encoder · layout',input:manifest,view:'pcb',clearSelection:true},
+ {label:'The main schematic',input:manifest,options:{file:'Encoder.kicad_sch'},view:'schematic',clearSelection:true},
+ {label:'Decoder sheet · saved project source',input:manifest,options:{file:'decoder.kicad_sch'},view:'schematic',clearSelection:true},
  {label:'Board assembly · live 3D',input:manifest,view:'3d',camera3D:'isometric',clearSelection:true},
- {label:'Phase A · copper and connected parts',view:'3d',camera3D:'top',net:'/Pa'},
+ {label:'VBAT · copper and connected parts',view:'3d',camera3D:'top',net:'/VBAT'},
 ];
 const boardSlides=[
  {label:'Assembly · isometric',input:manifest,view:'3d',camera3D:'isometric',clearSelection:true},
- {label:'Phase A net · highlighted copper',view:'3d',camera3D:'top',net:'/Pa'},
- {label:'Follow the same net to the back',view:'3d',camera3D:'bottom',net:'/Pa'},
+ {label:'VBAT net · highlighted copper',view:'3d',camera3D:'top',net:'/VBAT'},
+ {label:'Follow the same net to the back',view:'3d',camera3D:'bottom',net:'/VBAT'},
  {label:'Board profile · front',view:'3d',camera3D:'front',clearSelection:true},
  {label:'Return to the assembly',view:'3d',camera3D:'isometric',clearSelection:true},
 ];

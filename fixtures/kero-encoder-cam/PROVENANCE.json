@@ -1,0 +1,62 @@
+{
+  "description": "Gerber and Excellon demonstration exports from the saved KERO Encoder board. No zone refill requested.",
+  "source": "https://github.com/wayri/KERO/tree/7be8fef589bc28eee149323e3790ef95b0873032/encoder/Encoder.kicad_pcb",
+  "revision": "7be8fef589bc28eee149323e3790ef95b0873032",
+  "boardSHA256": "08437dcfd8f304786d4f3444a26bd56c443661ea22bd25d69c3900906c6ef109",
+  "tool": "KiCad CLI 10.0.6",
+  "commands": [
+    [
+      "pcb",
+      "export",
+      "gerbers",
+      "--layers",
+      "F.Cu,B.Cu,F.Silkscreen,Edge.Cuts",
+      "--output",
+      "<output>/",
+      "Encoder.kicad_pcb"
+    ],
+    [
+      "pcb",
+      "export",
+      "drill",
+      "--format",
+      "excellon",
+      "--excellon-separate-th",
+      "--output",
+      "<output>/",
+      "Encoder.kicad_pcb"
+    ]
+  ],
+  "files": [
+    {
+      "path": "Encoder-B_Cu.gbl",
+      "bytes": 32008,
+      "sha256": "3071462dc131080fd389b9edfa45a68762125d84e871bdc095e749c20e60f91c"
+    },
+    {
+      "path": "Encoder-Edge_Cuts.gm1",
+      "bytes": 700,
+      "sha256": "01251ea9cd16adc706487a3956946179d51322218c0557d418ecb384d71c6fa4"
+    },
+    {
+      "path": "Encoder-F_Cu.gtl",
+      "bytes": 106940,
+      "sha256": "1a6d0ec1ced2ca685a1db0c973d88a2356143e381b7aa97556f01407f534b5ae"
+    },
+    {
+      "path": "Encoder-F_Silkscreen.gto",
+      "bytes": 15946,
+      "sha256": "9349b9c5c1d8d072507af695f3b731c48e0739f097518dc0a72b578bb20a326b"
+    },
+    {
+      "path": "Encoder-NPTH.drl",
+      "bytes": 276,
+      "sha256": "072ac09094b6fd3fd531e9932c75cf06f03dc87a8f5e3e4b6ebc592b8ba4bfcc"
+    },
+    {
+      "path": "Encoder-PTH.drl",
+      "bytes": 1538,
+      "sha256": "4171ad41ef46056cf9fe5467eeeec1b4598a970efb71d8d35711e96d08b0feb0"
+    }
+  ]
+}

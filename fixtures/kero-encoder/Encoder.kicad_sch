@@ -1,0 +1,1104 @@
+(kicad_sch
+  (version 20250114)
+  (generator "eeschema")
+  (uuid "3e440f99-8f4f-5697-8edb-e34f9bffe210")
+  (paper "A4")
+  (title_block (title "KERO: RC-programmed hello world transmitter") (date "2026-11-07") (rev "candidate"))
+  (lib_symbols
+    (symbol
+      "Encoder:Device_R"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "R" (at 2.032 0 90) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Value" "R" (at 0 0 90) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at -1.778 0 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Description" "Resistor" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "R res resistor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_fp_filters" "R_*" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (symbol
+        "Device_R_0_1"
+        (rectangle (start -1.016 -2.54) (end 1.016 2.54) (stroke (width 0.254) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_R_1_1"
+        (pin
+          passive
+          line
+          (at 0 3.81 270)
+          (length 1.27)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -3.81 90)
+          (length 1.27)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_C"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0.254))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property
+        "Reference"
+        "C"
+        (at 0.635 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Value" "C" (at 0.635 -2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27)) (justify left)))
+      (property "Footprint" "" (at 0.9652 -3.81 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Unpolarized capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_keywords"
+        "cap capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_fp_filters" "C_*" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (symbol
+        "Device_C_0_1"
+        (polyline (pts (xy -2.032 0.762) (xy 2.032 0.762)) (stroke (width 0.508) (type default)) (fill (type none)))
+        (polyline (pts (xy -2.032 -0.762) (xy 2.032 -0.762)) (stroke (width 0.508) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_C_1_1"
+        (pin
+          passive
+          line
+          (at 0 3.81 270)
+          (length 2.794)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -3.81 90)
+          (length 2.794)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_LED"
+      (pin_numbers (hide yes))
+      (pin_names (offset 1.016) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "D" (at 0 2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Value" "LED" (at 0 -2.54 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Light emitting diode"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Sim.Pins" "1=K 2=A" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "ki_keywords" "LED diode" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_fp_filters"
+        "LED* LED_SMD:* LED_THT:*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "Device_LED_0_1"
+        (polyline
+          (pts (xy -3.048 -0.762) (xy -4.572 -2.286) (xy -3.81 -2.286) (xy -4.572 -2.286) (xy -4.572 -1.524))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy -1.778 -0.762) (xy -3.302 -2.286) (xy -2.54 -2.286) (xy -3.302 -2.286) (xy -3.302 -1.524))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline (pts (xy -1.27 0) (xy 1.27 0)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy -1.27 -1.27) (xy -1.27 1.27)) (stroke (width 0.254) (type default)) (fill (type none)))
+        (polyline
+          (pts (xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol
+        "Device_LED_1_1"
+        (pin
+          passive
+          line
+          (at -3.81 0 0)
+          (length 2.54)
+          (name "K" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 3.81 0 180)
+          (length 2.54)
+          (name "A" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:Device_Battery_Cell"
+      (pin_numbers (hide yes))
+      (pin_names (offset 0) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property
+        "Reference"
+        "BT"
+        (at 2.54 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property
+        "Value"
+        "Battery_Cell"
+        (at 2.54 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" "" (at 0 1.524 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 1.524 90) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Single-cell battery"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Sim.Device" "V" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Sim.Type" "DC" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Sim.Pins" "1=+ 2=-" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "battery cell"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "Device_Battery_Cell_0_1"
+        (rectangle (start -2.286 1.778) (end 2.286 1.524) (stroke (width 0) (type default)) (fill (type outline)))
+        (rectangle (start -1.524 1.016) (end 1.524 0.508) (stroke (width 0) (type default)) (fill (type outline)))
+        (polyline (pts (xy 0 1.778) (xy 0 2.54)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy 0 0.762) (xy 0 0)) (stroke (width 0) (type default)) (fill (type none)))
+        (polyline (pts (xy 0.762 3.048) (xy 1.778 3.048)) (stroke (width 0.254) (type default)) (fill (type none)))
+        (polyline (pts (xy 1.27 3.556) (xy 1.27 2.54)) (stroke (width 0.254) (type default)) (fill (type none)))
+      )
+      (symbol
+        "Device_Battery_Cell_1_1"
+        (pin
+          passive
+          line
+          (at 0 5.08 270)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          passive
+          line
+          (at 0 -2.54 90)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:power_PWR_FLAG"
+      (power global)
+      (pin_numbers (hide yes))
+      (pin_names (offset 0) (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "#FLG" (at 0 1.905 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Value" "PWR_FLAG" (at 0 3.81 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property "Footprint" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property "Datasheet" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Description"
+        "Special symbol for telling ERC where power comes from"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_keywords"
+        "flag power"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (symbol
+        "power_PWR_FLAG_0_0"
+        (pin
+          power_out
+          line
+          (at 0 0 90)
+          (length 0)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "power_PWR_FLAG_0_1"
+        (polyline
+          (pts (xy 0 0) (xy 0 1.27) (xy -1.016 1.905) (xy 0 2.54) (xy 1.016 1.905) (xy 0 1.27))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol
+      "Encoder:TLV9044"
+      (pin_names (offset 0.127))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (symbol
+        "TLV9044_1_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "3" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_2_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "5" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "6" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "7" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_3_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "8" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "9" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "10" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_4_1"
+        (polyline
+          (pts (xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08))
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+        (pin
+          input
+          line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "12" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          input
+          line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "13" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          output
+          line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "" (effects (font (size 1.27 1.27))))
+          (number "14" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (symbol
+        "TLV9044_5_1"
+        (pin
+          power_in
+          line
+          (at -2.54 7.62 270)
+          (length 3.81)
+          (name "V+" (effects (font (size 1.27 1.27))))
+          (number "4" (effects (font (size 1.27 1.27))))
+        )
+        (pin
+          power_in
+          line
+          (at -2.54 -7.62 90)
+          (length 3.81)
+          (name "V-" (effects (font (size 1.27 1.27))))
+          (number "11" (effects (font (size 1.27 1.27))))
+        )
+      )
+      (embedded_fonts no)
+      (property "Reference" "U" (at 0 5.08 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27)) (justify left)))
+      (property
+        "Value"
+        "TLV9044IPWR"
+        (at 0 -5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" "" (at -1.27 2.54 0) (show_name no) (do_not_autoplace no) (hide yes) (effects (font (size 1.27 1.27))))
+      (property
+        "Datasheet"
+        "https://www.ti.com/lit/ds/symlink/tlv9044.pdf"
+        (at 1.27 5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "Description"
+        "TLV9044 quad RRIO low-power op amp; standard TSSOP-14 pin map"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "ki_locked" "" (at 0 0 0) (show_name no) (do_not_autoplace no) (effects (font (size 1.27 1.27))))
+      (property
+        "ki_keywords"
+        "quad opamp"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property
+        "ki_fp_filters"
+        "SOIC*3.9x8.7mm*P1.27mm* DIP*W7.62mm* TSSOP*4.4x5mm*P0.65mm* SSOP*5.3x6.2mm*P0.65mm* MSOP*3x3mm*P0.5mm*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects (font (size 1.27 1.27)))
+      )
+    )
+  )
+  (wire (pts (xy 76.2 53.34) (xy 83.82 53.34)) (stroke (width 0) (type default)) (uuid "94348193-6016-51bb-9207-f77a1a879366"))
+  (label
+    "VBAT"
+    (at 83.82000000000001 53.34 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "a6353bee-5bbf-5a6c-83e1-12b1a25f3ee1")
+  )
+  (wire (pts (xy 76.2 57.15) (xy 83.82 57.15)) (stroke (width 0) (type default)) (uuid "57754b42-768e-55cc-ac3a-8a6f57f83e1d"))
+  (label
+    "GND"
+    (at 83.82000000000001 57.15 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "6bdc493f-19fc-5988-af01-8e2810fa1fa0")
+  )
+  (sheet
+    (at 20.32 48.26)
+    (size 55.88 30.48)
+    (stroke (width 0) (type default))
+    (fill (color 0 0 0 0))
+    (uuid "d23fc87b-804e-5bef-ae40-2c344f10f8fe")
+    (property "Sheetname" "power" (at 20.32 45.72 0) (effects (font (size 1.27 1.27))))
+    (property "Sheetfile" "power.kicad_sch" (at 20.32 81.28 0) (effects (font (size 1.27 1.27))))
+    (pin "VBAT" bidirectional (at 76.2 53.34 0) (effects (font (size 1.016 1.016))) (uuid "eb551b64-8a90-5f82-913a-5b401dfe419c"))
+    (pin "GND" bidirectional (at 76.2 57.15 0) (effects (font (size 1.016 1.016))) (uuid "f39cff78-f4b6-54aa-b426-cfb8a2f318dc"))
+    (instances (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210" (page "2"))))
+  )
+  (text
+    "CR2032 cell\nU1–U3 supplies / bypass"
+    (at 42.672000000000004 86.36 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "af0e115f-599a-55bc-9bf0-cdd5195929ba")
+  )
+  (wire (pts (xy 157.48 53.34) (xy 165.1 53.34)) (stroke (width 0) (type default)) (uuid "d5dc3c46-4ce8-5ead-8752-7716128134a3"))
+  (label
+    "VBAT"
+    (at 165.1 53.34 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "f5531cdc-834f-5bce-8a16-d3fba9110a2f")
+  )
+  (wire (pts (xy 157.48 57.15) (xy 165.1 57.15)) (stroke (width 0) (type default)) (uuid "f4098298-93c5-5f16-a964-64317df10c6d"))
+  (label
+    "GND"
+    (at 165.1 57.15 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "2224730a-0db5-5124-9b50-18aa1a63d6c0")
+  )
+  (wire (pts (xy 157.48 60.96) (xy 165.1 60.96)) (stroke (width 0) (type default)) (uuid "3ec343bb-c5a9-5928-8fad-fa377229e909"))
+  (label
+    "ST11_OUT"
+    (at 165.1 60.96 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "fc317b6f-0e8b-5b72-928a-37a2705bc572")
+  )
+  (wire (pts (xy 157.48 64.77) (xy 165.1 64.77)) (stroke (width 0) (type default)) (uuid "bb1b0536-0e66-5ff7-a8ae-35b8ad460733"))
+  (label
+    "ST01_OUT"
+    (at 165.1 64.77 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "1c503fab-fc28-5ea2-8f67-caf1b0a1ade0")
+  )
+  (wire (pts (xy 157.48 68.58) (xy 165.1 68.58)) (stroke (width 0) (type default)) (uuid "00d0e7a8-b2ec-5ffd-aa5a-47c165342a53"))
+  (label
+    "ST02_OUT"
+    (at 165.1 68.58 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "67a6674a-a247-507c-96d4-48d5994c6847")
+  )
+  (wire (pts (xy 157.48 72.39) (xy 165.1 72.39)) (stroke (width 0) (type default)) (uuid "8041271b-380c-53ff-a6a1-7e495a9f8292"))
+  (label
+    "ST03_OUT"
+    (at 165.1 72.39 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "6f468f34-6b5d-5046-afd2-51ba17907026")
+  )
+  (wire (pts (xy 157.48 76.2) (xy 165.1 76.2)) (stroke (width 0) (type default)) (uuid "393e8d86-0070-5e05-bbcc-8b0d03704e94"))
+  (label
+    "ST04_OUT"
+    (at 165.1 76.2 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "86367706-127f-58a5-9af9-1c28ead0eebe")
+  )
+  (sheet
+    (at 101.6 48.26)
+    (size 55.88 45.72)
+    (stroke (width 0) (type default))
+    (fill (color 0 0 0 0))
+    (uuid "1a7fbb01-6560-54b5-9b34-89583e4e2610")
+    (property "Sheetname" "bank1" (at 101.6 45.72 0) (effects (font (size 1.27 1.27))))
+    (property "Sheetfile" "bank1.kicad_sch" (at 101.6 96.52 0) (effects (font (size 1.27 1.27))))
+    (pin "VBAT" bidirectional (at 157.48 53.34 0) (effects (font (size 1.016 1.016))) (uuid "2bc3fc64-7ce9-543b-8ec7-da05c9fb02f5"))
+    (pin "GND" bidirectional (at 157.48 57.15 0) (effects (font (size 1.016 1.016))) (uuid "daec7b3b-6783-592e-9233-77657d9ea512"))
+    (pin
+      "ST11_OUT"
+      bidirectional
+      (at 157.48 60.96 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "7288a4f6-89f8-5211-b91e-533886dd3fc5")
+    )
+    (pin
+      "ST01_OUT"
+      bidirectional
+      (at 157.48 64.77 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "04a27c04-2bca-5898-8273-39ccb8e0efa7")
+    )
+    (pin
+      "ST02_OUT"
+      bidirectional
+      (at 157.48 68.58 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "50eef794-13ef-5acc-b206-4905fbd408ab")
+    )
+    (pin
+      "ST03_OUT"
+      bidirectional
+      (at 157.48 72.39 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "594a6613-117e-5ed5-8533-2f68266afb42")
+    )
+    (pin
+      "ST04_OUT"
+      bidirectional
+      (at 157.48 76.2 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "ff306caa-8a0e-596d-b494-f8da53ddc0c4")
+    )
+    (instances (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210" (page "3"))))
+  )
+  (text "ST01–ST04 / U1A–U1D" (at 123.952 101.6 0) (effects (font (size 1.27 1.27))) (uuid "f50072b2-9942-532a-b8fa-6ceda215a668"))
+  (wire (pts (xy 246.38 53.34) (xy 254.0 53.34)) (stroke (width 0) (type default)) (uuid "a302c11d-59ae-5b6e-bd78-d3a9df9cd1f9"))
+  (label
+    "VBAT"
+    (at 254.0 53.34 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "d43862a1-e75e-5da7-b133-d65e93e24082")
+  )
+  (wire (pts (xy 246.38 57.15) (xy 254.0 57.15)) (stroke (width 0) (type default)) (uuid "78337b77-48e0-59b4-a581-ad3dd53b9c8f"))
+  (label
+    "GND"
+    (at 254.0 57.15 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "fd662719-7c3b-537a-afb9-3bd8dd87ba90")
+  )
+  (wire (pts (xy 246.38 60.96) (xy 254.0 60.96)) (stroke (width 0) (type default)) (uuid "3bbfbd8c-c6a5-5b46-9394-2650f115c335"))
+  (label
+    "ST04_OUT"
+    (at 254.0 60.96 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "9576f37e-5408-5698-b5e0-72740d2e93b0")
+  )
+  (wire (pts (xy 246.38 64.77) (xy 254.0 64.77)) (stroke (width 0) (type default)) (uuid "3b06c3cb-de1c-5aca-b45c-dcdc564a690c"))
+  (label
+    "ST05_OUT"
+    (at 254.0 64.77 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "dfaadc08-0dfd-5cf6-b759-88015a56d861")
+  )
+  (wire (pts (xy 246.38 68.58) (xy 254.0 68.58)) (stroke (width 0) (type default)) (uuid "3ee693a6-ca16-503d-bbab-a416dce69901"))
+  (label
+    "ST06_OUT"
+    (at 254.0 68.58 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "83a8ca02-97e6-5efd-aa2d-17694f776d78")
+  )
+  (wire (pts (xy 246.38 72.39) (xy 254.0 72.39)) (stroke (width 0) (type default)) (uuid "3c305c88-fdfb-5bb4-943b-cbf1b1263f62"))
+  (label
+    "ST07_OUT"
+    (at 254.0 72.39 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "68d530f7-c528-5aca-b92c-a2389023fdb8")
+  )
+  (wire (pts (xy 246.38 76.2) (xy 254.0 76.2)) (stroke (width 0) (type default)) (uuid "b7b48f50-8870-5f9f-b94c-de92bed4ee15"))
+  (label
+    "ST08_OUT"
+    (at 254.0 76.2 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "4f11bf96-3ec4-5212-9f90-d39e9158f5f3")
+  )
+  (sheet
+    (at 190.5 48.26)
+    (size 55.88 45.72)
+    (stroke (width 0) (type default))
+    (fill (color 0 0 0 0))
+    (uuid "0bdf1f61-aaac-5d9d-aedd-a17ac5c891b4")
+    (property "Sheetname" "bank2" (at 190.5 45.72 0) (effects (font (size 1.27 1.27))))
+    (property "Sheetfile" "bank2.kicad_sch" (at 190.5 96.52 0) (effects (font (size 1.27 1.27))))
+    (pin "VBAT" bidirectional (at 246.38 53.34 0) (effects (font (size 1.016 1.016))) (uuid "bfc054da-aa8a-515f-888f-5004b8d2a83a"))
+    (pin "GND" bidirectional (at 246.38 57.15 0) (effects (font (size 1.016 1.016))) (uuid "59d34ef4-a079-5572-8fb3-7d1ac52b34cc"))
+    (pin
+      "ST04_OUT"
+      bidirectional
+      (at 246.38 60.96 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "824db82e-41bb-5486-9703-37fbdbf92507")
+    )
+    (pin
+      "ST05_OUT"
+      bidirectional
+      (at 246.38 64.77 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "86165cf7-c75d-56c8-a320-9bad1ee9d94d")
+    )
+    (pin
+      "ST06_OUT"
+      bidirectional
+      (at 246.38 68.58 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "19825847-6474-5f7a-9fbd-a45a79f65551")
+    )
+    (pin
+      "ST07_OUT"
+      bidirectional
+      (at 246.38 72.39 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "1b19ac15-80c4-5344-a30c-351d64f9884a")
+    )
+    (pin
+      "ST08_OUT"
+      bidirectional
+      (at 246.38 76.2 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "bc1c1196-df1d-52af-b6ea-3e74596b3dff")
+    )
+    (instances (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210" (page "4"))))
+  )
+  (text "ST05–ST08 / U2A–U2D" (at 212.852 101.6 0) (effects (font (size 1.27 1.27))) (uuid "7faa82a6-271d-546a-a34e-e79234bcdb51"))
+  (wire (pts (xy 76.2 111.76) (xy 83.82 111.76)) (stroke (width 0) (type default)) (uuid "247edead-c203-57aa-a5ac-b3d367e83790"))
+  (label
+    "VBAT"
+    (at 83.82000000000001 111.76 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "29f21a1f-a5d2-5e32-8c9f-42ce61431b64")
+  )
+  (wire (pts (xy 76.2 115.57) (xy 83.82 115.57)) (stroke (width 0) (type default)) (uuid "c1192cc4-ea5d-54ba-b0a7-88a5772cc357"))
+  (label
+    "GND"
+    (at 83.82000000000001 115.57 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "13f538ea-2ca0-5d2e-9151-01bd2d18e783")
+  )
+  (wire (pts (xy 76.2 119.38) (xy 83.82 119.38)) (stroke (width 0) (type default)) (uuid "313dfd85-c873-5131-8b42-6d5efaa21b6d"))
+  (label
+    "ST08_OUT"
+    (at 83.82000000000001 119.38 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "0e6928d3-f13b-5ffc-b8a2-55392cb55447")
+  )
+  (wire (pts (xy 76.2 123.19) (xy 83.82 123.19)) (stroke (width 0) (type default)) (uuid "5002fd77-570b-56c8-a3fe-018618c53b67"))
+  (label
+    "ST09_OUT"
+    (at 83.82000000000001 123.19 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "c3e8cda0-58c6-5263-b8c8-32b9d9e58e60")
+  )
+  (wire (pts (xy 76.2 127.0) (xy 83.82 127.0)) (stroke (width 0) (type default)) (uuid "358959b8-287d-5973-8170-b1412161ac70"))
+  (label
+    "ST10_OUT"
+    (at 83.82000000000001 127.0 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "56e4f1cd-637e-59b3-9a62-a77d65610220")
+  )
+  (wire (pts (xy 76.2 130.81) (xy 83.82 130.81)) (stroke (width 0) (type default)) (uuid "636e4397-466b-5f75-a76c-32844af5a04d"))
+  (label
+    "ST11_OUT"
+    (at 83.82000000000001 130.81 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "39dd69d8-0566-58e6-9fe8-c667a275011c")
+  )
+  (sheet
+    (at 20.32 106.68)
+    (size 55.88 50.8)
+    (stroke (width 0) (type default))
+    (fill (color 0 0 0 0))
+    (uuid "a9252019-b33b-5f20-a763-f6f31dd95760")
+    (property "Sheetname" "bank3" (at 20.32 104.14 0) (effects (font (size 1.27 1.27))))
+    (property "Sheetfile" "bank3.kicad_sch" (at 20.32 160.02 0) (effects (font (size 1.27 1.27))))
+    (pin "VBAT" bidirectional (at 76.2 111.76 0) (effects (font (size 1.016 1.016))) (uuid "822dcf4c-4893-5110-a45b-2354515a177e"))
+    (pin "GND" bidirectional (at 76.2 115.57 0) (effects (font (size 1.016 1.016))) (uuid "5f3848fe-f5ea-52b6-bbec-46fb4549a719"))
+    (pin
+      "ST08_OUT"
+      bidirectional
+      (at 76.2 119.38 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "82d86be1-8e7d-568b-bcd8-2e35bb870c15")
+    )
+    (pin
+      "ST09_OUT"
+      bidirectional
+      (at 76.2 123.19 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "33ffbb90-c786-5a0f-9289-e8f280c401fd")
+    )
+    (pin
+      "ST10_OUT"
+      bidirectional
+      (at 76.2 127.0 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "f65c2e3c-9e44-59fc-a027-163e40ad7d7a")
+    )
+    (pin
+      "ST11_OUT"
+      bidirectional
+      (at 76.2 130.81 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "2af0fde9-a376-52a9-bdd8-85da73d03894")
+    )
+    (instances (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210" (page "5"))))
+  )
+  (text
+    "ST09–ST11 / U3A–U3C"
+    (at 42.672000000000004 165.10000000000002 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "442c7e57-097f-53fb-9d25-a30de2ddf946")
+  )
+  (wire
+    (pts (xy 223.52 111.76) (xy 231.14 111.76))
+    (stroke (width 0) (type default))
+    (uuid "8fce13d1-da15-566c-b683-8f8a2450f9c1")
+  )
+  (label
+    "VBAT"
+    (at 231.14 111.76 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "3689db8e-4bb1-5cd6-a8ac-525df2cbf1a0")
+  )
+  (wire
+    (pts (xy 223.52 115.57) (xy 231.14 115.57))
+    (stroke (width 0) (type default))
+    (uuid "3ec09697-c746-563e-bbda-f58ffa8b88d1")
+  )
+  (label
+    "GND"
+    (at 231.14 115.57 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "edeb343a-5a8d-587e-b003-12e588106bcf")
+  )
+  (wire
+    (pts (xy 223.52 119.38) (xy 231.14 119.38))
+    (stroke (width 0) (type default))
+    (uuid "a23b1b1e-47dd-5d68-a6d7-df1618fc2477")
+  )
+  (label
+    "ST01_OUT"
+    (at 231.14 119.38 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "46b3c81b-ac14-5538-8d85-e6a279f63385")
+  )
+  (wire
+    (pts (xy 223.52 123.19) (xy 231.14 123.19))
+    (stroke (width 0) (type default))
+    (uuid "77fb9966-adb5-565d-bb23-a928c410c19c")
+  )
+  (label
+    "ST02_OUT"
+    (at 231.14 123.19 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "f065c7d9-b756-5172-a1e7-4483b4f35b08")
+  )
+  (wire (pts (xy 223.52 127.0) (xy 231.14 127.0)) (stroke (width 0) (type default)) (uuid "7ca28ca8-ec37-589d-a7af-17242a287cc2"))
+  (label
+    "ST03_OUT"
+    (at 231.14 127.0 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "d9593322-ec33-5442-abad-07339f0cc8d5")
+  )
+  (wire
+    (pts (xy 223.52 130.81) (xy 231.14 130.81))
+    (stroke (width 0) (type default))
+    (uuid "3a25fda6-3d20-53ed-9641-eb3504663502")
+  )
+  (label
+    "ST04_OUT"
+    (at 231.14 130.81 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "90a6a2c7-3734-5d64-8d6e-fd04219060d0")
+  )
+  (wire
+    (pts (xy 223.52 134.62) (xy 231.14 134.62))
+    (stroke (width 0) (type default))
+    (uuid "5134f96d-f20f-5253-a274-f079e16f88b8")
+  )
+  (label
+    "ST05_OUT"
+    (at 231.14 134.62 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "a5f453da-ba08-5d2e-be7d-09230fb0d4a2")
+  )
+  (wire
+    (pts (xy 223.52 138.43) (xy 231.14 138.43))
+    (stroke (width 0) (type default))
+    (uuid "cdc14aab-ade1-536a-a2db-2604d8cdfa2e")
+  )
+  (label
+    "ST06_OUT"
+    (at 231.14 138.43 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "53824f6d-7e0f-574a-adc6-f400858d43f3")
+  )
+  (wire
+    (pts (xy 223.52 142.24) (xy 231.14 142.24))
+    (stroke (width 0) (type default))
+    (uuid "c6f1f2e5-f862-523b-b1eb-b25999293519")
+  )
+  (label
+    "ST07_OUT"
+    (at 231.14 142.24 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "e286513b-de5c-56e7-8e37-a990e4a1315b")
+  )
+  (wire
+    (pts (xy 223.52 146.05) (xy 231.14 146.05))
+    (stroke (width 0) (type default))
+    (uuid "78a0fdfd-7ca1-5248-9e4d-0b2ad9ebd2d0")
+  )
+  (label
+    "ST08_OUT"
+    (at 231.14 146.05 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "4811a095-64fd-5d8b-b296-fcdfb6a388d6")
+  )
+  (wire
+    (pts (xy 223.52 149.86) (xy 231.14 149.86))
+    (stroke (width 0) (type default))
+    (uuid "28eab953-9d16-514c-a4cb-066a602d6278")
+  )
+  (label
+    "ST09_OUT"
+    (at 231.14 149.86 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "041fd453-4683-5ff5-a045-f8b093e77787")
+  )
+  (wire
+    (pts (xy 223.52 153.67) (xy 231.14 153.67))
+    (stroke (width 0) (type default))
+    (uuid "882e8036-8cf9-54ec-9d3a-94bb041d9d74")
+  )
+  (label
+    "ST10_OUT"
+    (at 231.14 153.67 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "cd6183e9-a9ae-5128-ab22-b65eba811224")
+  )
+  (wire
+    (pts (xy 223.52 157.48) (xy 231.14 157.48))
+    (stroke (width 0) (type default))
+    (uuid "1fc5d65b-444a-5309-bb6e-8491a5db0e5c")
+  )
+  (label
+    "ST11_OUT"
+    (at 231.14 157.48 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "42e9ab8c-f132-52e6-bc7b-1ded9bd0ca61")
+  )
+  (sheet
+    (at 119.38 106.68)
+    (size 104.14 50.8)
+    (stroke (width 0) (type default))
+    (fill (color 0 0 0 0))
+    (uuid "7f5781d0-4eca-50af-9689-3f9d0f72fc67")
+    (property "Sheetname" "decoder" (at 119.38 104.14 0) (effects (font (size 1.27 1.27))))
+    (property "Sheetfile" "decoder.kicad_sch" (at 119.38 160.02 0) (effects (font (size 1.27 1.27))))
+    (pin
+      "VBAT"
+      bidirectional
+      (at 223.51999999999998 111.76 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "d869b3de-196d-5d91-8d53-0f834f4c04fd")
+    )
+    (pin
+      "GND"
+      bidirectional
+      (at 223.51999999999998 115.57 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "80ecb38f-d7c8-5db9-9b00-619809a0c2b6")
+    )
+    (pin
+      "ST01_OUT"
+      bidirectional
+      (at 223.51999999999998 119.38 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "a3999180-ae14-5ac5-b71e-138a56482efa")
+    )
+    (pin
+      "ST02_OUT"
+      bidirectional
+      (at 223.51999999999998 123.19 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "7c232523-e1c6-5699-99cb-9ef9935fc66b")
+    )
+    (pin
+      "ST03_OUT"
+      bidirectional
+      (at 223.51999999999998 127.0 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "369204d9-fe6e-5ec4-94b3-1844383ceb21")
+    )
+    (pin
+      "ST04_OUT"
+      bidirectional
+      (at 223.51999999999998 130.81 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "d0e24668-8881-5d60-b2db-d20139bd1535")
+    )
+    (pin
+      "ST05_OUT"
+      bidirectional
+      (at 223.51999999999998 134.62 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "e27ba669-7807-5112-86c5-d84c614ebce9")
+    )
+    (pin
+      "ST06_OUT"
+      bidirectional
+      (at 223.51999999999998 138.43 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "eac739c3-d5cf-5cf7-a4d8-ffa915605871")
+    )
+    (pin
+      "ST07_OUT"
+      bidirectional
+      (at 223.51999999999998 142.24 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "9b951338-b29e-5b76-be2b-1864cc96ccf6")
+    )
+    (pin
+      "ST08_OUT"
+      bidirectional
+      (at 223.51999999999998 146.05 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "88443aa9-bf21-56ae-bd52-02ecf76bcee0")
+    )
+    (pin
+      "ST09_OUT"
+      bidirectional
+      (at 223.51999999999998 149.86 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "fa1b4062-5602-5395-8414-891a74c35f4b")
+    )
+    (pin
+      "ST10_OUT"
+      bidirectional
+      (at 223.51999999999998 153.67 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "70b11b89-d4f2-56f5-ac71-87691524ca0e")
+    )
+    (pin
+      "ST11_OUT"
+      bidirectional
+      (at 223.51999999999998 157.48 0)
+      (effects (font (size 1.016 1.016)))
+      (uuid "2c3eb89a-68ac-554b-94dc-e1b3ab3343c8")
+    )
+    (instances (project "Encoder" (path "/3e440f99-8f4f-5697-8edb-e34f9bffe210" (page "6"))))
+  )
+  (text
+    "11 × 1 MΩ weighted sum\nU3D majority comparator\nRED / GREEN indication"
+    (at 161.036 165.10000000000002 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "cd4168c2-9404-56fb-95f5-9ad587c844b1")
+  )
+  (text
+    "RC-programmed repeating \"hello world\""
+    (at 139.7 22.86 0)
+    (effects (font (size 2.54 2.54)))
+    (uuid "5aca267d-19a9-5f70-ae95-42a174f9a4d6")
+  )
+  (text
+    "11 inverting Schmitt delay stages form an odd ring. Equal-weight majority decoding yields 11 PWM symbols.\nShared project variables define nominal values and common metadata; exact passive MPN selection remains open.\nSingle CR2032 powers three TLV9044 quad op amps. Simulation evidence: ../encoded-model/spice/."
+    (at 139.7 32.258 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "26e38b4b-cc2b-5225-ba93-53ac3dd7b707")
+  )
+)

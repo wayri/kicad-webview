@@ -1,0 +1,29 @@
+{
+  "entry": "Encoder-F_Cu.gtl",
+  "files": [
+    {
+      "path": "Encoder-B_Cu.gbl",
+      "url": "./Encoder-B_Cu.gbl"
+    },
+    {
+      "path": "Encoder-Edge_Cuts.gm1",
+      "url": "./Encoder-Edge_Cuts.gm1"
+    },
+    {
+      "path": "Encoder-F_Cu.gtl",
+      "url": "./Encoder-F_Cu.gtl"
+    },
+    {
+      "path": "Encoder-F_Silkscreen.gto",
+      "url": "./Encoder-F_Silkscreen.gto"
+    },
+    {
+      "path": "Encoder-NPTH.drl",
+      "url": "./Encoder-NPTH.drl"
+    },
+    {
+      "path": "Encoder-PTH.drl",
+      "url": "./Encoder-PTH.drl"
+    }
+  ]
+}

@@ -12,7 +12,7 @@ import {
 const viewers = [schematicViewer, pcbViewer, assemblyViewer];
 const linked = linkViewers(viewers);
 const saved = await captureViewState(viewers, { theme: 'dark' });
-const url = createViewLink('https://example.com/board-viewer?project=inverter', saved);
+const url = createViewLink('https://example.com/board-viewer?project=kero-encoder', saved);
 
 // On that page, after its normal project loading:
 const state = parseViewLink(location.href);

@@ -24,3 +24,14 @@ test('net shine-through uses layer colors while via barrels remain gold in eithe
  assert.equal(children[1].material.color.getHex(),0xc5aa6c);}
  glow.dispose();geometry.dispose();material.dispose();
 });
+
+
+test('saved endpoint annuli and blind via spans keep gold when copper palettes change',()=>{
+ for(const layer of ['F.Cu','In1.Cu','F.Cu-In1.Cu']){
+  const scene=new THREE.Scene(),geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial(),source=new THREE.InstancedMesh(geometry,material,1);
+  source.userData={identity:'spike:via-barrel:'+layer+':saved',records:[{id:'via',net:'GND'}]};source.setMatrixAt(0,new THREE.Matrix4());scene.add(source);
+  const glow=createNetGlow(THREE,{scene,objects:()=>[source],colorForLayer:()=>0xff0000});
+  for(const color of ['source','accent','source']){glow.update(new Set(['GND']),{color});assert.equal(glow.stats().instances,1);assert.equal(scene.getObjectByName('Selected net shine-through').children[0].material.color.getHex(),0xc5aa6c);}
+  glow.dispose();geometry.dispose();material.dispose();
+ }
+});

@@ -22,7 +22,7 @@ await esbuild.build({
   bundle: true, platform: 'browser', format: 'iife', globalName: 'SpikeBoard3D',
   banner: {js:distributionNotice(root)}, target: ['chrome116', 'edge116'], minify: true, legalComments: 'none', nodePaths: [deps], alias,
 });
-const hashes = owners.map(name => `${name}: ${createHash('sha256').update(readFileSync(path.join(source, name))).digest('hex')}`);
+const hashes = owners.map(name => `${name}: ${createHash('sha256').update(readFileSync(path.join(source, name), 'utf8').replace(/\r\n/g, '\n')).digest('hex')}`);
 writeFileSync(path.join(root, 'engine/vendor/SPIKE-ENGINE-NOTICE.md'),
   '# SPIKE browser geometry bundle\n\n' +
   'Built from the owner-provided subset in engine/spike-source and adapters in engine/spike. This supplied owner-authored subset is MPL-2.0; see LICENSE and LICENSING.md. Other SPIKE software is not relicensed. Matching source: https://github.com/wayri/kicad-webview/tree/v'+JSON.parse(readFileSync(path.join(root,'package.json'),'utf8')).version+' . Original extraction provenance and valid earlier grants remain intact.\n\n' +

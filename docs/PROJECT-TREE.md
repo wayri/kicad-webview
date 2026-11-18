@@ -59,7 +59,7 @@ tree.addEventListener('select', event => {
 await tree.load('/designs/project.json', {root:'main.kicad_sch'});
 ~~~
 
-The independent example hierarchy.html displays the owner-provided inverter, root selector, branches, schematic preview, tree-only mode, local file input and SVG download.
+The independent example hierarchy.html displays the KERO Encoder, root selector, branches, schematic preview, tree-only mode, local file input and SVG download.
 
 ## Bounds and failure behavior
 

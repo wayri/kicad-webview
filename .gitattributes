@@ -6,3 +6,7 @@
 tests/fixtures/wayricad/** -text
 
 tests/fixtures/bezier/** -text
+
+fixtures/kero-encoder/*.kicad_* -text
+fixtures/kero-encoder-cam/*.g* -text
+fixtures/kero-encoder-cam/*.drl -text

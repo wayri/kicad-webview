@@ -1,0 +1,50 @@
+{
+  "project": "KERO Encoder",
+  "author": "Yawar Badri (wayri)",
+  "repository": "https://github.com/wayri/KERO",
+  "revision": "7be8fef589bc28eee149323e3790ef95b0873032",
+  "files": [
+    {
+      "path": "Encoder.kicad_pcb",
+      "bytes": 726156,
+      "sha256": "08437dcfd8f304786d4f3444a26bd56c443661ea22bd25d69c3900906c6ef109",
+      "sourcePath": "encoder/Encoder.kicad_pcb"
+    },
+    {
+      "path": "Encoder.kicad_sch",
+      "bytes": 37683,
+      "sha256": "c8170889000416e7d5da67348e48b579efc1122663ecbd89017244313ada52bb",
+      "sourcePath": "encoder/Encoder.kicad_sch"
+    },
+    {
+      "path": "bank1.kicad_sch",
+      "bytes": 65884,
+      "sha256": "f810c0e654ed2c0e514641a30d0615ee6d94b068b1d6a444891e92edc9b664e4",
+      "sourcePath": "encoder/bank1.kicad_sch"
+    },
+    {
+      "path": "bank2.kicad_sch",
+      "bytes": 66118,
+      "sha256": "66709dfe3f674b9388b96f932c32dd997e28426cfd0d431340ae855de3da0600",
+      "sourcePath": "encoder/bank2.kicad_sch"
+    },
+    {
+      "path": "bank3.kicad_sch",
+      "bytes": 54049,
+      "sha256": "00372ade10aaf8aa68b33aee8660868a83b4fb1656f6b0bbce3c37fdfc097056",
+      "sourcePath": "encoder/bank3.kicad_sch"
+    },
+    {
+      "path": "decoder.kicad_sch",
+      "bytes": 50319,
+      "sha256": "cee1e80dc3f17177ef4850e5dcf0f244e89684c27955da5f65a9f9c8457737c9",
+      "sourcePath": "encoder/decoder.kicad_sch"
+    },
+    {
+      "path": "power.kicad_sch",
+      "bytes": 31814,
+      "sha256": "0bec3885bb39580414061264e16563cadb00f14aada47738c9326b078104a9ae",
+      "sourcePath": "encoder/power.kicad_sch"
+    }
+  ]
+}

@@ -12,4 +12,4 @@ viewer.root.addEventListener('pointerdown',stop,{capture:true});viewer.root.addE
 viewer.addEventListener('viewchange',()=>{stop();const enabled=viewer.view==='3d';for(const button of buttons)button.disabled=!enabled;if(enabled)quality(preferred);});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
 window.addEventListener('pagehide',()=>{stop();viewer.dispose();},{once:true});
-try{await viewer.load('https://wayri.github.io/assets/demos/public-hardware/olimex-p4-project.json',{view:'3d'});for(const button of buttons)button.disabled=false;viewer.fit();}catch(error){status.textContent=error.message;stop();}
+try{await viewer.load('./demo/project.json',{view:'3d'});for(const button of buttons)button.disabled=false;viewer.fit();}catch(error){status.textContent=error.message;stop();}

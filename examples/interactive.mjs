@@ -22,13 +22,13 @@ function rebuildScreen(){if(!demo?.active)return;demo.remove(screenId);demo.addD
 async function start(){const ticket=++setupTicket;faceAbort?.abort();faceAbort=null;stopAnimation();const old=demo;demo=null;old?.dispose();controls(false);held=false;marker=null;status.textContent='Attaching source-bound virtual controls…';
  try{if(viewer.kind!=='pcb'||viewer.view!=='3d'){const ok=await viewer.load('./demo/project.json',{view:'3d'});if(!ok||ticket!==setupTicket)return;}
   if(ticket!==setupTicket)return;demo=new DemoController(viewer);const parts=viewer.getParts(),part=reference=>{const found=parts.filter(p=>p.reference===reference);if(found.length!==1)throw new Error('Demo fixture needs unique '+reference+'.');return found[0].uuid;};
-  placement={anchor:{uuid:part('Q3'),face:'top'}};screenId='screen-a';demo.addDisplay(screenId,screenOptions(placement));
-  demo.addLED('lamp',{anchor:{uuid:part('D13')},color:'#65ff84',on:true,brightness:.18});
-  demo.addButton('key',{anchor:{uuid:part('D14'),face:'top'},label:'PUSH',onPress:()=>{held=true;note('key press');draw();},onRelease:event=>{held=false;note(event.cancelled?'key cancelled':'key release');draw();}});
-  demo.addKnob('dial',{anchor:{uuid:part('D15'),face:'top'},min:0,max:100,step:1,value:Number(dial.value),onChange:event=>{note('dial · '+event.value);draw();}});
+  placement={anchor:{uuid:part('U1'),face:'top'}};screenId='screen-a';demo.addDisplay(screenId,screenOptions(placement));
+  demo.addLED('lamp',{anchor:{uuid:part('D1')},color:'#65ff84',on:true,brightness:.18});
+  demo.addButton('key',{anchor:{uuid:part('R1'),face:'top'},label:'PUSH',onPress:()=>{held=true;note('key press');draw();},onRelease:event=>{held=false;note(event.cancelled?'key cancelled':'key release');draw();}});
+  demo.addKnob('dial',{anchor:{uuid:part('R2'),face:'top'},min:0,max:100,step:1,value:Number(dial.value),onChange:event=>{note('dial · '+event.value);draw();}});
   demo.bindKey('Space',{id:'key',action:'press'});demo.bindKey('ArrowRight',{id:'dial',action:'increment',repeat:true});demo.bindKey('ArrowLeft',{id:'dial',action:'decrement',repeat:true});demo.bindKey('KeyP',{onDown:toggleRun});
   demo.addEventListener('error',event=>fail(event.detail.error));demo.addEventListener('suspend',()=>{stopAnimation();controls(false);status.textContent='Demo suspended because the 3D scene changed. Restart to bind it explicitly.';});
-  controls(true);draw();frameControl(screenId,false);status.textContent='Ready · all graphics and controls are scripted virtual overlays.';note('demo ready · original inverter source unchanged');
+  controls(true);draw();frameControl(screenId,false);status.textContent='Ready · all graphics and controls are scripted virtual overlays.';note('demo ready · KERO Encoder source unchanged');
  }catch(error){fail(error);const failed=demo;demo=null;failed?.dispose();controls(false);}}
 document.querySelector('#start').onclick=()=>start();document.querySelector('#stop').onclick=()=>{++setupTicket;faceAbort?.abort();stopAnimation();const old=demo;demo=null;old?.dispose();controls(false);status.textContent='Demo stopped · ordinary read-only 3D viewing remains available.';};
 run.onclick=toggleRun;dial.oninput=()=>{try{demo?.setKnob('dial',Number(dial.value));}catch(error){fail(error);}};mode.onchange=()=>{try{rebuildScreen();}catch(error){fail(error);}};
