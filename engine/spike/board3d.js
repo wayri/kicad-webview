@@ -910,7 +910,7 @@ export function mountBoard3D(container, source, options = {}) {
     if(pureNetSelection(externalSelection,netNames)){
       const result=countNetSelection(pickables,matches);selectionWorkload.netOnlyUpdates++;selectionWorkload.netRecordsScanned+=result.visitedRecords;selectionWorkload.netBoundsAvoided+=result.matchedRecords;
       groupGeometry.setDrawRange(0,0);selectionNotice.hidden=true;selectionNotice.style.display='none';highlight.visible=false;groupHighlight.visible=false;
-      selectionAppearance.update(matches,result.matched>0&&selectionDim,record=>netNames.has(record?.net),selectionDisplayStyle);
+      selectionAppearance.update(matches,result.matched>0&&selectionDim,record=>netNames.has(record?.net),{...selectionDisplayStyle,expanded:explode.get()>0});
       syncExpansionFade();updateNetGlow(netNames);return {highlighted:Math.min(result.matched,selectionLimit),matched:result.matched,limited:result.matched>selectionLimit};
     }
     const matrix = new THREE.Matrix4(), local = new THREE.Matrix4(), box = new THREE.Box3();
@@ -955,7 +955,7 @@ export function mountBoard3D(container, source, options = {}) {
     selectionNotice.style.display = total > selectionLimit ? 'block' : 'none';
     highlight.visible = false;
     groupHighlight.visible=!netNames.size;
-    selectionAppearance.update(matches,total>0&&selectionDim,netNames.size?record=>netNames.has(record?.net):null,selectionDisplayStyle);
+    selectionAppearance.update(matches,total>0&&selectionDim,netNames.size?record=>netNames.has(record?.net):null,{...selectionDisplayStyle,expanded:explode.get()>0});
     syncExpansionFade();updateNetGlow(netNames);return { highlighted: count, matched: total, limited: total > selectionLimit };
   }
   const highlight = new THREE.LineSegments(outlineGeometry, outlineMaterial());
