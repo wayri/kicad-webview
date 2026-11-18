@@ -6,7 +6,7 @@ The documented core embed API reaches version **1.0**. Embed read-only schematic
 
 - Shared drawing improvements from KiCad Online: saved text variables, embedded symbol overrides, graphics, sheet markers/navigation and bounded multilayer inspection.
 - Stable copper depth: resolved SMAA smoothing avoids the KERO pad/track speckling seen with hardware multisample/logarithmic depth. Copper role ordering is applied in the active depth domain and survives selection/translucency material clones.
-- Expanded net focus: only matching via caps and stretched barrels stay gold; unrelated vias become gray and translucent in Dim mode. Changing nets, clearing and reassembling restore original materials without moving source geometry.
+- Camera-preserving net focus: selecting nets directly or through pads/linked views retains the current 3D camera. Explicit part selection still frames the part. In assembled and expanded Dim net views, only matching via caps and barrels stay gold; unrelated copper, all component bodies and board structures become gray and translucent. Changing nets, clearing and reassembling restore original materials without moving source geometry.
 - Pinned KERO demonstrations and fabrication assets with exact-source provenance, hardware attribution and self-contained export. IRCA and credited public hardware remain website examples.
 
 Existing project hierarchy, linked selection and side-aware 3D part focus, shareable saved views, layers, compact controls, contextual insets, BOM inspection and retained WayriCAD results remain available. Scripted model controls include virtual LEDs, displays, buttons and knobs; those scripts are demonstrations, not firmware execution or circuit simulation.
