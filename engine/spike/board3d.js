@@ -399,7 +399,7 @@ export function mountBoard3D(container, source, options = {}) {
       if(material.transparent!==transparent){material.transparent=transparent;material.needsUpdate=true;}
       material.opacity=opacity;material.depthWrite=!transparent;
     }
-    edges.material.opacity=.42*fade;substrate.castShadow=!inspectedLayer&&explode.get()===0&&presentation.enabled;
+    edges.material.opacity=Math.min(.42*fade,edges.material.userData.selectionOpacityCap??1);substrate.castShadow=!inspectedLayer&&explode.get()===0&&presentation.enabled;
   }
   const silkDetail=createSilkscreenDetail(THREE,{camera,document,bounds:board.bounds,centerX,centerY,graphics,resources,invalidate,arcThrough:globalThis.KiCadOwnedCanvas?.arcThrough,onError:error=>graphicsNotice("Silkscreen detail could not be refreshed: "+error.message)});
   if(globalThis.KiCadPCBRenderer&&globalThis.KiCadOwnedCanvas?.arcThrough){
@@ -910,7 +910,7 @@ export function mountBoard3D(container, source, options = {}) {
     if(pureNetSelection(externalSelection,netNames)){
       const result=countNetSelection(pickables,matches);selectionWorkload.netOnlyUpdates++;selectionWorkload.netRecordsScanned+=result.visitedRecords;selectionWorkload.netBoundsAvoided+=result.matchedRecords;
       groupGeometry.setDrawRange(0,0);selectionNotice.hidden=true;selectionNotice.style.display='none';highlight.visible=false;groupHighlight.visible=false;
-      selectionAppearance.update(matches,result.matched>0&&selectionDim,record=>netNames.has(record?.net),{...selectionDisplayStyle,expanded:explode.get()>0});
+      selectionAppearance.update(matches,result.matched>0&&selectionDim,record=>netNames.has(record?.net),{...selectionDisplayStyle,expanded:explode.get()>0,netContext:netNames.size>0});
       syncExpansionFade();updateNetGlow(netNames);return {highlighted:Math.min(result.matched,selectionLimit),matched:result.matched,limited:result.matched>selectionLimit};
     }
     const matrix = new THREE.Matrix4(), local = new THREE.Matrix4(), box = new THREE.Box3();
@@ -955,7 +955,7 @@ export function mountBoard3D(container, source, options = {}) {
     selectionNotice.style.display = total > selectionLimit ? 'block' : 'none';
     highlight.visible = false;
     groupHighlight.visible=!netNames.size;
-    selectionAppearance.update(matches,total>0&&selectionDim,netNames.size?record=>netNames.has(record?.net):null,{...selectionDisplayStyle,expanded:explode.get()>0});
+    selectionAppearance.update(matches,total>0&&selectionDim,netNames.size?record=>netNames.has(record?.net):null,{...selectionDisplayStyle,expanded:explode.get()>0,netContext:netNames.size>0});
     syncExpansionFade();updateNetGlow(netNames);return { highlighted: count, matched: total, limited: total > selectionLimit };
   }
   const highlight = new THREE.LineSegments(outlineGeometry, outlineMaterial());

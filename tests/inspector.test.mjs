@@ -265,7 +265,10 @@ test('3D part search and clicks locate once; explicit suppression, renderer refr
  assert.equal(viewer.selectPart('part-a'),true);assert.deepEqual(calls,['part-a']);
  viewer.selectPart('part-b',{locate:false});viewer.inspector.syncRenderer();assert.equal(calls.length,1);
  viewer.inspector.select({uuid:'part-b',kind:'part'});assert.deepEqual(calls,['part-a','part-b']);
- viewer.inspector.select({uuid:'pad-a',ownerUuid:'part-a',kind:'pad'});assert.equal(calls.at(-1),'part-a');
+ viewer.inspector.select({uuid:'pad-a',ownerUuid:'part-a',kind:'pad'});assert.equal(calls.length,2,'pad net selection preserves camera');
+ viewer.selectObject('pad-b',{locate:true});assert.equal(calls.length,2,'linked pad net selection preserves camera');
+ viewer.selectNet('GND',{locate:true});assert.equal(calls.length,2,'explicit net search preserves camera');
+ viewer.inspector.netToggle.checked=false;viewer.inspector.select({uuid:'pad-a',ownerUuid:'part-a',kind:'pad'});assert.equal(calls.at(-1),'part-a','individual pin focus still locates its part');
  viewer.selectNet('GND');viewer.clearSelection();assert.equal(calls.length,3);
  viewer.inspector.partsTab.onclick();viewer.inspector.search.value='Driver';viewer.inspector.search.oninput();viewer.inspector.results.children[0].onclick();assert.equal(calls.length,4);assert.equal(calls.at(-1),'part-a');
  viewer.dispose();

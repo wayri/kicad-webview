@@ -96,3 +96,29 @@ test('expanded net context fades unrelated via caps and barrels and restores the
   }finally{selection.dispose();meshes.forEach(mesh=>mesh.dispose());geometry.dispose();materials.forEach(material=>material.dispose());}
  }
 });
+
+
+test('net focus fades every unrelated instance and component body in assembled and expanded views',()=>{
+ for(const expanded of [false,true])for(const color of ['source','accent']){
+  const geometry=new THREE.BoxGeometry(),gold=new THREE.MeshStandardMaterial({color:0xc5aa6c}),bodyMaterial=new THREE.MeshStandardMaterial({color:0x428751});
+  const via=new THREE.InstancedMesh(geometry,gold,2);via.userData={identity:'spike:via-barrel:through:test',records:[{net:'GND'},{net:'OTHER'}]};
+  const parts=new THREE.InstancedMesh(geometry,bodyMaterial,2);parts.userData.records=[{type:'Component',ref:'U1'},{type:'Component',ref:'U2'}];
+  const body=new THREE.Mesh(geometry,bodyMaterial);body.userData.record={type:'Component',ref:'U1'};
+  const board=new THREE.Mesh(geometry,bodyMaterial);board.userData.record={type:'Board'};
+  const sourceMatrices=Array.from(via.instanceMatrix.array),selection=createSelectionAppearance(THREE,()=>[via,parts,body,board]);
+  try{
+   // Connected part bodies are context even though the identity matcher includes them.
+   const predicate=r=>matches(r)||r?.ref==='U1';
+   selection.update(predicate,true,matches,{mode:'dim',color,expanded,netContext:true});
+   assert.equal(via.material.color.getHex(),0xc5aa6c);
+   assert.deepEqual(Array.from(via.instanceColor.array),[1,1,1,-2,-2,-2]);
+   assert.deepEqual(Array.from(parts.instanceColor.array),[-2,-2,-2,-2,-2,-2]);
+   for(const mesh of [via,parts]){assert.equal(mesh.material.transparent,true);assert.equal(mesh.material.depthWrite,false);assert.match(shader(mesh.material).fragmentShader,/diffuseColor.a \*= 0.24/);}
+   for(const mesh of [body,board]){assert.equal(mesh.material.opacity,.24);assert.equal(mesh.material.transparent,true);assert.match(shader(mesh.material).fragmentShader,/outgoingLight = vec3\(dot/);}
+   selection.update(r=>r?.net==='OTHER',true,null,{mode:'dim',color,expanded,netContext:true});
+   assert.deepEqual(Array.from(via.instanceColor.array),[-2,-2,-2,1,1,1]);
+   selection.update(matches,false);
+   assert.equal(via.material,gold);assert.equal(via.instanceColor,null);assert.equal(parts.material,bodyMaterial);assert.equal(parts.instanceColor,null);assert.equal(body.material,bodyMaterial);assert.equal(board.material,bodyMaterial);assert.deepEqual(Array.from(via.instanceMatrix.array),sourceMatrices);
+  }finally{selection.dispose();via.dispose();parts.dispose();geometry.dispose();gold.dispose();bodyMaterial.dispose();}
+ }
+});

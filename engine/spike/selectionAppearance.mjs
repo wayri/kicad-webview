@@ -55,19 +55,22 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
     material.customProgramCacheKey=()=>originalKey+':selection-instances-v1'+(fadeContext?':translucent-context':'');return material;
   }
   function update(matches,enabled,accentMatches=null,options={}){
-    const style=selectionStyle(options),expanded=options.expanded===true,key=style.mode+':'+style.color+':'+expanded;
+    const style=selectionStyle(options),expanded=options.expanded===true,netContext=options.netContext===true,key=style.mode+':'+style.color+':'+expanded+':'+netContext;
+    const fadeContext=style.mode==='dim'&&netContext;
+    // Net focus emphasizes conductive geometry, not the bodies of connected parts.
+    const displayMatches=record=>matches(record)&&!(fadeContext&&(record?.type==='Component'||typeof record?.library==='string'));
     if(!enabled){restore();return;}
     if(currentStyle&&currentStyle!==key)restore();currentStyle=key;
     const accentLegacy=style.mode==='dim'&&style.color==='accent';
     for(const object of objects()){
       if(!object.material)continue;
       const state=capture(object),records=object.userData.records;
-      const via=object.userData.identity?.startsWith('spike:via-barrel:'),legacy=accentLegacy&&!via;
-      if(via && style.mode!=='isolate'&&!(expanded&&style.mode==='dim')){object.material=state.material;if(object.instanceColor!==state.instanceColor)object.instanceColor=state.instanceColor;continue;}
+      const via=object.userData.identity?.startsWith('spike:via-barrel:'),legacy=accentLegacy&&!via&&!fadeContext;
+      if(via && style.mode!=='isolate'&&!((expanded||netContext)&&style.mode==='dim')){object.material=state.material;if(object.instanceColor!==state.instanceColor)object.instanceColor=state.instanceColor;continue;}
       if(object.isInstancedMesh&&records){
         if(!legacy){
           if(!state.instances){
-            state.instances=list(state.material).map(source=>instanceMaterial(source,state,false,via&&expanded&&style.mode==='dim'));
+            state.instances=list(state.material).map(source=>instanceMaterial(source,state,false,style.mode==='dim'&&(netContext||via&&expanded)));
             object.instanceColor=state.instanceColor?.clone()||null;
             if(style.mode==='isolate'){
               object.customDepthMaterial=instanceMaterial(state.depth||new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),state,!state.depth);
@@ -78,7 +81,7 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
           const color=new THREE.Color();
           for(let index=0;index<records.length;index++){
             if(state.instanceColor)color.fromArray(state.instanceColor.array,index*3);else color.setHex(0xffffff);
-            const record=records[index],matched=matches(record);
+            const record=records[index],matched=displayMatches(record);
             if(!matched&&style.mode==='isolate')color.setRGB(-1e30,-1e30,-1e30);
             else if(!via&&style.color==='accent'&&accentMatches?.(record))color.setRGB(-1e20,-1e20,-1e20);
             else if(!matched&&style.mode==='dim')color.setRGB(-color.r-1,-color.g-1,-color.b-1);
@@ -100,7 +103,7 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
         if(!state.hidden)state.hidden=list(state.material).map(source=>{const material=own(source,state);material.visible=false;return material;});
         object.material=Array.isArray(state.material)?state.hidden:state.hidden[0];
       }else if(!via&&style.color==='accent'&&accentMatches?.(object.userData.record))object.material=accentMaterials(state);
-      else if(matches(object.userData.record)||style.mode!=='dim')object.material=state.material;
+      else if(displayMatches(object.userData.record)||style.mode!=='dim')object.material=state.material;
       else {if(!state.dim)state.dim=list(state.material).map(source=>dimMaterial(source,state));object.material=Array.isArray(state.material)?state.dim:state.dim[0];}
     }
   }

@@ -1,7 +1,7 @@
 # Release status
 
-KiCad WebView 0.2.0 is the MPL-2.0 inspection update. Matching covered source is published with the release; npm publication is verified separately before CDN links are advertised. See [documentation](https://wayri.github.io/kicad-webview/docs/) and [inspection controls](INSPECTION-CONTROLS.md).
+The current source targets **KiCad WebView 1.0.0** with the documented core embed API **1.0**. Package version, source revision and integrity are distinct from npm publication and CDN propagation. Verify each distribution channel before advertising its new version as available; preparing a package does not publish it.
 
-This update adds configurable dim/bright/isolate highlighting and accent/source colors; searchable saved layers with colors, counts and presets; 2D PCB focus/isolate/fit/restore; and 3D copper visibility through the same compact controls. It also ports schematic field orientation and multi-unit display fixes from KiCad Online. Translucent rendering, independent embeds and source identities remain supported.
+See [1.0.0 release notes](RELEASE-1.0.0.md), [API compatibility](API-STABILITY.md), and [validation scope](QA-1.0.0.md). Existing immutable releases retain their original bytes. Altium and application integrations retain their explicit experimental/host-validation limits.
 
-Free-use and optional paid-help wording is included in 0.2.0. The library remains a read-only viewer; adapter and renderer limitations remain disclosed.
+The library remains a read-only viewer under MPL-2.0, free to use including commercially. Paid embedding, customization, maintenance and support are optional. Hardware examples and component models retain their own licenses and attribution.
