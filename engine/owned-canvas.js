@@ -47,7 +47,7 @@
 
     if(p.type==='circle'||p.type==='pad'&&p.r)return [{x:p.x-p.r,y:p.y-p.r},{x:p.x+p.r,y:p.y+p.r}];
 
-    if(p.type==='text'){const size=p.size||1.27,w=String(p.text||'').length*size*.65,h=size*1.4,angle=(p.angle||0)*Math.PI/180;return [{x:0,y:-h},{x:w,y:-h},{x:w,y:h},{x:0,y:h}].map(q=>({x:p.x+q.x*Math.cos(angle)-q.y*Math.sin(angle),y:p.y+q.x*Math.sin(angle)+q.y*Math.cos(angle)}));}
+    if(p.type==='text'){const size=p.fontHeight||p.size||1.27,lines=String(p.text||'').split('\n'),w=Math.max(...lines.map(line=>Array.from(line).length))*(p.fontWidth||size)*.65,h=size*1.4,span=(lines.length-1)*size*(p.lineSpacing||1.5)/2,angle=(p.angle||0)*Math.PI/180,left=p.align==='left'?0:p.align==='right'?-w:-w/2,top=(p.baseline==='top'?0:p.baseline==='bottom'?-h:-h/2)-span,bottom=top+h+span*2;return [{x:left,y:top},{x:left+w,y:top},{x:left+w,y:bottom},{x:left,y:bottom}].map(q=>({x:p.x+q.x*Math.cos(angle)-q.y*Math.sin(angle),y:p.y+q.x*Math.sin(angle)+q.y*Math.cos(angle)}));}
 
     return finitePoint(p)?[p]:[];
 
@@ -75,7 +75,8 @@
 
     const poly=points(p);
 
-    if((['pad','text','image'].includes(p.type)||p.type==='polygon'&&(p.fill||['symbol','footprint','footprint-hit','sheet'].includes(p.kind)))&&inside(at,poly))return true;
+    // Outline graphics own their stroke, not the objects enclosed by it.
+    if((p.type==='pad'||p.type==='text'||p.type==='image'||p.type==='bezier'&&p.fill||p.type==='polygon'&&(p.fill||['symbol','footprint','footprint-hit','sheet','global_label','hierarchical_label','sheet-pin'].includes(p.kind)))&&inside(at,poly))return true;
 
     const limit=tolerance+(p.width||.1)/2;
 
@@ -89,7 +90,7 @@
     if(!p||p.frame||p.hole)return Infinity;
     if(p.type==='circle'||p.type==='pad'&&p.r){const distance=Math.hypot(at.x-p.x,at.y-p.y);return Math.max(0,(p.fill?distance-p.r:Math.abs(distance-p.r))-(p.width||.1)/2);}
     const path=points(p);let distance=Infinity;
-    if((['pad','text','image'].includes(p.type)||p.type==='polygon'&&(p.fill||['symbol','footprint','footprint-hit','sheet'].includes(p.kind)))&&inside(at,path))return 0;
+    if((['pad','text','image'].includes(p.type)||p.type==='bezier'&&p.fill||p.type==='polygon'&&(p.fill||['symbol','footprint','footprint-hit','sheet','global_label','hierarchical_label','sheet-pin'].includes(p.kind)))&&inside(at,path))return 0;
     for(let i=1;i<path.length;i++)distance=Math.min(distance,segmentDistance(at,path[i-1],path[i]));
     if(['polygon','pad','image','text'].includes(p.type)&&path.length>2)distance=Math.min(distance,segmentDistance(at,path.at(-1),path[0]));
     return Math.max(0,distance-(p.width||.1)/2);
@@ -199,16 +200,16 @@
   }
 
   class Camera {
-
-    constructor(width=800,height=600){this.width=width;this.height=height;this.zoom=4;this.center={x:0,y:0,set(x,y){this.x=x;this.y=y;}};this.flipped=false;}
-
-    get bbox(){return {x:this.center.x-this.width/this.zoom/2,y:this.center.y-this.height/this.zoom/2,w:this.width/this.zoom,h:this.height/this.zoom};}
-
-    set bbox(b){if(!b||![b.x,b.y,b.w,b.h].every(Number.isFinite)||b.w<=0||b.h<=0)return;this.center.set(b.x+b.w/2,b.y+b.h/2);this.zoom=Math.max(.001,Math.min(10000,Math.min(this.width/b.w,this.height/b.h)));}
-
-    screen_to_world(p){return {x:this.center.x+(p.x-this.width/2)/this.zoom*(this.flipped?-1:1),y:this.center.y+(p.y-this.height/2)/this.zoom};}
-
-    world_to_screen(p){return {x:(p.x-this.center.x)*this.zoom*(this.flipped?-1:1)+this.width/2,y:(p.y-this.center.y)*this.zoom+this.height/2};}
+    constructor(width=800,height=600){this.width=width;this.height=height;this.zoom=4;this.center={x:0,y:0,set(x,y){this.x=x;this.y=y;}};this.flipped=false;this.quarterTurns=0;}
+    get quarterTurns(){return this._quarterTurns;}
+    set quarterTurns(value){this._quarterTurns=Number.isFinite(value)?Math.round(((value%4+4)%4)*90*1e9)/1e9/90%4:0;const angle=this._quarterTurns*Math.PI/2;this.rotationCos=Math.abs(Math.cos(angle))<1e-12?0:Math.cos(angle);this.rotationSin=Math.abs(Math.sin(angle))<1e-12?0:Math.sin(angle);}
+    get bbox(){const co=Math.abs(this.rotationCos),si=Math.abs(this.rotationSin),w=(co*this.width+si*this.height)/this.zoom,h=(si*this.width+co*this.height)/this.zoom;return {x:this.center.x-w/2,y:this.center.y-h/2,w,h};}
+    set bbox(b){if(!b||![b.x,b.y,b.w,b.h].every(Number.isFinite)||b.w<=0||b.h<=0)return;this.center.set(b.x+b.w/2,b.y+b.h/2);const co=Math.abs(this.rotationCos),si=Math.abs(this.rotationSin);this.zoom=Math.max(.001,Math.min(10000,Math.min(this.width/(co*b.w+si*b.h),this.height/(si*b.w+co*b.h))));}
+    // Mirror saved world X, then rotate clockwise in screen coordinates.
+    worldDeltaToScreen(p){const x=p.x*this.zoom*(this.flipped?-1:1),y=p.y*this.zoom;return{x:x*this.rotationCos-y*this.rotationSin,y:x*this.rotationSin+y*this.rotationCos};}
+    screenDeltaToWorld(p){const x=p.x/this.zoom,y=p.y/this.zoom;return{x:(x*this.rotationCos+y*this.rotationSin)*(this.flipped?-1:1),y:-x*this.rotationSin+y*this.rotationCos};}
+    screen_to_world(p){const d=this.screenDeltaToWorld({x:p.x-this.width/2,y:p.y-this.height/2});return{x:this.center.x+d.x,y:this.center.y+d.y};}
+    world_to_screen(p){const d=this.worldDeltaToScreen({x:p.x-this.center.x,y:p.y-this.center.y});return{x:this.width/2+d.x,y:this.height/2+d.y};}
 
   }
 
@@ -274,7 +275,7 @@
       if(this.images.has(p))return this.images.get(p);
       const invalid={ready:false};this.images.set(p,invalid);
       const width=p.pixelWidth,height=p.pixelHeight,pixels=width*height;
-      if(typeof root.Image!=='function'||typeof p.dataUrl!=='string'||p.dataUrl.length>5600000||!/^data:image\/png;base64,iVBORw0KGgo[A-Za-z0-9+/]*={0,2}$/.test(p.dataUrl)||!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||pixels>16000000||this.imagePixels+pixels>16000000||this.images.size>16)return invalid;
+      if(typeof root.Image!=='function'||typeof p.dataUrl!=='string'||p.dataUrl.length>5600000||!/^data:image\/(?:png;base64,iVBORw0KGgo|bmp;base64,Qk[0123])[A-Za-z0-9+/]*={0,2}$/.test(p.dataUrl)||!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||pixels>16000000||this.imagePixels+pixels>16000000||this.images.size>16)return invalid;
       this.imagePixels+=pixels;const image=new root.Image(),entry={image,ready:false};this.images.set(p,entry);image.decoding='async';
       image.onload=()=>{if(this.disposed||this.images.get(p)!==entry)return;entry.ready=image.naturalWidth===width&&image.naturalHeight===height;if(entry.ready)this.requestDraw();};
       image.onerror=()=>{entry.ready=false;};image.src=p.dataUrl;return entry;
@@ -299,8 +300,22 @@
       for(const label of labels){ctx.save();ctx.translate(label.x,label.y);ctx.rotate(label.angle*Math.PI/180);ctx.font=label.size+'px monospace';const lines=label.text.split('\n');lines.forEach((line,i)=>{const y=(i-(lines.length-1)/2)*label.size*1.4;ctx.strokeText(line,0,y);ctx.fillText(line,0,y);});ctx.restore();}ctx.restore();
     }
     setSelectionMode(mode){this.selectionMode=['all','part','net','pin'].includes(mode)?mode:'all';}
-    pickDistance(p,at){return primitiveDistance(p,at,.25/this.viewport.camera.zoom)*this.viewport.camera.zoom;}
-    query(at,pixels=5){const tolerance=pixels/this.viewport.camera.zoom;return this.candidates({x:at.x-tolerance,y:at.y-tolerance,w:2*tolerance,h:2*tolerance}).filter(p=>this.geometryVisible(p)&&p.pick!==false&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(p))&&(this.selectionMode!=='pin'||['pad','pin','pin-marker','pin-name','pin-number'].includes(p.kind))&&(p.uuid||p.reference)&&(!p.layer||this.visibleLayers.has(p.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||p.layer===this.focusedLayer)&&hitPrimitive(p,at,tolerance)).sort((a,b)=>{const priority=p=>!this.pcb?(['pin','pad','via'].includes(p.kind)?0:['wire','junction','label','global_label','hierarchical_label','pin-number','pin-name'].includes(p.kind)?1:['symbol','sheet','footprint','footprint-hit'].includes(p.kind)?2:p.type==='image'?12:3):p.kind==='pad'?0:this.pcb&&['track','arc','via'].includes(p.kind)?1:p.kind==='footprint'||p.kind==='symbol'||p.kind==='footprint-hit'?2:p.type==='text'?4:p.kind==='zone'?5:3;const focus=p=>this.focusedLayer&&p.layer===this.focusedLayer?0:1;return focus(a)-focus(b)||(this.pcb?priority(a)-priority(b):this.pickDistance(a,at)-this.pickDistance(b,at)+(priority(a)-priority(b))*.35)||this.pickDistance(a,at)-this.pickDistance(b,at);}).slice(0,40);}
+    pickDistance(p,at){
+      if(!p||p.frame||p.hole)return Infinity;
+      const c=this.viewport.camera;if(p.type==='text'){
+        this.textBounds(p);const rects=this.textBoundsCache.get(p)?.rects;
+        if(rects){const origin=c.world_to_screen(p),point=c.world_to_screen(at),angle=((p.angle||0)*(c.flipped?-1:1)+c.quarterTurns*90)*Math.PI/180,dx=point.x-origin.x,dy=point.y-origin.y,x=dx*Math.cos(angle)+dy*Math.sin(angle),y=-dx*Math.sin(angle)+dy*Math.cos(angle);let distance=Infinity;
+          for(const rect of rects)distance=Math.min(distance,Math.hypot(Math.max(rect.left-x,0,x-rect.right),Math.max(rect.top-y,0,y-rect.bottom)));return distance;
+        }
+      }
+      return primitiveDistance(p,at,.25/c.zoom)*c.zoom;
+    }
+    query(at,pixels=5){
+      const zoom=this.viewport.camera.zoom,tolerance=pixels/zoom,priority=p=>['pad','pin','via'].includes(p.kind)?0:['wire','track','arc','junction','label','global_label','hierarchical_label','sheet-pin','pin-number','pin-name'].includes(p.electricalKind||p.kind)?1:['footprint','symbol','footprint-hit','sheet'].includes(p.kind)?2:p.type==='image'?12:p.kind==='zone'?10:3;
+      return this.candidates({x:at.x-tolerance,y:at.y-tolerance,w:2*tolerance,h:2*tolerance}).filter(p=>this.geometryVisible(p)&&p.pick!==false&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(p))&&(this.selectionMode!=='pin'||['pad','pin','pin-marker','pin-name','pin-number'].includes(p.kind))&&(p.uuid||p.reference)&&(!p.layer||this.visibleLayers.has(p.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||p.layer===this.focusedLayer)&&(p.type==='text'?this.pickDistance(p,at)<=pixels:hitPrimitive(p,at,tolerance)))
+        .map(p=>({p,score:this.pickDistance(p,at)+priority(p)*.35+(this.focusedLayer&&p.layer!==this.focusedLayer ? .1 : 0)}))
+        .sort((a,b)=>a.score-b.score).slice(0,40).map(row=>row.p);
+    }
 
     select(hit,options={}){this.selected=hit?.primitive||null;this.draw();this.dispatchEvent(new CustomEvent('kicad:select',{detail:{item:hit?.context||null,multi:Boolean(options.multi)}}));}
 
@@ -372,28 +387,41 @@
     // panning avoids both measuring and painting offscreen labels; zoom/flip
     // invalidate the entry, including minimum screen-size fonts. Without full
     // glyph metrics, retain the previous conservative always-visible behavior.
+    displayTextLines(p){
+      const lines=String(p.text||'').split('\n');if(!Number.isFinite(p.maxTextWidth))return lines;
+      const zoom=this.viewport.camera.zoom,cached=this.overviewTextCache?.get(p);if(cached?.zoom===zoom&&cached.text===p.text)return cached.lines;
+      const height=p.fontHeight||p.size||1.27,scale=p.fontWidth&&height>0?p.fontWidth/height:1,width=p.maxTextWidth*zoom/scale;
+      let result=[];
+      if(p.maxTextWidth*zoom>=(p.minDisplayWidthPx||0)&&width>0){
+        const ctx=this.ctx;ctx.save();ctx.font=this.textFont(p);
+        result=lines.map(line=>{const measure=text=>ctx.measureText(text)?.width;if(measure(line)<=width)return line;if(!(measure('…')<=width))return '';
+          const chars=Array.from(line);let low=0,high=chars.length;while(low<high){const mid=Math.ceil((low+high)/2);if(measure(chars.slice(0,mid).join('')+'…')<=width)low=mid;else high=mid-1;}return chars.slice(0,low).join('')+'…';});ctx.restore();
+      }
+      this.overviewTextCache||=new WeakMap();this.overviewTextCache.set(p,{zoom,text:p.text,lines:result});return result;
+    }
     textBounds(p){
       const c=this.viewport.camera,cached=this.textBoundsCache.get(p);
-      if(cached&&cached.zoom===c.zoom&&cached.flipped===c.flipped)return cached.box;
+      if(cached&&cached.zoom===c.zoom&&cached.flipped===c.flipped&&cached.quarterTurns===c.quarterTurns)return cached.box;
       const ctx=this.ctx,height=p.fontHeight||p.size||1.27,scale=p.fontWidth&&height>0?p.fontWidth/height:1;
-      let box=null,minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+      let box=null,rects=[],minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
       ctx.save();
       try{
         ctx.font=this.textFont(p);ctx.textAlign=p.align||'center';ctx.textBaseline=p.baseline||'middle';
-        const lines=String(p.text||'').split('\n'),angle=(p.angle||0)*Math.PI/180*(c.flipped?-1:1),cos=Math.cos(angle),sin=Math.sin(angle),mirror=Boolean(p.mirrored)!==Boolean(c.flipped)?-1:1;
+        const lines=this.displayTextLines(p),angle=((p.angle||0)*(c.flipped?-1:1)+c.quarterTurns*90)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
         for(let i=0;i<lines.length;i++){
           const m=ctx.measureText(lines[i]);
-          if(!m||![m.actualBoundingBoxLeft,m.actualBoundingBoxRight,m.actualBoundingBoxAscent,m.actualBoundingBoxDescent].every(Number.isFinite))return null;
+          if(!m||![m.actualBoundingBoxLeft,m.actualBoundingBoxRight,m.actualBoundingBoxAscent,m.actualBoundingBoxDescent].every(Number.isFinite)){rects=null;return null;}
           const offset=(i-(lines.length-1)/2)*height*c.zoom*(p.lineSpacing||1.5);
-          const left=-m.actualBoundingBoxLeft*scale,right=m.actualBoundingBoxRight*scale,top=offset-m.actualBoundingBoxAscent,bottom=offset+m.actualBoundingBoxDescent;
-          for(const [localX,y] of [[left,top],[right,top],[right,bottom],[left,bottom]]){
-            const x=localX*mirror;
-            const wx=p.x+(x*cos-y*sin)/c.zoom*(c.flipped?-1:1),wy=p.y+(x*sin+y*cos)/c.zoom;
+          const mirror=Boolean(p.mirrored??p.mirror)!==Boolean(c.flipped);
+          const left=-(mirror?m.actualBoundingBoxRight:m.actualBoundingBoxLeft)*scale,right=(mirror?m.actualBoundingBoxLeft:m.actualBoundingBoxRight)*scale,top=offset-m.actualBoundingBoxAscent,bottom=offset+m.actualBoundingBoxDescent;
+          rects.push({left,right,top,bottom});
+          for(const [x,y] of [[left,top],[right,top],[right,bottom],[left,bottom]]){
+            const d=c.screenDeltaToWorld({x:x*cos-y*sin,y:x*sin+y*cos}),wx=p.x+d.x,wy=p.y+d.y;
             minX=Math.min(minX,wx);maxX=Math.max(maxX,wx);minY=Math.min(minY,wy);maxY=Math.max(maxY,wy);
           }
         }
         if([minX,minY,maxX,maxY].every(Number.isFinite))box={x:minX,y:minY,w:maxX-minX,h:maxY-minY};
-      }finally{ctx.restore();this.textBoundsCache.set(p,{zoom:c.zoom,flipped:c.flipped,box});}
+      }finally{ctx.restore();this.textBoundsCache.set(p,{zoom:c.zoom,flipped:c.flipped,quarterTurns:c.quarterTurns,box,rects});}
       return box;
     }
     textFont(p){return `${p.bold?'bold ':''}${p.italic?'italic ':''}${Math.max(1,p.minPixelSize||1,(p.fontHeight||p.size||1.27)*this.viewport.camera.zoom*4/3)}px ${p.fontFace?'sans-serif':'"Arial",sans-serif'}`;}
@@ -454,10 +482,9 @@
 
       const ctx=this.ctx,c=this.viewport.camera;ctx.save();let color=style.color||p.color||'#819baa';if(p.hole)color=this.paperVisible?this.paperColor():this.background();else if(!style.color){if(!this.pcb&&!p.sourceColor)color=schematicColor(color,this.dark);else if(p.layer&&root.KiCadLayerColors?.reviewColorFor)color=root.KiCadLayerColors.reviewColorFor(p.layer,this.dark);}
 
-      ctx.strokeStyle=color;ctx.fillStyle=style.color?color:['color','hatch','reverse_hatch','cross_hatch'].includes(p.fill)&&p.fillColor?p.fillColor:p.fill==='background'?(this.dark?'#32322a':'#ffffc2'):color;ctx.globalAlpha=Math.max(0,Math.min(1,(Number.isFinite(p.opacity)?p.opacity:1)*(style.opacity??1)));ctx.lineWidth=Math.max(.65,(p.width||.15)*c.zoom);ctx.lineCap='round';ctx.lineJoin='round';const dashUnit=Math.max(1,ctx.lineWidth),dash={dash:[11,4],dot:[.2,4],dash_dot:[11,4,.2,4],dash_dot_dot:[11,4,.2,4,.2,4]}[p.lineStyle];ctx.setLineDash?.(dash?dash.map(n=>n*dashUnit):[]);
+      ctx.strokeStyle=color;ctx.fillStyle=style.color?color:['color','hatch','reverse_hatch','cross_hatch'].includes(p.fill)&&p.fillColor?p.fillColor:p.fill==='background'?(this.dark?'#32322a':'#ffffc2'):color;ctx.globalAlpha=Math.max(0,Math.min(1,(this.netPrimitives.has(p)&&!p.hole?1:Number.isFinite(p.opacity)?p.opacity:1)*(style.opacity??1)));ctx.lineWidth=Math.max(.65,(p.width||.15)*c.zoom);if(this.netPrimitives.has(p)&&!p.hole)ctx.lineWidth+=1.5;ctx.lineCap='round';ctx.lineJoin='round';const dashUnit=Math.max(1,ctx.lineWidth),dash={dash:[11,4],dot:[.2,4],dash_dot:[11,4,.2,4],dash_dot_dot:[11,4,.2,4,.2,4]}[p.lineStyle];ctx.setLineDash?.(dash?dash.map(n=>n*dashUnit):[]);
 
-      if(p.type==='text'){const q=c.world_to_screen(p);ctx.translate(q.x,q.y);ctx.rotate((p.angle||0)*Math.PI/180*(c.flipped?-1:1));if(Boolean(p.mirrored)!==Boolean(c.flipped))ctx.scale(-1,1);ctx.font=this.textFont(p);ctx.textAlign=p.align||'center';ctx.textBaseline=p.baseline||'middle';const height=p.fontHeight||p.size||1.27;if(p.fontWidth&&height>0)ctx.scale(p.fontWidth/height,1);const lines=String(p.text||'').split('\n');lines.forEach((text,i)=>ctx.fillText(text,0,(i-(lines.length-1)/2)*height*c.zoom*(p.lineSpacing||1.5)));ctx.restore();return;}
-
+      if(p.type==='text'){const q=c.world_to_screen(p);ctx.translate(q.x,q.y);ctx.rotate(((p.angle||0)*(c.flipped?-1:1)+c.quarterTurns*90)*Math.PI/180);if(Boolean(p.mirrored??p.mirror)!==Boolean(c.flipped))ctx.scale(-1,1);ctx.font=this.textFont(p);ctx.textAlign=p.align||'center';ctx.textBaseline=p.baseline||'middle';const height=p.fontHeight||p.size||1.27;if(p.fontWidth&&height>0)ctx.scale(p.fontWidth/height,1);const lines=this.displayTextLines(p);lines.forEach((text,i)=>ctx.fillText(text,0,(i-(lines.length-1)/2)*height*c.zoom*(p.lineSpacing||1.5)));ctx.restore();return;}
       if(p.type==='image'){const entry=this.imageResource(p);if(entry.ready&&p.points?.length===4){const [a,b,,d]=p.points.map(point=>c.world_to_screen(point));ctx.transform((b.x-a.x)/p.pixelWidth,(b.y-a.y)/p.pixelWidth,(d.x-a.x)/p.pixelHeight,(d.y-a.y)/p.pixelHeight,a.x,a.y);ctx.drawImage(entry.image,0,0);}ctx.restore();return;}
 
       ctx.beginPath();
@@ -476,7 +503,13 @@
 
   }
 
-  root.KiCadOwnedCanvas={netLabels,Camera,arcThrough,bounds,hitPrimitive,primitiveDistance,schematicColor,objectTypes,objectCategory,objectVisible,canvasViewport,mount:(host,options)=>new Viewport(host,options)};
+  function paintBoardPrimitives(ctx,camera,primitives,color){
+    const painter=Object.create(Viewport.prototype);
+    Object.assign(painter,{ctx,viewport:{camera},pcb:true,netPrimitives:new Set(),pointCache:new WeakMap(),pathCache:new WeakMap(),pathCacheCount:0,pathCachePoints:0});
+    for(const primitive of primitives)painter.paint(primitive,{color});
+  }
+
+  root.KiCadOwnedCanvas={paintBoardPrimitives,netLabels,Camera,arcThrough,bounds,hitPrimitive,primitiveDistance,schematicColor,objectTypes,objectCategory,objectVisible,canvasViewport,mount:(host,options)=>new Viewport(host,options)};
 
   if(typeof module==='object'&&module.exports)module.exports=root.KiCadOwnedCanvas;
 

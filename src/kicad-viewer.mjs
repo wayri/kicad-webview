@@ -1,3 +1,4 @@
+import '../engine/legacy-kicad.js';
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 import {ViewMemory} from './view-memory.mjs';
 import {createLoadingSurface,paintLoading} from './viewer-loading.mjs';
@@ -195,7 +196,7 @@ export class KiCadViewer extends EventTarget {
     if (!kind) throw new TypeError('Expected a .kicad_sch or .kicad_pcb design.');
     view ||= kind; this.validateView(view, kind);
     const loadedSheets=kind==='schematic'&&project?.memory ? project.files.filter(file=>/\.kicad_sch$/i.test(file.path)).map(file=>({path:file.path,content:file.source,...(file.path===path?{ast}:{})})) : [{path,ast}];
-    const textContext=kind==='schematic' ? globalThis.KiCadFileCompatibility.textContext(loadedSheets,path,{instancePath,parse:source=>sourceParser.parse(source)}) : {};
+    const textContext=kind==='schematic' ? globalThis.KiCadFileCompatibility.textContext(loadedSheets,path,{instancePath,parse:source=>sourceParser.parseMetadata(source)}) : {};
     const design = (kind === 'pcb' ? globalThis.KiCadPCBRenderer : globalThis.KiCadSchematicRenderer).build(ast, path, {...textContext,textVariables});
     let connectivity = { nets: [], warnings: [] };
     try { connectivity = viewerNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]]), sourceSnapshot); }

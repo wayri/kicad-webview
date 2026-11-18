@@ -37,3 +37,29 @@ test('empty selection fast path respects saved identities and ignores unconnecte
 test('translucent picking reaches internal geometry while hidden layers remain inaccessible',()=>{const substrate={visible:true},layer={visible:true},trace={visible:true,parent:layer};assert.equal(inspectionTarget(substrate,substrate,'realistic'),true);assert.equal(inspectionTarget(substrate,substrate,'translucent'),false);assert.equal(inspectionTarget(trace,substrate,'translucent'),true);layer.visible=false;assert.equal(inspectionTarget(trace,substrate,'translucent'),false);});
 
 test('aggregate copper selectors are not physical internal layers',()=>{assert.deepEqual(copperLayerPlan({layers:['F.Cu','In1.Cu','B.Cu','F&B.Cu','*.Cu','User.Cu']},1.6).map(layer=>layer.name),['F.Cu','In1.Cu','B.Cu']);});
+
+test('a dense first layer leaves budget for saved contours on other requested layers',()=>{
+ const points=['pts',['xy',0,0],['xy',3,0],['xy',0,3]];
+ const zone=(layer,id,filled=true)=>['zone',['layer',layer],['uuid',id],[filled?'filled_polygon':'polygon',points]];
+ const ast=['kicad_pcb',zone('In1.Cu','a'),zone('In1.Cu','b'),zone('In2.Cu','boundary',false),zone('In2.Cu','fill'),zone('B.Cu','back')];
+ const result=sourceZoneGeometry(ast,2,6,['In1.Cu','In2.Cu']);
+ assert.deepEqual(result.records.map(record=>record.id),['a','fill']);
+ assert.deepEqual(result.omittedByLayer,{'In1.Cu':1,'In2.Cu':1});
+ assert.equal(result.unfilled,1);
+ const insufficient=sourceZoneGeometry(ast,2,2,['In1.Cu','In2.Cu']);
+ assert.equal(insufficient.records.length,0);
+ assert.deepEqual(insufficient.omittedByLayer,{'In1.Cu':2,'In2.Cu':2});
+});
+
+test('dim selection caps opaque context without overriding a fainter original material',()=>{
+ const geometry=new THREE.BoxGeometry(),materials=[1,.08].map(opacity=>new THREE.MeshStandardMaterial({opacity}));
+ const bodies=materials.map(material=>new THREE.Mesh(geometry,material));
+ const selection=createSelectionAppearance(THREE,()=>bodies);
+ selection.update(()=>false,true);
+ assert.deepEqual(bodies.map(body=>body.material.opacity),[.24,.08]);
+ assert.ok(bodies.every(body=>body.material.transparent&&!body.material.depthWrite));
+ selection.restore();
+ assert.ok(bodies.every((body,index)=>body.material===materials[index]));
+ assert.deepEqual(materials.map(material=>material.opacity),[1,.08]);
+ materials.forEach(material=>material.dispose());geometry.dispose();
+});

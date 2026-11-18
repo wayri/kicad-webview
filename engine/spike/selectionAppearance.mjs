@@ -20,7 +20,9 @@ export function createSelectionAppearance(THREE, objects) {
   function own(source,state){const material=source.clone();state.owned.push(material);return material;}
   function dimMaterial(source,state){
     const material=own(source,state),originalCompile=source.onBeforeCompile;
-    material.onBeforeCompile=(shader,renderer)=>{originalCompile?.call(material,shader,renderer);shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','outgoingLight = vec3(dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722))) * 0.60;\n#include <opaque_fragment>');};
+    material.userData??={};material.userData.selectionOpacityCap=.24;
+    material.opacity=Math.min(source.opacity??1,.24);material.transparent=true;material.depthWrite=false;
+    material.onBeforeCompile=(shader,renderer)=>{originalCompile?.call(material,shader,renderer);shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','outgoingLight = vec3(dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722))) * 0.24;\n#include <opaque_fragment>');};
     material.customProgramCacheKey=()=>source.customProgramCacheKey()+':selection-grey';return material;
   }
   function accentMaterials(state){
@@ -47,7 +49,7 @@ vSelectionStyle = 0.0;
 vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceColor.r < 0.0 ? -instanceColor - vec3(1.0) : instanceColor;
 #endif
 `+THREE.ShaderChunk.color_vertex.replace(/\binstanceColor\b/g,'selectionDecodedColor'));
-      shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vSelectionStyle;').replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif (vSelectionStyle > 2.5) discard;').replace('#include <color_fragment>','#include <color_fragment>\nif (vSelectionStyle > 1.5 && vSelectionStyle < 2.5) diffuseColor.rgb = vec3(0.1247718, 0.7912979, 0.8549926);').replace('#include <opaque_fragment>','if (vSelectionStyle > 0.5 && vSelectionStyle < 1.5) outgoingLight = vec3(dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722))) * 0.60;\n#include <opaque_fragment>');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vSelectionStyle;').replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif (vSelectionStyle > 2.5) discard;').replace('#include <color_fragment>','#include <color_fragment>\nif (vSelectionStyle > 1.5 && vSelectionStyle < 2.5) diffuseColor.rgb = vec3(0.1247718, 0.7912979, 0.8549926);').replace('#include <opaque_fragment>','if (vSelectionStyle > 0.5 && vSelectionStyle < 1.5) outgoingLight = vec3(dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722))) * 0.24;\n#include <opaque_fragment>');
     };
     material.customProgramCacheKey=()=>originalKey+':selection-instances-v1';return material;
   }
@@ -88,7 +90,7 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
           for(let index=0;index<records.length;index++){
             if(state.instanceColor)color.fromArray(state.instanceColor.array,index*3).multiply(base);else color.copy(base);
             if(accentMatches?.(records[index]))color.setHex(0x63e6ee);
-            else if(!matches(records[index])){const grey=(color.r*.2126+color.g*.7152+color.b*.0722)*.60;color.setRGB(grey,grey,grey);}
+            else if(!matches(records[index])){const grey=(color.r*.2126+color.g*.7152+color.b*.0722)*.24;color.setRGB(grey,grey,grey);}
             object.setColorAt(index,color);
           }
         }

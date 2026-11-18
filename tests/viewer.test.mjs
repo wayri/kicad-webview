@@ -275,7 +275,7 @@ test('named sources parse once across geometry, nets and 3D switches; snapshots 
   const {runInNewContext}=await import('node:vm');
   let parses=0;
   const context={TextEncoder,Map,Set,WeakMap,countParse(){parses++;}};
-  runInNewContext(readFileSync(new URL('../engine/design-diff.js',import.meta.url),'utf8').replace('function parse(source) {','function parse(source) { countParse();'),context);
+  runInNewContext(readFileSync(new URL('../engine/design-diff.js',import.meta.url),'utf8').replace(/function parse\(source(?:, options = \{\})?\) \{/, '$& countParse();'),context);
   runInNewContext(readFileSync(new URL('../engine/net-model.js',import.meta.url),'utf8'),context);
   const previous=globalThis.KiCadDesignDiff,previousNets=globalThis.KiCadNetModel;
   globalThis.KiCadDesignDiff=context.KiCadDesignDiff;globalThis.KiCadNetModel=context.KiCadNetModel;
