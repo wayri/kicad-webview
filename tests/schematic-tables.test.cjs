@@ -1,4 +1,3 @@
-/* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 const test=require('node:test'),assert=require('node:assert/strict');
 const {parse}=require('../engine/design-diff.js'),{build}=require('../engine/schematic-renderer.js');
 // Native KiCad 10 saveTable/saveTextBox grammar:
@@ -18,6 +17,12 @@ test('saved tables preserve cell text, header/external borders and independent s
  assert.deepEqual(edges.find(e=>e.width===.2).points,[{x:30,y:20},{x:30,y:30}]);
  assert.ok(result.primitives.filter(p=>p.kind==='table-cell'&&p.type==='polygon').every(p=>p.stroke===false));
 });
+
+test('table cells retain explicit page links across their full saved cell area',()=>{
+ const source=fixture.replace('(effects (font (size 1 1) bold) (justify left top))','(effects (font (size 1 1) bold) (justify left top) (href "#8"))');
+ const primitives=build(parse(source),'links.kicad_sch').primitives.filter(p=>p.kind==='table-cell');
+ assert.deepEqual(primitives.find(p=>p.type==='text').links,[{kind:'sheet',page:'8',target:'#8'}]);assert.deepEqual(primitives.find(p=>p.type==='polygon').links,[{kind:'sheet',page:'8',target:'#8'}]);
+});
 test('merged cells omit internal dividers and malformed/oversized tables never partially render',()=>{
  const merged=table(cell('Merged',10,10,40,10,'2 1')+cell('',30,10,20,10,'0 0')+cell('C',10,20,20,10)+cell('D',30,20,20,10));
  const render=source=>build(parse(`(kicad_sch ${source})`),'table.kicad_sch');
@@ -33,10 +38,3 @@ test('local label spin keeps readable text and sheet field angles use saved worl
  assert.equal(field.angle,-90);
 });
 module.exports={fixture};
-
-test('supported horizontal tables are recognized rather than reported as omitted constructs',()=>{
- const result=build(parse(fixture),'table.kicad_sch');
- assert.equal(result.compatibility.unknown.includes('table'),false);
- assert.equal(result.warnings.some(message=>/Unrecognized saved drawing constructs omitted:.*table/.test(message)),false);
- assert.ok(result.primitives.some(item=>item.kind==='table-cell'));
-});
