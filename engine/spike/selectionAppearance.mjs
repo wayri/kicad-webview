@@ -32,8 +32,9 @@ export function createSelectionAppearance(THREE, objects) {
   // Only the owned instance-color buffer carries selection flags. No shared
   // geometry attributes or instance matrices are changed. Negative encoded
   // colors retain every source color channel, including zero-valued channels.
-  function instanceMaterial(source,state,created=false){
+  function instanceMaterial(source,state,created=false,fadeContext=false){
     const originalCompile=source.onBeforeCompile,originalKey=source.customProgramCacheKey(),material=created?source:own(source,state);if(created)state.owned.push(material);
+    if(fadeContext){material.transparent=true;material.depthWrite=false;}
     material.onBeforeCompile=(shader,renderer)=>{
       originalCompile?.call(material,shader,renderer);
       shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying float vSelectionStyle;').replace('#include <begin_vertex>',`#include <begin_vertex>
@@ -49,12 +50,12 @@ vSelectionStyle = 0.0;
 vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceColor.r < 0.0 ? -instanceColor - vec3(1.0) : instanceColor;
 #endif
 `+THREE.ShaderChunk.color_vertex.replace(/\binstanceColor\b/g,'selectionDecodedColor'));
-      shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vSelectionStyle;').replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif (vSelectionStyle > 2.5) discard;').replace('#include <color_fragment>','#include <color_fragment>\nif (vSelectionStyle > 1.5 && vSelectionStyle < 2.5) diffuseColor.rgb = vec3(0.1247718, 0.7912979, 0.8549926);').replace('#include <opaque_fragment>','if (vSelectionStyle > 0.5 && vSelectionStyle < 1.5) outgoingLight = vec3(dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722))) * 0.24;\n#include <opaque_fragment>');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vSelectionStyle;').replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif (vSelectionStyle > 2.5) discard;').replace('#include <color_fragment>','#include <color_fragment>\nif (vSelectionStyle > 1.5 && vSelectionStyle < 2.5) diffuseColor.rgb = vec3(0.1247718, 0.7912979, 0.8549926);').replace('#include <opaque_fragment>','if (vSelectionStyle > 0.5 && vSelectionStyle < 1.5) { outgoingLight = vec3(dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722))) * 0.24;'+(fadeContext?' diffuseColor.a *= 0.24;':'')+' }\n#include <opaque_fragment>');
     };
-    material.customProgramCacheKey=()=>originalKey+':selection-instances-v1';return material;
+    material.customProgramCacheKey=()=>originalKey+':selection-instances-v1'+(fadeContext?':translucent-context':'');return material;
   }
   function update(matches,enabled,accentMatches=null,options={}){
-    const style=selectionStyle(options),key=style.mode+':'+style.color;
+    const style=selectionStyle(options),expanded=options.expanded===true,key=style.mode+':'+style.color+':'+expanded;
     if(!enabled){restore();return;}
     if(currentStyle&&currentStyle!==key)restore();currentStyle=key;
     const accentLegacy=style.mode==='dim'&&style.color==='accent';
@@ -62,11 +63,11 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
       if(!object.material)continue;
       const state=capture(object),records=object.userData.records;
       const via=object.userData.identity?.startsWith('spike:via-barrel:'),legacy=accentLegacy&&!via;
-      if(via && style.mode!=='isolate'){object.material=state.material;if(object.instanceColor!==state.instanceColor)object.instanceColor=state.instanceColor;continue;}
+      if(via && style.mode!=='isolate'&&!(expanded&&style.mode==='dim')){object.material=state.material;if(object.instanceColor!==state.instanceColor)object.instanceColor=state.instanceColor;continue;}
       if(object.isInstancedMesh&&records){
         if(!legacy){
           if(!state.instances){
-            state.instances=list(state.material).map(source=>instanceMaterial(source,state));
+            state.instances=list(state.material).map(source=>instanceMaterial(source,state,false,via&&expanded&&style.mode==='dim'));
             object.instanceColor=state.instanceColor?.clone()||null;
             if(style.mode==='isolate'){
               object.customDepthMaterial=instanceMaterial(state.depth||new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),state,!state.depth);

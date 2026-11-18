@@ -72,3 +72,27 @@ test('via plating retains gold in dim, bright and isolate styles without accent 
  for(const mode of ['dim','bright','isolate'])for(const color of ['source','accent']){selection.update(matches,true,matches,{mode,color});assert.equal(via.material.color.getHex(),0xc5aa6c);if(via.instanceColor)assert.ok(via.instanceColor.array[0]>=0);assert.equal(selection.isVisible(via,0),true);if(mode==='isolate')assert.equal(selection.isVisible(via,1),false);}
  selection.dispose();assert.equal(via.material,material);geometry.dispose();material.dispose();
 });
+
+test('expanded net context fades unrelated via caps and barrels and restores their exact source state',()=>{
+ for(const color of ['source','accent']){
+  const geometry=new THREE.BoxGeometry(1,1,2),materials=[new THREE.MeshStandardMaterial({color:0xc5aa6c}),new THREE.MeshStandardMaterial({color:0xc5aa6c})];
+  const meshes=['F.Cu','through','B.Cu'].map(layer=>{const mesh=new THREE.InstancedMesh(geometry,materials,2);mesh.userData={identity:'spike:via-barrel:'+layer+':saved',records:[{id:'selected-via',net:'GND'},{id:'context-via',net:'OTHER'}]};mesh.setMatrixAt(0,new THREE.Matrix4());mesh.setMatrixAt(1,new THREE.Matrix4().makeTranslation(4,0,0));return mesh;});
+  const originalMatrices=meshes.map(mesh=>Array.from(mesh.instanceMatrix.array)),selection=createSelectionAppearance(THREE,()=>meshes);
+  try{
+   selection.update(matches,true,matches,{mode:'dim',color,expanded:true});
+   for(const [i,mesh]of meshes.entries()){
+    assert.equal(mesh.material[0].color.getHex(),0xc5aa6c,'selected via keeps its source gold');
+    assert.deepEqual(Array.from(mesh.instanceColor.array).slice(0,3),[1,1,1]);
+    assert.deepEqual(Array.from(mesh.instanceColor.array).slice(3),[-2,-2,-2],'only the unrelated via receives context flags');
+    for(const material of mesh.material){assert.equal(material.transparent,true);assert.equal(material.depthWrite,false);const program=shader(material);assert.match(program.fragmentShader,/outgoingLight = vec3\(dot/);assert.match(program.fragmentShader,/diffuseColor.a \*= 0.24/);}
+    assert.deepEqual(Array.from(mesh.instanceMatrix.array),originalMatrices[i]);
+   }
+   selection.update(r=>r?.net==='OTHER',true,null,{mode:'dim',color,expanded:true});
+   assert.deepEqual(Array.from(meshes[0].instanceColor.array),[-2,-2,-2,1,1,1],'changing nets exchanges emphasis');
+   selection.update(matches,true,matches,{mode:'dim',color,expanded:false});
+   meshes.forEach(mesh=>{assert.equal(mesh.material,materials);assert.equal(mesh.instanceColor,null);});
+   selection.update(matches,true,matches,{mode:'dim',color,expanded:true});selection.update(matches,false);
+   meshes.forEach((mesh,i)=>{assert.equal(mesh.material,materials);assert.equal(mesh.instanceColor,null);assert.deepEqual(Array.from(mesh.instanceMatrix.array),originalMatrices[i]);});
+  }finally{selection.dispose();meshes.forEach(mesh=>mesh.dispose());geometry.dispose();materials.forEach(material=>material.dispose());}
+ }
+});
