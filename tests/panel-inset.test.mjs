@@ -191,3 +191,13 @@ test('local project settings and loaded hierarchy context reach the public rende
  assert.ok(v.design.primitives.some(p=>p.text==='Wayri / Amplifier'));assert.equal(v.getFiles().length,2);const inset=await v.openInset();assert.ok(inset.viewer.design.primitives.some(p=>p.text==='Wayri / Amplifier'));inset.dispose();
  await v.openFile('root.kicad_sch');await v.openFile('child.kicad_sch');assert.ok(v.design.primitives.some(p=>p.text==='Wayri / Amplifier'));v.dispose();
 });
+
+
+test('repeated occurrence previews keep resolved text and close when source changes occurrence',async()=>{
+ const d=doc(),v=new KiCadViewer(new Element(d));
+ const root='(kicad_sch (version 20250114) (uuid "root") '+['A','B'].map(name=>'(sheet (uuid "'+name+'") (property "Sheetname" "'+name+'") (property "Sheetfile" "child.kicad_sch"))').join(' ')+')';
+ const child='(kicad_sch (version 20250114) (uuid "child") (text "${SHEETNAME}" (at 20 20 0) (effects (font (size 1 1)))))';
+ const files=[{path:'root.kicad_sch',source:root},{path:'child.kicad_sch',source:child}];
+ await v.loadFiles(files,{file:'child.kicad_sch',instancePath:'/root/A'});const inset=await v.openInset();assert.ok(inset.viewer.design.primitives.some(p=>p.text==='A'));
+ await v.openFile('child.kicad_sch',{instancePath:'/root/B'});assert.ok(v.design.primitives.some(p=>p.text==='B'));assert.equal(inset.disposed,true);v.dispose();
+});

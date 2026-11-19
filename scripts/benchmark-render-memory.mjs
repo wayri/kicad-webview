@@ -1,0 +1,13 @@
+/* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
+// Isolated-process synthetic prepared-source benchmark; not a full 3D/phone benchmark.
+import {createRequire} from 'node:module';import {performance} from 'node:perf_hooks';
+const require=createRequire(import.meta.url),diff=require('../engine/design-diff.js');
+const [profile='compact',partArg='4000',trackArg='16000']=process.argv.slice(2),parts=Number(partArg),tracks=Number(trackArg);
+if(!['compact','comparison'].includes(profile)||!Number.isInteger(parts)||parts<1||parts>10000||!Number.isInteger(tracks)||tracks<0||tracks>50000)throw Error('Use compact|comparison, 1–10000 parts and 0–50000 tracks.');
+if(typeof globalThis.gc!=='function')throw Error('Run this bounded benchmark with node --expose-gc.');
+function source(){const forms=['(kicad_pcb (version 20240108) (general (thickness 1.6)) (layers (0 "F.Cu" signal) (31 "B.Cu" signal)) (net 1 "GND")'];for(let i=0;i<parts;i++)forms.push('(footprint "Synthetic:FourPad" (uuid "part-'+i+'") (at '+(i%100)+' '+Math.floor(i/100)+') (property "Reference" "U'+i+'") '+Array.from({length:4},(_,p)=>'(pad "'+(p+1)+'" thru_hole circle (uuid "pad-'+i+'-'+p+'") (at '+p+' 0) (size 1.5 1.5) (drill .6) (layers "*.Cu") (net 1 "GND"))').join(' ')+')');for(let i=0;i<tracks;i++)forms.push('(segment (start '+(i%1000)+' 0) (end '+(i%1000)+' 2) (width .25) (layer "F.Cu") (net 1) (uuid "track-'+i+'"))');forms.push(')');return forms.join('\n');}
+const files=[{path:'synthetic.kicad_pcb',content:source()}];globalThis.gc();const before=process.memoryUsage(),start=performance.now();
+const snapshot=diff.prepareProject(files,{forConnectivity:profile==='compact'}),sampled=process.memoryUsage(),prepareMs=performance.now()-start;globalThis.gc();const retained=process.memoryUsage();
+const preparedHighWaterKiB=process.resourceUsage().maxRSS;
+const records=diff.projectObjects(files,null,snapshot,{forConnectivity:profile==='compact'}),canonicalChars=records.reduce((sum,r)=>sum+(r.signature?.length||0),0);
+console.log(JSON.stringify({schema:'kicad-webview.memory-benchmark/v1',profile,parts,tracks,records:records.length,sourceBytes:diff.sourceByteLength(files[0].content),canonicalChars,prepareMs:+prepareMs.toFixed(2),heapBefore:before.heapUsed,heapSampledAfterPrepare:sampled.heapUsed,heapRetainedAfterGC:retained.heapUsed,retainedHeapDelta:retained.heapUsed-before.heapUsed,rssAfterPrepare:sampled.rss,rssAfterGC:retained.rss,preparedHighWaterKiB,maxRssKiB:process.resourceUsage().maxRSS,scope:'Prepared source only; sampled and post-GC heap are distinct. RSS high water is process-wide where supported. Synthetic identities, not real hardware or full rendering.'}));

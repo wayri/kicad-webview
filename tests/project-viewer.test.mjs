@@ -96,3 +96,14 @@ test('cancelling from a workspace setting callback stops later active-pane and l
 });
 
 test('sheet browser reopens from search, reuses exact hierarchy and cancels at project replacement',async()=>{const{project}=fixture();await project.loadFiles(files);assert.equal(await project.openSheetBrowser(),true);const model=project.sheetBrowser.tree.model;assert.ok(model);project.closeSheetBrowser();assert.equal(project.sheetBrowser.root.hidden,true);project.setTab('files');project.search.value='sheet navigator';project.renderList();assert.equal(project.list.children[0].textContent,'Show sheet browser');project.list.children[0].onclick();assert.equal(project.sheetBrowser.root.hidden,false);assert.equal(project.sheetBrowser.tree.model,model);await project.loadFiles(files);assert.equal(project.sheetBrowser.root.hidden,true);assert.equal(project.sheetBrowser.loadedSource,null);project.dispose();});
+
+
+test('sheet browser forwards distinct repeated occurrence contexts to the opened pane',async()=>{
+ const {project}=fixture();
+ const root='(kicad_sch (version 20250114) (uuid "root") (paper "A4") '+["a","b"].map(id=>'(sheet (uuid "'+id+'") (property "Sheetname" "'+id+'") (property "Sheetfile" "child.kicad_sch"))').join(' ')+')';
+ await project.loadFiles([{path:'root.kicad_sch',source:root},{path:'child.kicad_sch',source:schematic.replace('(lib_symbols)', '(lib_symbols) (text "${SHEETNAME}" (at 20 20 0) (effects (font (size 1 1))) (uuid "context-text"))')}]);
+ await assert.rejects(project.openFile('child.kicad_sch',{instancePath:'bad'}),/instance path/);
+ await project.openSheetBrowser();const nodes=project.sheetBrowser.tree.getHierarchy().roots[0].children;
+ for(const node of nodes){let opened;const original=project.openFile.bind(project);project.openFile=(path,options)=>opened=original(path,options);assert.equal(project.sheetBrowser.tree.select(node.id),true);await opened;project.openFile=original;assert.equal(project.getActiveViewer().path,'child.kicad_sch');assert.equal(project.getActiveViewer().textInstancePath,node.instancePath);assert.equal(node.instancePath,'/root/'+node.uuid);assert.ok(project.getActiveViewer().design.primitives.some(p=>p.text===node.name));}
+ project.dispose();
+});

@@ -26,10 +26,12 @@ export function validateViewState(input){
  object(input,['schema','views','theme','layout','activePane','linkedSelection'],'view state');if(input.schema!==SCHEMA)throw new TypeError('Unsupported view-state schema.');
  if(!Array.isArray(input.views)||input.views.length<1||input.views.length>MAX_VIEWS)throw new TypeError('Choose 1 to 8 linked views.');
  const result={schema:SCHEMA,views:input.views.map(view=>{
-  object(view,['path','sha256','view','camera','camera3D','layers','selection'],'saved view');
+  object(view,['path','sha256','view','camera','camera3D','layers','selection','instancePath','expand'],'saved view');
   if(!['pcb','schematic','3d'].includes(view.view))throw new TypeError('View links support native KiCad views only.');
   if(typeof view.sha256!=='string'||!/^[a-f0-9]{64}$/.test(view.sha256))throw new TypeError('Invalid source SHA-256.');
   const out={path:path(view.path),sha256:view.sha256,view:view.view};
+  if(own(view,'instancePath')){if(view.view!=='schematic')throw new TypeError('Sheet occurrence requires a schematic view.');out.instancePath=view.instancePath===null?null:text(view.instancePath,8192,'sheet instance path');if(out.instancePath!==null&&!out.instancePath.startsWith('/'))throw new TypeError('Choose a saved UUID instance path.');}
+  if(own(view,'expand')){if(view.view!=='3d')throw new TypeError('Expansion requires a 3D view.');out.expand=number(view.expand,0,100,'expansion');}
   if(own(view,'camera')){if(view.view==='3d')throw new TypeError('Use a 3D camera for the 3D view.');out.camera=camera2D(view.camera);}
   if(own(view,'camera3D')){if(view.view!=='3d')throw new TypeError('A 3D camera requires the 3D view.');out.camera3D=camera3D(view.camera3D);}
   if(own(view,'layers')){if(view.view!=='pcb'||!Array.isArray(view.layers)||view.layers.length>128)throw new TypeError('Layer state requires a bounded PCB layer list.');out.layers=view.layers.map(layer=>text(layer,128,'saved layer'));if(new Set(out.layers).size!==out.layers.length)throw new TypeError('Duplicate saved layers.');}
@@ -47,14 +49,16 @@ function viewersList(viewers){if(!Array.isArray(viewers)||!viewers.length||viewe
 function copiedSelection(value){if(!value)return null;const out={kind:value.kind};for(const key of ['uuid','ownerUuid','id','netName','pinNumber'])if(value[key]!==undefined&&value[key]!=='')out[key]=value[key];return out;}
 /** Capture independent view/camera/selection state bound to exact saved source text. */
 export async function captureViewState(viewers,options={}){
- viewersList(viewers);const sources=viewers.map(v=>({source:v.source,path:v.path||'',view:v.view,renderer:v.renderer,generation:v.generation}));
+ viewersList(viewers);const sources=viewers.map(v=>({source:v.source,path:v.path||'',view:v.view,renderer:v.renderer,generation:v.generation,instancePath:v.textInstancePath??null}));
  const views=viewers.map((viewer,index)=>{
   const view={path:sources[index].path,view:viewer.view,selection:copiedSelection(viewer.getSelection?.())};
+  if(viewer.view==='schematic')view.instancePath=viewer.textInstancePath??null;
+  if(viewer.view==='3d'&&typeof viewer.getExpand==='function')view.expand=viewer.getExpand();
   const camera=viewer.view==='3d'?viewer.getCamera3D?.():viewer.getCamera?.();if(camera)view[viewer.view==='3d'?'camera3D':'camera']=JSON.parse(JSON.stringify(camera));
   if(viewer.view==='pcb'&&viewer.renderer?.visibleLayers instanceof Set)view.layers=[...viewer.renderer.visibleLayers].filter(layer=>viewer.getLayers().includes(layer));return view;
  });
  const hashes=await Promise.all(sources.map(value=>hash(value.source)));
- if(viewers.some((viewer,index)=>viewer.disposed||viewer.source!==sources[index].source||(viewer.path||'')!==sources[index].path||viewer.view!==sources[index].view||viewer.renderer!==sources[index].renderer||viewer.generation!==sources[index].generation))throw new Error('A drawing changed while creating its view link. Try again.');
+ if(viewers.some((viewer,index)=>viewer.disposed||viewer.source!==sources[index].source||(viewer.path||'')!==sources[index].path||viewer.view!==sources[index].view||viewer.renderer!==sources[index].renderer||viewer.generation!==sources[index].generation||(viewer.textInstancePath??null)!==sources[index].instancePath))throw new Error('A drawing changed while creating its view link. Try again.');
  const state={schema:SCHEMA,views:views.map((view,i)=>({...view,sha256:hashes[i]}))};for(const key of ['theme','layout','activePane','linkedSelection'])if(options[key]!==undefined)state[key]=options[key];return validateViewState(state);
 }
 function aborted(){return new DOMException('View restoration was aborted.','AbortError');}
@@ -64,20 +68,22 @@ export async function restoreViewState(viewers,input,{signal,openFile,current}={
  const check=()=>{if(signal?.aborted)throw aborted();return !viewers.some(v=>v.disposed)&&(!current||current());};
  const wait=promise=>new Promise((resolve,reject)=>{const abort=()=>reject(aborted());Promise.resolve(promise).then(resolve,reject).finally(()=>signal?.removeEventListener('abort',abort));if(signal?.aborted){abort();return;}signal?.addEventListener('abort',abort,{once:true});});
  if(!check())return false;
- const snapshot=viewer=>({source:viewer.source,path:viewer.path||'',renderer:viewer.renderer,generation:viewer.generation});
+ const snapshot=viewer=>({source:viewer.source,path:viewer.path||'',renderer:viewer.renderer,generation:viewer.generation,instancePath:viewer.textInstancePath??null});
  // Guard peers from the first asynchronous file resolution, including same-source reloads.
  const saved=viewers.map(snapshot);
- const sameSource=(viewer,i)=>viewer.source===saved[i].source&&(viewer.path||'')===saved[i].path;
+ const sameSource=(viewer,i)=>viewer.source===saved[i].source&&(viewer.path||'')===saved[i].path&&(viewer.textInstancePath??null)===saved[i].instancePath;
  const sameMount=(viewer,i)=>sameSource(viewer,i)&&viewer.renderer===saved[i].renderer&&viewer.generation===saved[i].generation;
  const unchanged=()=>viewers.every(sameMount);
  for(let i=0;i<viewers.length;i++){
   if(!check()||!unchanged())return false;
-  if((viewers[i].path||'')!==state.views[i].path){
+  const requested=state.views[i],differentOccurrence=own(requested,'instancePath')&&(viewers[i].textInstancePath??null)!==requested.instancePath;
+  if((viewers[i].path||'')!==requested.path||differentOccurrence){
    if(typeof openFile!=='function')throw new Error('Load the linked drawing first: '+state.views[i].path);
-   const previousGeneration=viewers[i].generation,ok=await wait(openFile(i,state.views[i].path,signal));
+   const previousGeneration=viewers[i].generation,ok=await wait(openFile(i,requested.path,signal,{instancePath:requested.instancePath??undefined}));
    if(!check()||ok===false||!viewers.every((viewer,j)=>j===i||sameMount(viewer,j)))return false;
    if(Number.isInteger(previousGeneration)&&viewers[i].generation!==previousGeneration+1)return false;
    if((viewers[i].path||'')!==state.views[i].path)throw new Error('The host did not open the linked drawing: '+state.views[i].path);
+   if(own(requested,'instancePath')&&(viewers[i].textInstancePath??null)!==requested.instancePath)throw new Error('The host did not open the linked sheet occurrence.');
    saved[i]=snapshot(viewers[i]);
   }
  }
@@ -105,6 +111,7 @@ export async function restoreViewState(viewers,input,{signal,openFile,current}={
  for(let i=0;i<viewers.length;i++){
   if(!check()||!unchanged()||viewers.some((viewer,j)=>viewer.view!==state.views[j].view))return false;const viewer=viewers[i],view=state.views[i];
   if(state.theme){viewer.setTheme(state.theme);if(!check()||!unchanged())return false;}
+  if(own(view,'expand')){if(typeof viewer.setExpand!=='function')throw new Error('The viewer cannot restore expansion.');viewer.setExpand(view.expand,{animate:false});if(!check()||!unchanged())return false;}
   if(view.camera){viewer.setCamera(view.camera);if(!check()||!unchanged())return false;}
   if(view.camera3D){viewer.setCamera3D(view.camera3D);if(!check()||!unchanged())return false;}
   if(view.layers){viewer.setLayers(view.layers);if(!check()||!unchanged())return false;}

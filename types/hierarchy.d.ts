@@ -1,7 +1,7 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 export type HierarchyStatus = 'ok'|'missing'|'invalid'|'cycle'|'truncated'|'error';
 export interface HierarchyNode {
- id: string; path: string|null; file: string; name: string; uuid: string|null;
+ id: string; path: string|null; file: string; name: string; uuid: string|null; instancePath?: string|null;
  status: HierarchyStatus; role?: 'root'|'unlinked'; children: HierarchyNode[];
 }
 export interface ProjectHierarchy {
@@ -16,7 +16,7 @@ export interface HierarchyLoadOptions extends HierarchyBuildOptions {
  file?: string; ref?: string; baseURL?: string; credentials?: 'omit'|'same-origin'; signal?: AbortSignal;
 }
 export type HierarchyLoadInput = string|URL|{files: {path:string;url:string}[]; entry?:string}|ArrayLike<{path?:string;source?:string;bytes?:Uint8Array|ArrayBuffer;name?:string;size?:number;arrayBuffer?:()=>Promise<ArrayBuffer>}>|Uint8Array|ArrayBuffer;
-export interface HierarchySelection {id: string; path: string; file: string; name: string; uuid: string|null; status: 'ok';}
+export interface HierarchySelection {id: string; path: string; file: string; name: string; uuid: string|null; instancePath?: string; status: 'ok';}
 export declare function buildProjectHierarchy(files: HierarchyFileInput[], options?: HierarchyBuildOptions): ProjectHierarchy;
 export declare function loadProjectHierarchy(input: HierarchyLoadInput, options?: HierarchyLoadOptions): Promise<ProjectHierarchy>;
 export declare function hierarchyToSVG(model: ProjectHierarchy, options?: {theme?:'light'|'dark'}): string;

@@ -184,7 +184,7 @@ test('multiple highlights form a union; isolate retains board outline and bright
  canvas.setDocument({layers:['F.Cu','Edge.Cuts'],primitives:[a,b,other,edge]},'board.kicad_pcb');const painted=[];canvas.paint=(p,style)=>painted.push({p,style});
  canvas.viewport.camera.bbox={x:-3,y:-3,w:16,h:16};
  canvas.viewport.camera.bbox={x:-3,y:-3,w:16,h:16};
- canvas.setNetHighlights([{primitives:[a]},{primitives:[b]}],{mode:'isolate'});canvas.draw();assert.deepEqual(painted.map(x=>x.p),[a,b,edge]);assert.equal(canvas.netPrimitives.size,2);
+ canvas.setNetHighlights([{primitives:[a]},{primitives:[b]}],{mode:'isolate'});canvas.draw();assert.deepEqual(painted.map(x=>x.p),[edge,a,b]);assert.equal(canvas.netPrimitives.size,2);
  painted.length=0;canvas.setNetHighlights([{primitives:[a,b]}],{mode:'bright'});canvas.draw();assert.equal(painted.find(x=>x.p===other).style.opacity,1);assert.ok(painted.find(x=>x.p===a).style.color);
  canvas.setNetHighlights([]);assert.equal(canvas.netHighlight,null);assert.equal(canvas.netPrimitives.size,0);
 });
@@ -217,7 +217,7 @@ test('net highlight respects layer visibility, dims unrelated copper and preserv
  const {canvas}=runtime(),pad={type:'circle',x:20,y:30,r:1,uuid:'pad',layer:'F.Cu'},other={...pad,uuid:'other',x:30},back={...pad,uuid:'back',layer:'B.Cu'},hole={...pad,uuid:'hole',hole:true},hidden={...pad,uuid:'hidden',hidden:true};
  canvas.setDocument({layers:['F.Cu','B.Cu'],primitives:[pad,other,back,hole,hidden]},'board.kicad_pcb');canvas.visibleLayers.delete('B.Cu');
  const painted=[];canvas.paint=(p,style)=>painted.push({p,style});canvas.setNetHighlight({primitives:[pad,back]});canvas.draw();
- assert.deepEqual(painted.map(item=>item.p.uuid),['pad','other','hole']);assert.equal(painted[0].style.color,'#ffe18b');assert.equal(painted[1].style.opacity,.42);assert.equal(painted[1].style.color,'#87919d');assert.equal(painted[2].style.opacity,1);
+ assert.deepEqual(painted.map(item=>item.p.uuid),['other','pad','hole']);assert.equal(painted[1].style.color,'#ffe18b');assert.equal(painted[0].style.opacity,.045);assert.equal(painted[0].style.color,'#87919d');assert.equal(painted[2].style.opacity,1);
  painted.length=0;canvas.setNetHighlight({primitives:[pad]},{isolate:true});canvas.draw();assert.deepEqual(painted.map(item=>item.p.uuid),['pad','hole']);
  canvas.setNetHighlight(null);painted.length=0;canvas.draw();assert.equal(painted.find(item=>item.p===other).style.opacity,1);
 });
@@ -342,4 +342,31 @@ test('embedded PNGs decode once, use saved world geometry and release pending lo
  const {canvas,operations}=runtime(1,{Image}),png={type:'image',uuid:'png',pixelWidth:2,pixelHeight:1,dataUrl:'data:image/png;base64,iVBORw0KGgoAAA==',points:[{x:400,y:10},{x:420,y:10},{x:420,y:20},{x:400,y:20}]};
  canvas.primitives=[png];canvas.viewport.camera.bbox={x:395,y:5,w:30,h:20};canvas.draw();assert.equal(decoded.length,1);assert.equal(decoded[0].decoding,'async');decoded[0].naturalWidth=2;decoded[0].naturalHeight=1;decoded[0].onload();operations.length=0;canvas.draw();assert.ok(operations.some(row=>row[0]==='drawImage'));assert.equal(decoded.length,1);assert.equal(canvas.query({x:410,y:15})[0],png);
  const unsafe={...png,dataUrl:'https://example.com/private.png'};canvas.imageResource(unsafe);assert.equal(decoded.length,1);canvas.primitives=[];assert.equal(decoded[0].onload,null);assert.equal(decoded[0].src,'');canvas.dispose();
+});
+
+
+test('Overview excludes inner/fabrication clutter and retains explicit identity across equal visible sets',()=>{
+ const {canvas}=runtime(),outer=['F.Cu','B.Cu','F.SilkS','B.SilkS','Edge.Cuts'],layers=[...outer,'In1.Cu','F.Fab','B.CrtYd'];
+ canvas.setDocument({layers,primitives:[]},'board.kicad_pcb');canvas.visibleLayers=new Set(['In1.Cu','Edge.Cuts']);
+ for(let i=0;i<3;i++){canvas.layerPreset('all');assert.equal(canvas.layerPresetName,'all');canvas.layerPreset('overview');assert.equal(canvas.layerPresetName,'overview');assert.deepEqual([...canvas.visibleLayers],outer);}
+ canvas.restoreLayers();assert.equal(canvas.layerPresetName,null);assert.deepEqual([...canvas.visibleLayers],['In1.Cu','Edge.Cuts']);
+ canvas.layerPreset('overview');canvas.focusLayer('F.Cu');assert.equal(canvas.layerPresetName,null);
+ canvas.setDocument({layers:outer,primitives:[]},'next.kicad_pcb');assert.equal(canvas.layerPresetName,null);assert.equal(canvas.layerSnapshot,null);
+ canvas.layerPreset('all');const all=[...canvas.visibleLayers];canvas.layerPreset('overview');assert.deepEqual([...canvas.visibleLayers],all);assert.equal(canvas.layerPresetName,'overview');canvas.dispose();
+});
+
+test('Dim PCB net paints faint gray vias before selected copper and drills last without changing Bright or saved order',()=>{
+ for(const dark of [true,false]){
+  const {canvas}=runtime();canvas.dark=dark;
+  const shape=(uuid,kind='track',layer='F.Cu')=>({uuid,kind,layer,type:'circle',x:10,y:10,r:1});
+  const selected=shape('selected'),context=shape('context-via','via'),hole={...shape('hole','drill'),hole:true},selectedVia=shape('selected-via','via'),hidden=shape('hidden','track','B.Cu');
+  const source=[selected,hole,context,selectedVia,hidden],original=JSON.stringify(source),painted=[];
+  canvas.setDocument({layers:['F.Cu','B.Cu'],primitives:source},'board.kicad_pcb');canvas.visibleLayers.delete('B.Cu');canvas.paint=(p,style)=>painted.push({p,style});
+  const members=[selected,selectedVia,hidden];canvas.setNetHighlights([{primitives:members}],{mode:'dim',selectionColor:'source'});canvas.draw();
+  assert.deepEqual(painted.map(x=>x.p.uuid),['context-via','selected','selected-via','hole']);assert.equal(painted[0].style.opacity,.045);assert.equal(painted[0].style.color,dark?'#87919d':'#8b919a');assert.equal(painted[2].style.color,'#c5aa6c');
+  painted.length=0;canvas.setNetHighlight({primitives:members},{mode:'bright',selectionColor:'source'});canvas.draw();assert.deepEqual(painted.map(x=>x.p.uuid),['selected','hole','context-via','selected-via']);assert.equal(painted.find(x=>x.p===context).style.opacity,1);assert.equal(painted.find(x=>x.p===context).style.color,'#c5aa6c');
+  painted.length=0;canvas.setNetHighlight({primitives:members},{mode:'isolate',selectionColor:'source'});canvas.draw();assert.deepEqual(painted.map(x=>x.p.uuid),['selected','selected-via','hole']);
+  canvas.focusLayer('B.Cu','isolate');painted.length=0;canvas.visibleLayers.delete('B.Cu');canvas.draw();assert.deepEqual(painted.map(x=>x.p.uuid),['hole']);
+  canvas.restoreLayers();canvas.setNetHighlight(null);painted.length=0;canvas.draw();assert.deepEqual(painted.map(x=>x.p.uuid),['selected','hole','context-via','selected-via']);assert.equal(JSON.stringify(source),original);assert.equal(canvas.netPrimitives.size,0);canvas.dispose();
+ }
 });

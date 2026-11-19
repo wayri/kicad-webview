@@ -11,7 +11,7 @@ export class ProjectSheetBrowser {
   this.header=m('div');this.header.className='project-sheet-heading';this.header.append(m('strong','Schematic sheets'));
   this.closeButton=m('button','Close');this.closeButton.type='button';this.closeButton.setAttribute('aria-label','Close sheet browser');this.closeButton.onclick=()=>this.close();this.header.append(this.closeButton);
   this.mount=m('div');this.mount.className='project-sheet-mount';this.root.append(this.header,this.mount);body.append(this.root);
-  this.tree=new ProjectTree(this.mount,{theme:project.theme,onSelect:node=>project.openFile(node.path,{pane:this.pane()})});
+  this.tree=new ProjectTree(this.mount,{theme:project.theme,onSelect:node=>project.openFile(node.path,{pane:this.pane(),instancePath:node.instancePath})});
   this.drag=null;this.down=e=>{if(e.target!==this.header||e.button!==0)return;const box=this.root.getBoundingClientRect(),area=body.getBoundingClientRect();this.drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:box.left-area.left,top:box.top-area.top};this.header.setPointerCapture?.(e.pointerId);e.preventDefault();};
   this.move=e=>{if(!this.drag||this.drag.id!==e.pointerId)return;const b=body.getBoundingClientRect(),r=this.root.getBoundingClientRect();this.root.style.left=Math.max(0,Math.min(Math.max(0,b.width-r.width),this.drag.left+e.clientX-this.drag.x))+'px';this.root.style.top=Math.max(0,Math.min(Math.max(0,b.height-44),this.drag.top+e.clientY-this.drag.y))+'px';this.root.style.right='auto';};
   this.up=e=>{if(this.drag?.id!==e.pointerId)return;this.header.releasePointerCapture?.(e.pointerId);this.drag=null;};

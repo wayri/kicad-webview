@@ -269,7 +269,7 @@
   }
   function build(files, designs=new Map(), snapshot=null) {
     if (!diff?.projectObjects || !diff?.parse) throw new Error("KiCadDesignDiff is required for net extraction.");
-    const parsedFiles=new Map(),rawRecords=diff.projectObjects(files,(file,ast)=>parsedFiles.set(file.path,ast),snapshot), counts=new Map(), recordsByPath=new Map();
+    const parsedFiles=new Map(),rawRecords=diff.projectObjects(files,(file,ast)=>parsedFiles.set(file.path,ast),snapshot,{forConnectivity:true}), counts=new Map(), recordsByPath=new Map();
     // Keep duplicate saved object IDs aligned with the design-model convention.
     for (const record of rawRecords) {
       if(!recordsByPath.has(record.path))recordsByPath.set(record.path,[]);
@@ -385,7 +385,7 @@
       for(const file of files) {
         if(!file||typeof file.path!=="string"||typeof file.content!=="string"||!/\.kicad_(?:sch|pcb)$/i.test(file.path)||paths.has(file.path))throw new Error("Invalid or duplicate KiCad file entry.");
         paths.add(file.path);
-        const previous=cache.get(file.path),size=previous?.content===file.content?previous.sourceBytes:encoder.encode(file.content).length;
+        const previous=cache.get(file.path),size=previous?.content===file.content?previous.sourceBytes:(diff.sourceByteLength?diff.sourceByteLength(file.content):encoder.encode(file.content).length);
         sourceBytes+=size;
         if(size>diff.MAX_FILE_BYTES||sourceBytes>diff.MAX_PROJECT_BYTES)throw new Error("KiCad project exceeds browser comparison size limits.");
         const design=designs instanceof Map?designs.get(file.path):designs?.[file.path],primitives=Array.isArray(design?.primitives)?design.primitives:[];

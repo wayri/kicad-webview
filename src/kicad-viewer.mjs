@@ -189,7 +189,7 @@ export class KiCadViewer extends EventTarget {
     const sourceParser = viewerSourceParser;
     const sourceKey = path;
     const sourceSnapshot = /\.kicad_(?:pcb|sch)$/i.test(path)
-      ? sourceParser.prepareProject([{path, content: source}]) : null;
+      ? sourceParser.prepareProject([{path, content: source}],{forConnectivity:true}) : null;
     const ast = sourceSnapshot ? sourceParser.preparedFile(sourceSnapshot, sourceKey, source)
       : sourceParser.parse(source);
     const kind = ast[0] === 'kicad_pcb' ? 'pcb' : ast[0] === 'kicad_sch' ? 'schematic' : null;
@@ -370,7 +370,7 @@ export class KiCadViewer extends EventTarget {
     return this.renderer.setQuality(quality);
   }
 
-  setExpand(value){this.assertActive();if(!Number.isFinite(value)||value<0||value>100)throw new TypeError('Expand must be a number from 0 to 100.');if(this.view!=='3d'||!(this.renderer?.setExpand||this.renderer?.setExplode))throw new Error('Expand requires a loaded 3D board.');return (this.renderer.setExpand||this.renderer.setExplode).call(this.renderer,value);}
+  setExpand(value,{animate=true}={}){this.assertActive();if(!Number.isFinite(value)||value<0||value>100)throw new TypeError('Expand must be a number from 0 to 100.');if(typeof animate!=='boolean')throw new TypeError('animate must be a boolean.');if(this.view!=='3d'||!(this.renderer?.setExpand||this.renderer?.setExplode))throw new Error('Expand requires a loaded 3D board.');if(!animate){if(typeof this.renderer.restoreExpand!=='function')throw new Error('This renderer cannot restore expansion immediately.');return this.renderer.restoreExpand(value);}return (this.renderer.setExpand||this.renderer.setExplode).call(this.renderer,value);}
   getExpand(){this.assertActive();return this.view==='3d'?(this.renderer?.getExpand?.()??this.renderer?.getExplode?.()??0):0;}
   /** Compatibility aliases; use setExpand/getExpand in new integrations. */
   setExplode(value){return KiCadViewer.prototype.setExpand.call(this,value);}

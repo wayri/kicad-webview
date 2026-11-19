@@ -80,21 +80,21 @@ export function buildProjectHierarchy(files,{root,entry}={}){
  for(const path of [...candidates,...paths])if(!covered.has(path))plan(path,'unlinked');
  let instances=0,truncated=metadataTruncated;
  const mark=()=>{truncated=true;warn('Hierarchy expansion was truncated at 4096 instances, 32 levels or the bounded saved-sheet descriptor budget.');};
- const expand=(ref,id,depth,ancestors,limit,role)=>{
+ const expand=(ref,id,depth,ancestors,limit,role,instancePath=null)=>{
   if(instances>=limit){mark();return null;}instances++;
-  const node={id,path:ref.path,file:ref.file,name:ref.name,uuid:ref.uuid,status:ref.status,children:[]};if(role)node.role=role;
+  const node={id,path:ref.path,file:ref.file,name:ref.name,uuid:ref.uuid,instancePath,status:ref.status,children:[]};if(role)node.role=role;
   if(node.status!=='ok')return node;
   const model=index.get(node.path);if(model.error){node.status='error';return node;}if(ancestors.has(node.path)){node.status='cycle';warn('Recursive sheet cycle at '+node.path+'.');return node;}
   if(depth>=MAX_DEPTH&&model.sheetCount>0){node.status='truncated';mark();return node;}
   const next=new Set(ancestors);next.add(node.path);
   for(const link of model.links){
    if(instances>=limit){mark();node.status='truncated';break;}
-   const child=expand(link,id+'/s'+link.ordinal,depth+1,next,limit);if(child)node.children.push(child);
+   const child=expand(link,id+'/s'+link.ordinal,depth+1,next,limit,undefined,instancePath&&link.uuid?instancePath+'/'+link.uuid:null);if(child)node.children.push(child);
   }
   if(model.links.length<model.sheetCount){mark();if(instances<limit){instances++;node.children.push({id:id+'/more',path:null,file:'',name:'Additional saved sheets omitted',uuid:null,status:'truncated',children:[]});}else node.status='truncated';}
   return node;
  };
- const roots=[];for(let i=0;i<plans.length;i++){const model=index.get(plans[i].path),node=expand({path:model.path,file:model.path,name:model.title,uuid:model.uuid,status:'ok'},'r'+i,0,new Set(),MAX_NODES-(plans.length-i-1),plans[i].role);if(node)roots.push(node);}
+ const roots=[];for(let i=0;i<plans.length;i++){const model=index.get(plans[i].path),node=expand({path:model.path,file:model.path,name:model.title,uuid:model.uuid,status:'ok'},'r'+i,0,new Set(),MAX_NODES-(plans.length-i-1),plans[i].role,model.uuid?'/'+model.uuid:null);if(node)roots.push(node);}
  if(metadataTruncated)mark();
  return {schema:'kicad-webview.hierarchy/v1',rootPath,rootReason,roots,files:paths.map(path=>{const model=index.get(path);return {path,sheetCount:model.sheetCount,...(model.error?{error:model.error}:{})};}),warnings,stats:{files:paths.length,instances,truncated}};
 }

@@ -86,3 +86,13 @@ test('hierarchy rejects a claimed oversized UTF-8 source before parsing',()=>{
  const Original=globalThis.TextEncoder;let encoded=0;globalThis.TextEncoder=class extends Original{encode(){encoded++;return {length:256*1024*1024+1};}};
  try{assert.throws(()=>buildProjectHierarchy([file('huge.kicad_sch')]),/256 MiB/);assert.equal(encoded,1);}finally{globalThis.TextEncoder=Original;}
 });
+
+
+test('large repeated-sheet hierarchy retains exact saved occurrence paths',()=>{
+ const links=Array.from({length:256},(_,i)=>sheet('child.kicad_sch','Channel '+i,'channel-'+i));
+ const model=buildProjectHierarchy([file('root.kicad_sch',links),file('child.kicad_sch',[sheet('leaf.kicad_sch','Leaf','leaf')]),file('leaf.kicad_sch')]);
+ assert.equal(model.stats.instances,513);assert.equal(model.stats.truncated,false);
+ const children=model.roots[0].children;
+ for(const i of [0,127,255]){assert.equal(children[i].instancePath,'/document/channel-'+i);assert.equal(children[i].children[0].instancePath,'/document/channel-'+i+'/leaf');}
+ assert.equal(new Set(children.map(n=>n.instancePath)).size,256);
+});

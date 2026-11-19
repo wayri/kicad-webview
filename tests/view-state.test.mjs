@@ -67,3 +67,29 @@ test('host resolution must produce the requested listed path',async()=>{const a=
 test('a host callback cannot replace a native target with a non-native placeholder source',async()=>{const a=viewer();a.source='manufacturing';const state=await captureViewState([a]);a.path='other.kicad_pcb';await assert.rejects(restoreViewState([a],state,{openFile:async(index,path)=>{a.path=path;a.kind='manufacturing';return true;}}),/native KiCad/);assert.deepEqual(a.calls,[]);});
 
 test('synchronous host abort still consumes an underlying rejected load promise',async()=>{const a=viewer(),state=await captureViewState([a]),controller=new AbortController(),unhandled=[];a.path='other.kicad_pcb';const onUnhandled=error=>unhandled.push(error);process.on('unhandledRejection',onUnhandled);try{await assert.rejects(restoreViewState([a],state,{signal:controller.signal,openFile:()=>{controller.abort();return Promise.reject(new Error('underlying loader rejection'));}}),{name:'AbortError'});await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(unhandled,[]);assert.deepEqual(a.calls,[]);}finally{process.removeListener('unhandledRejection',onUnhandled);}});
+
+
+test('same-file occurrence links reopen exact context, preserving cameras and old links',async()=>{
+ const a=viewer('child.kicad_sch','schematic');a.textInstancePath='/root/a';
+ const state=await captureViewState([a]);assert.equal(state.views[0].instancePath,'/root/a');
+ const roundtrip=parseViewLink(createViewLink('https://example.test/views',state));a.textInstancePath='/root/b';
+ await assert.rejects(restoreViewState([a],roundtrip),/Load the linked drawing/);assert.equal(a.calls.length,0);
+ let requested;await restoreViewState([a],roundtrip,{openFile:async(i,path,signal,options)=>{requested=options;a.textInstancePath=options.instancePath;return true;}});
+ assert.deepEqual(requested,{instancePath:'/root/a'});assert.equal(a.textInstancePath,'/root/a');assert.ok(a.calls.some(c=>c[0]==='camera'));
+ const old=copy(state);delete old.views[0].instancePath;a.textInstancePath='/root/b';assert.equal(await restoreViewState([a],old),true);assert.equal(a.textInstancePath,'/root/b');
+ const unscoped=copy(state);unscoped.views[0].instancePath=null;
+ await restoreViewState([a],unscoped,{openFile:async(i,path,signal,options)=>{a.textInstancePath=options.instancePath;return true;}});assert.equal(a.textInstancePath,undefined);
+});
+
+test('occurrence changes invalidate pending capture and a dishonest host cannot restore another occurrence',async()=>{
+ const a=viewer('child.kicad_sch','schematic');a.textInstancePath='/root/a';const pending=captureViewState([a]);a.textInstancePath='/root/b';await assert.rejects(pending,/changed/);
+ const state=await captureViewState([a]);a.textInstancePath='/root/c';await assert.rejects(restoreViewState([a],state,{openFile:async()=>true}),/sheet occurrence/);assert.equal(a.calls.length,0);
+});
+
+test('3D view links retain expansion and restore it before saved camera and net without locating',async()=>{
+ const a=viewer('board.kicad_pcb','3d');a.getExpand=()=>65;a.getSelection=()=>({kind:'net',netName:'GND'});a.setExpand=(value,options)=>a.calls.push(['expand',value,options]);a.selectNet=(id,options)=>{a.calls.push(['net',id,options]);return true;};
+ const state=await captureViewState([a]);assert.equal(state.views[0].expand,65);assert.equal(await restoreViewState([a],state),true);
+ assert.deepEqual(a.calls.find(c=>c[0]==='expand'),['expand',65,{animate:false}]);assert.ok(a.calls.findIndex(c=>c[0]==='expand')<a.calls.findIndex(c=>c[0]==='camera3D'));assert.deepEqual(a.calls.find(c=>c[0]==='net'),['net','GND',{locate:false}]);
+ for(const value of [-1,101,NaN,'20']){const bad=copy(state);bad.views[0].expand=value;assert.throws(()=>validateViewState(bad));}
+ const bad=copy(state);bad.views[0].instancePath='/root/a';assert.throws(()=>validateViewState(bad),/schematic/);
+});

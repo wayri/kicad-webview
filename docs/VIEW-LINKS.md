@@ -1,5 +1,21 @@
 # Shareable native KiCad views
 
+## Next release (unreleased source)
+
+Saved schematic views now carry `instancePath` (saved root/sheet UUID sequence, or `null` for no explicit occurrence). A host must reopen a different occurrence even when its filename is unchanged. Forward the fourth callback argument:
+
+```js
+await restoreViewState(viewers, state, {
+  openFile: (index, path, signal, options) =>
+    viewers[index].openFile(path, {signal, ...options})
+});
+```
+
+Old links without this optional field retain their current occurrence behavior. A host that opens the wrong occurrence is rejected. Loaded ancestor sources are still needed for inherited sheet fields; the child-file hash does not authenticate every ancestor. No hierarchical netlist is inferred.
+
+3D links also carry `expand` (0–100). Restoration applies expansion immediately before the saved camera and selection, cancelling pending expansion motion. Ordinary `setExpand(amount)` remains animated; use `setExpand(amount, {animate:false})` for an immediate host-controlled reset. Existing schema, URL-size bounds and source hash checks remain in force.
+
+
 View links restore one to eight native schematic, layout or 3D viewers after the host has loaded the project. Each view carries its project-relative path, exact source SHA-256, view mode, copied camera, optional PCB layer visibility, and saved selection identity. The description may also retain theme and host layout/active-pane/link settings. Drawing source, models and credentials are never included.
 
 ~~~js
@@ -31,7 +47,7 @@ Selection replay should run with cross-selection propagation suspended, so resto
 
 captureViewState(viewers, options) snapshots the current state, computes exact SHA-256 using browser Web Crypto, and rejects if a drawing changes before hashing finishes. HTTPS and localhost provide Web Crypto. State describes the current native KiCad source revision; it is not a moving pointer to future file contents.
 
-restoreViewState(viewers, state, { signal, openFile, current }) validates the entire bounded schema, then optionally asks the host to open a different listed path with openFile(index, path, signal). It never derives a network URL from the fragment. The host must confine this callback to its already loaded project list. Without a callback, load the correct drawings before restoring. Every pane's exact source hash, drawing kind and requested layers are checked before any saved camera or selection is applied. A mismatched source, missing layer or absent/ambiguous selection rejects rather than falling back to a matching reference/name.
+restoreViewState(viewers, state, { signal, openFile, current }) validates the entire bounded schema, then optionally asks the host to open a different listed path with openFile(index, path, signal, options). It never derives a network URL from the fragment. The host must confine this callback to its already loaded project list. Without a callback, load the correct drawings before restoring. Every pane's exact source hash, drawing kind and requested layers are checked before any saved camera or selection is applied. A mismatched source, missing layer or absent/ambiguous selection rejects rather than falling back to a matching reference/name.
 
 The optional AbortSignal is forwarded to file loading and view changes. A pre-aborted restore rejects with AbortError. Cancellation is checked between asynchronous work and individual state mutations; current() returning false or disposed viewers stop replay and return false. Custom host loaders must honor the supplied signal. A false return from a loader/view switch also stops restoration. These operations are not transactional: opening files, changing a view, or replaying an earlier pane may already have succeeded before a later operation fails. Hash mismatch never applies saved cameras/selections.
 
