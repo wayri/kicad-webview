@@ -24,3 +24,13 @@ Twenty separated display updates while the embed was off-screen produced 20 draw
 ## 1.0.0: overlapping copper stability
 
 Release 1.0.0 disables hardware multisample depth for the logarithmic-depth board renderer. Balanced, Photoreal Fast, High and Presentation smooth resolved color with SMAA; Low renders directly. Copper cap precedence is applied in the logarithmic depth domain and survives selection/translucency material clones. Source coordinates and geometry remain unchanged. Balanced uses at most two million pixels (one million on constrained devices); Photoreal Fast uses at most one million. The conservative allocation estimate includes the added color targets and retains the fast preset’s existing 60 MiB framebuffer ceiling. These are allocation bounds, not physical-phone timing results.
+
+
+## Next release: repeatable stability measurements
+
+The unreleased stability demo reports viewer-ready timing, 20 synchronous linked-net select/clear samples and renderer-owned resource estimates for KERO/IRCA. It also asserts that net selection leaves the 3D camera and expansion unchanged. See [the validation record](QA-STABILITY-NEXT.md) for samples and limits; these are not physical-phone FPS, peak memory or before/after speedup claims.
+
+
+## Next release: source and repeated-assembly retention
+
+Compact prepared source, shared dim materials and cross-layer pad buffers reduce avoidable retained allocations. See [memory optimization](MEMORY-OPTIMIZATION.md) for the 100,000-object synthetic measurements, repeated-assembly tests and scope. The prepared-source stage saved 29.6% retained heap in the three-run sample; this is not total browser/GPU RAM or phone performance.

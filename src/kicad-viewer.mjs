@@ -17,7 +17,7 @@ import '../engine/touch-canvas.js';
 import { viewerOwners as owners } from './viewer-host.mjs';
 import { resolveSource, fetchAsset } from './source-loader.mjs';
 import { readZip } from './archive/zip.mjs';
-import { normalizeFiles, manufacturingDesign } from './manufacturing-input.mjs';
+import { normalizeFiles, localSource, manufacturingDesign } from './manufacturing-input.mjs';
 import { mountManufacturing } from './manufacturing-canvas.mjs';
 import { isKiCadPath, isDrawingPath, isManufacturingPath } from './source-types.mjs';
 import { detectManufacturing } from './manufacturing/index.mjs';
@@ -132,7 +132,7 @@ export class KiCadViewer extends EventTarget {
   }
 
   /** Open browser Files or explicit {path, source|bytes} entries without uploading. */
-  loadFiles(files, options={}) { return this.loadCollection(signal=>normalizeFiles(files,{signal}),options); }
+  loadFiles(files, options={}) { return this.loadCollection(signal=>normalizeFiles(files,{signal,lazyBoards:true}),options); }
   /** Open a stored/deflated ZIP in memory. No extraction to disk or network. */
   loadArchive(bytes, options={}) { return this.loadCollection(signal=>readZip(bytes,{signal}),options); }
   loadCollection(read, {signal,...options}={}) {
@@ -151,6 +151,7 @@ export class KiCadViewer extends EventTarget {
         const saved=JSON.parse(source);settings.push(saved?.text_variables||{});continue;
       }
       if(!isDrawingPath(file.path)&&!file.path.toLowerCase().endsWith('.txt')){ignored.push(file.path);continue;}
+      if(/\.kicad_pcb$/i.test(file.path)){drawings.push(file);continue;}
       const source=file.source??new TextDecoder('utf-8',{fatal:true}).decode(file.bytes);
       if(isKiCadPath(file.path)||detectManufacturing(source,file.path))drawings.push({path:file.path,source});else ignored.push(file.path);
     }
@@ -160,7 +161,8 @@ export class KiCadViewer extends EventTarget {
     const project={files:drawings,entry:entry.path,memory:true,textVariables:settings.length===1?settings[0]:{},notes:ignored.length?['Ignored '+ignored.length+' unsupported bundle entries: '+ignored.slice(0,12).join(', ')]:[]};
     if(settings.length>1)project.notes.push('Multiple project settings files supplied; text variables require an explicit textVariables option.');
     if(!isKiCadPath(entry.path))return this.showManufacturing(drawings.filter(file=>!isKiCadPath(file.path)),{...options,path:entry.path,project},operation);
-    return this.showSource(entry.source,{...options,path:entry.path,project},operation);
+    const source=await localSource(entry,{signal:operation.signal});operation.check();
+    return this.showSource(source,{...options,path:entry.path,project},operation);
   }
   async showManufacturing(files,{path=files[0]?.path||'Manufacturing layers',project=null,...options}={},operation) {
     this.assertActive();
@@ -189,7 +191,7 @@ export class KiCadViewer extends EventTarget {
     const sourceParser = viewerSourceParser;
     const sourceKey = path;
     const sourceSnapshot = /\.kicad_(?:pcb|sch)$/i.test(path)
-      ? sourceParser.prepareProject([{path, content: source}]) : null;
+      ? sourceParser.prepareProject([{path, content: source}],{forConnectivity:true}) : null;
     const ast = sourceSnapshot ? sourceParser.preparedFile(sourceSnapshot, sourceKey, source)
       : sourceParser.parse(source);
     const kind = ast[0] === 'kicad_pcb' ? 'pcb' : ast[0] === 'kicad_sch' ? 'schematic' : null;
@@ -370,7 +372,7 @@ export class KiCadViewer extends EventTarget {
     return this.renderer.setQuality(quality);
   }
 
-  setExpand(value){this.assertActive();if(!Number.isFinite(value)||value<0||value>100)throw new TypeError('Expand must be a number from 0 to 100.');if(this.view!=='3d'||!(this.renderer?.setExpand||this.renderer?.setExplode))throw new Error('Expand requires a loaded 3D board.');return (this.renderer.setExpand||this.renderer.setExplode).call(this.renderer,value);}
+  setExpand(value,{animate=true}={}){this.assertActive();if(!Number.isFinite(value)||value<0||value>100)throw new TypeError('Expand must be a number from 0 to 100.');if(typeof animate!=='boolean')throw new TypeError('animate must be a boolean.');if(this.view!=='3d'||!(this.renderer?.setExpand||this.renderer?.setExplode))throw new Error('Expand requires a loaded 3D board.');if(!animate){if(typeof this.renderer.restoreExpand!=='function')throw new Error('This renderer cannot restore expansion immediately.');return this.renderer.restoreExpand(value);}return (this.renderer.setExpand||this.renderer.setExplode).call(this.renderer,value);}
   getExpand(){this.assertActive();return this.view==='3d'?(this.renderer?.getExpand?.()??this.renderer?.getExplode?.()??0):0;}
   /** Compatibility aliases; use setExpand/getExpand in new integrations. */
   setExplode(value){return KiCadViewer.prototype.setExpand.call(this,value);}

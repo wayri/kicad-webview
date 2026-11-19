@@ -10,20 +10,21 @@ export function selectionStyle(value={}) {
 
 /** Reversible selection display. Source geometry, visibility and materials are retained. */
 export function createSelectionAppearance(THREE, objects) {
-  const saved=new Map();let currentStyle='';
+  const saved=new Map(),sharedDim=new Map(),sharedState={owned:[]};let currentStyle='';
   const list=value=>Array.isArray(value)?value:[value];
-  function restore(){for(const [object,state]of saved){object.material=state.material;if(object.isInstancedMesh){if(object.instanceColor!==state.instanceColor)object.dispose?.();object.instanceColor=state.instanceColor;object.customDepthMaterial=state.depth;object.customDistanceMaterial=state.distance;}for(const material of state.owned)material.dispose();}saved.clear();currentStyle='';}
+  function restore(){for(const [object,state]of saved){object.material=state.material;if(object.isInstancedMesh){if(object.instanceColor!==state.instanceColor)object.dispose?.();object.instanceColor=state.instanceColor;object.customDepthMaterial=state.depth;object.customDistanceMaterial=state.distance;}for(const material of state.owned)material.dispose();}for(const material of sharedState.owned)material.dispose();sharedState.owned.length=0;sharedDim.clear();saved.clear();currentStyle='';}
   function capture(object){
     if(saved.has(object))return saved.get(object);
     const state={material:object.material,instanceColor:object.instanceColor,depth:object.customDepthMaterial,distance:object.customDistanceMaterial,owned:[]};saved.set(object,state);return state;
   }
   function own(source,state){const material=source.clone();material.onBeforeCompile=source.onBeforeCompile;material.customProgramCacheKey=()=>source.customProgramCacheKey();state.owned.push(material);return material;}
-  function dimMaterial(source,state){
-    const material=own(source,state),originalCompile=source.onBeforeCompile;
+  function dimMaterial(source,state,shared=false){
+    if(shared&&sharedDim.has(source))return sharedDim.get(source);
+    const material=own(source,shared?sharedState:state),originalCompile=source.onBeforeCompile;
     material.userData??={};material.userData.selectionOpacityCap=.24;
     material.opacity=Math.min(source.opacity??1,.24);material.transparent=true;material.depthWrite=false;
     material.onBeforeCompile=(shader,renderer)=>{originalCompile?.call(material,shader,renderer);shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','outgoingLight = vec3(dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722))) * 0.24;\n#include <opaque_fragment>');};
-    material.customProgramCacheKey=()=>source.customProgramCacheKey()+':selection-grey';return material;
+    material.customProgramCacheKey=()=>source.customProgramCacheKey()+':selection-grey';if(shared)sharedDim.set(source,material);return material;
   }
   function accentMaterials(state){
     if(!state.accent)state.accent=list(state.material).map(source=>{const material=own(source,state);material.color?.setHex(0x63e6ee);material.emissive?.setHex(0x12565c);material.metalness=0;material.roughness=.55;return material;});
@@ -104,7 +105,7 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
         object.material=Array.isArray(state.material)?state.hidden:state.hidden[0];
       }else if(!via&&style.color==='accent'&&accentMatches?.(object.userData.record))object.material=accentMaterials(state);
       else if(displayMatches(object.userData.record)||style.mode!=='dim')object.material=state.material;
-      else {if(!state.dim)state.dim=list(state.material).map(source=>dimMaterial(source,state));object.material=Array.isArray(state.material)?state.dim:state.dim[0];}
+      else {if(!state.dim)state.dim=list(state.material).map(source=>dimMaterial(source,state,!object.isInstancedMesh));object.material=Array.isArray(state.material)?state.dim:state.dim[0];}
     }
   }
   function isVisible(object,index){
@@ -112,5 +113,5 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
     if(colors&&Number.isInteger(index)&&colors.array[index*3]<-1e25)return false;
     return list(object.material).some(material=>material&&material.visible!==false);
   }
-  return {update,restore,dispose:restore,isVisible};
+  return {update,restore,dispose:restore,isVisible,stats:()=>({capturedObjects:saved.size,sharedDimMaterials:sharedDim.size})};
 }

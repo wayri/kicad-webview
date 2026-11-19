@@ -19,6 +19,20 @@
   const OMIT = new Set(["uuid", "tstamp", "filled_polygon", "fill_segments"]);
   const NUMBER = /^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?$/;
 
+  // Count source bytes without allocating a second full-size UTF-8 buffer.
+  function sourceByteLength(source) {
+    if(typeof source!=='string')throw new TypeError('KiCad source must be a string.');
+    if(!/[^\x00-\x7f]/.test(source))return source.length;
+    let bytes=source.length;
+    for(let i=0;i<source.length;i++){
+      const code=source.charCodeAt(i);if(code<128)continue;
+      if(code<2048){bytes++;continue;}
+      if(code>=0xd800&&code<=0xdbff&&i+1<source.length){const next=source.charCodeAt(i+1);if(next>=0xdc00&&next<=0xdfff){bytes+=2;i++;continue;}}
+      bytes+=2;
+    }
+    return bytes;
+  }
+
   // KiCad files are overwhelmingly ASCII. Keep the same ECMAScript whitespace
   // grammar without constructing/testing a regular expression for every byte.
   const spaceCode=code=>code===32||(code>=9&&code<=13)||(code>127&&/\s/.test(String.fromCharCode(code)));
@@ -63,7 +77,7 @@
     const byteLimit=modern?MAX_MODERN_FILE:MAX_FILE;
     // UTF-8 uses at most three bytes per UTF-16 code unit. Avoid a full-size
     // temporary byte array when that upper bound already proves the input fits.
-    if(source.length>byteLimit||source.length>byteLimit/3&&new TextEncoder().encode(source).length>byteLimit)throw new Error("KiCad file exceeds browser parser size limits.");
+    if(source.length>byteLimit||source.length>byteLimit/3&&sourceByteLength(source)>byteLimit)throw new Error("KiCad file exceeds browser parser size limits.");
     const nodeLimit = modern ? 12000000 : MAX_NODES;
     const stack = [], roots = [];
     let i = 0, nodes = 0, skippedDepth=0;
@@ -89,24 +103,38 @@
       }
       if (ch === ")") {
         if (!stack.length) throw new Error("Unexpected closing parenthesis in KiCad file.");
-        stack.pop();if(skippedDepth&&stack.length<skippedDepth)skippedDepth=0; i++; continue;
+        const node=stack.pop();
+        // Fixed-size small forms avoid retaining the spare capacity of millions
+        // of growable coordinate/attribute arrays. The public tree shape stays
+        // identical; replace only a completed child, never a live stack frame.
+        if(!skippedDepth&&node.length>0&&node.length<=4){
+          const compact=node.length===1?[node[0]]:node.length===2?[node[0],node[1]]:node.length===3?[node[0],node[1],node[2]]:[node[0],node[1],node[2],node[3]];
+          const parent=stack.at(-1)||roots;parent[parent.length-1]=compact;
+        }
+        if(skippedDepth&&stack.length<skippedDepth)skippedDepth=0; i++; continue;
       }
       if (!stack.length) throw new Error("Expected a KiCad S-expression.");
       if (ch === '"') {
-        let value = "", closed = false;
-        i++;
-        while (i < source.length) {
-          const next = source[i++];
-          if (next === '"') { closed = true; break; }
-          if (next === "\\") {
-            if (i >= source.length) throw new Error("Unterminated KiCad escape sequence.");
-            const escaped = source[i++];
-            const decoded = ({ n: "\n", r: "\r", t: "\t", '"': '"', "\\": "\\" })[escaped];
-            if(!skippedDepth)value += decoded === undefined ? `\\${escaped}` : decoded;
-          } else if(!skippedDepth)value += next;
+        let segments=null, chunkStart=++i, closed=false, text='';
+        while(i<source.length){
+          const next=source[i++];
+          if(next==='"'){
+            closed=true;
+            if(!skippedDepth){const tail=source.slice(chunkStart,i-1);if(segments){segments.push(tail);text=segments.join('');}else text=tail;}
+            break;
+          }
+          if(next==='\\'){
+            if(i>=source.length)throw new Error("Unterminated KiCad escape sequence.");
+            const escaped=source[i++];
+            if(!skippedDepth){
+              segments??=[];segments.push(source.slice(chunkStart,i-2));
+              const decoded=({n:"\n",r:"\r",t:"\t",'"':'"',"\\":"\\"})[escaped];segments.push(decoded===undefined?'\\'+escaped:decoded);
+            }
+            chunkStart=i;
+          }
         }
-        if (!closed) throw new Error("Unterminated quoted KiCad string.");
-        append({ quoted: value }); continue;
+        if(!closed)throw new Error("Unterminated quoted KiCad string.");
+        append(skippedDepth?null:{quoted:text});continue;
       }
       const start = i;
       while (i < source.length) { const code=source.charCodeAt(i);if(code===40||code===41||code===59||code===34||spaceCode(code))break;i++; }
@@ -117,7 +145,7 @@
         const number = Number(token);
         if (!Number.isFinite(number)) throw new Error("Invalid numeric KiCad value.");
         append(number);
-      } else append(token);
+      } else append(token==='xy'?'xy':token);
     }
     if (stack.length || roots.length !== 1 || !Array.isArray(roots[0])) {
       throw new Error("Incomplete KiCad S-expression.");
@@ -189,7 +217,7 @@
     const anchor = kind === "pad" ? props.Number :
       kind === "sheet" ? props.Sheetfile :
       kind === "symbol" || kind === "footprint" ? props.Reference : undefined;
-    return { key: anchor ? `fallback:${String(anchor)}` : `fallback:${hash(signature)}`, uuid: null };
+    return { key: anchor ? `fallback:${String(anchor)}` : `fallback:${hash(typeof signature==="function"?signature():signature)}`, uuid: null };
   }
   function labelFor(form, kind, props, parentLabel) {
     if (kind === "pad") return `${parentLabel || "Footprint"} pad ${props.Number || ""}`.trim();
@@ -207,43 +235,46 @@
     const rounded = (number) => Math.round(number * 1e6) / 1e6;
     return { x: rounded(x), y: rounded(y) };
   }
-  function objectRecord(path, form, parent = null, librarySignature = null) {
+  function objectRecord(path, form, parent = null, librarySignature = null, forConnectivity = false) {
     const kind = kindOf(form);
     const props = properties(form, kind);
     const local = point(form);
     const position = kind === "pad" ? padPosition(local, parent) : local;
-    const signature = JSON.stringify([structural(form), position, librarySignature]);
-    props["Source fingerprint"] = hash(signature);
+    let retainedSignature;
+    const signature=()=>retainedSignature??=JSON.stringify([structural(form),position,typeof librarySignature==='function'?librarySignature():librarySignature]);
+    // Connectivity needs saved identities and fields, not canonical comparison copies.
+    if(!forConnectivity)props["Source fingerprint"]=hash(signature());
     const identityValue = identity(form, kind, props, signature);
     const scope = parent ? `${parent.scope}/` : `${path}/`;
     const key = `${scope}${kind}:${identityValue.key}`;
     const label = labelFor(form, kind, props, parent?.label);
-    return { key, scope: key, signature, metadata: {
+    return { key, scope: key, signature:forConnectivity?null:signature(), metadata: {
       uuid: identityValue.uuid, position, properties: props }, path, kind, label, form };
   }
-  function collect(path, content, onParsed = null) {
-    const rootForm = parse(content);
+  function collect(path, content, onParsed = null, {forConnectivity=false,parseOnly=false} = {}, preparedAst) {
+    const rootForm = preparedAst || parse(content);
     onParsed?.(rootForm);
     const rootKind = kindOf(rootForm);
     if (rootKind !== "kicad_sch" && rootKind !== "kicad_pcb") throw new Error("Expected a KiCad schematic or board.");
+    if(parseOnly)return [];
     const types = rootKind === "kicad_sch" ? SCHEMATIC : BOARD;
     const definitions = new Map();
     if (rootKind === "kicad_sch") {
       const library = child(rootForm, "lib_symbols");
       if (library) for (const definition of children(library, "symbol")) {
         const name = value(definition[1]);
-        if (typeof name === "string") definitions.set(name, JSON.stringify(structural(definition)));
+        if (typeof name === "string") definitions.set(name, forConnectivity?definition:JSON.stringify(structural(definition)));
       }
     }
     const objects = [];
     for (const form of rootForm) {
       if (!Array.isArray(form) || !types.has(kindOf(form))) continue;
       const definition = kindOf(form) === "symbol" ? definitions.get(String(second(form, "lib_name") ?? second(form, "lib_id"))) : null;
-      const record = objectRecord(path, form, null, definition);
+      const record = objectRecord(path, form, null, forConnectivity&&definition?()=>JSON.stringify(structural(definition)):definition, forConnectivity);
       objects.push(record);
       if (rootKind === "kicad_pcb" && record.kind === "footprint") {
         for (const pad of children(form, "pad")) objects.push(objectRecord(path, pad,
-          { form, position: record.metadata.position, scope: record.scope, label: record.label }));
+          { form, position: record.metadata.position, scope: record.scope, label: record.label }, null, forConnectivity));
       }
     }
     return objects;
@@ -254,10 +285,10 @@
   }
   // Job-scoped snapshots reuse validated source without retaining projects globally.
   const preparedProjects = new WeakMap();
-  function prepareProject(files) {
-    const parsed = new Map(), records = projectObjects(files, (file, ast) => parsed.set(file.path, ast));
+  function prepareProject(files, {forConnectivity=false} = {}) {
+    const parsed = new Map(), records = projectObjects(files, (file, ast) => parsed.set(file.path, ast), null, {forConnectivity,parseOnly:forConnectivity});
     const snapshot = Object.freeze({});
-    preparedProjects.set(snapshot, {files: files.map(file => ({path: file.path, content: file.content})), parsed, records});
+    preparedProjects.set(snapshot, {files: files.map(file => ({path: file.path, content: file.content})), parsed, records:forConnectivity?null:records, forConnectivity});
     return snapshot;
   }
   function preparedFile(snapshot, path, expectedContent) {
@@ -266,12 +297,16 @@
     if (expectedContent !== undefined && !state.files.some(file => file.path === path && file.content === expectedContent)) throw new Error('Prepared KiCad file differs from source.');
     return state.parsed.get(path);
   }
-  function projectObjects(files, onParsed = null, snapshot = null) {
+  function projectObjects(files, onParsed = null, snapshot = null, {forConnectivity=false,parseOnly=false} = {}) {
     if (snapshot) {
       const state = preparedProjects.get(snapshot);
       if (!state || !Array.isArray(files) || files.length !== state.files.length ||
           files.some((file, index) => file?.path !== state.files[index].path || file?.content !== state.files[index].content)) {
         throw new Error('Prepared KiCad project differs from source.');
+      }
+      if(state.forConnectivity!==forConnectivity||!state.records){
+        const records=[];for(const file of files)for(const record of collect(file.path,file.content,ast=>onParsed?.(file,ast),{forConnectivity},state.parsed.get(file.path)))records.push(record);
+        return records;
       }
       for (const file of files) onParsed?.(file, state.parsed.get(file.path));
       // Consumers assign IDs to records; keep those assignments isolated.
@@ -286,10 +321,10 @@
         throw new Error("Invalid or duplicate KiCad file entry.");
       }
       paths.add(file.path);
-      const size = new TextEncoder().encode(file.content).length;
+      const size = sourceByteLength(file.content);
       total += size;
       if (size > MAX_FILE || total > MAX_PROJECT) throw new Error("KiCad project exceeds browser comparison size limits.");
-      for (const object of collect(file.path, file.content, ast => onParsed?.(file, ast))) objects.push(object);
+      for (const object of collect(file.path, file.content, ast => onParsed?.(file, ast), {forConnectivity,parseOnly})) objects.push(object);
     }
     return objects;
   }
@@ -329,6 +364,6 @@
     changes.sort((a, b) => a.path.localeCompare(b.path) || a.id.localeCompare(b.id) || a.status.localeCompare(b.status));
     return { changes, counts };
   }
-  root.KiCadDesignDiff = { compareProjects, projectObjects, parse, parseMetadata, sourceByteLimit, prepareProject, preparedFile, cubicBezierPoints, MAX_FILES, MAX_FILE_BYTES: MAX_FILE, MAX_PROJECT_BYTES: MAX_PROJECT, MAX_RENDER_PRIMITIVES };
+  root.KiCadDesignDiff = { compareProjects, projectObjects, parse, parseMetadata, sourceByteLimit, sourceByteLength, prepareProject, preparedFile, cubicBezierPoints, MAX_FILES, MAX_FILE_BYTES: MAX_FILE, MAX_PROJECT_BYTES: MAX_PROJECT, MAX_RENDER_PRIMITIVES };
   if (typeof module === "object" && module.exports) module.exports = root.KiCadDesignDiff;
 })(typeof globalThis === "object" ? globalThis : this);

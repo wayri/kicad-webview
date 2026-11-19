@@ -7,3 +7,11 @@ PCB/schematic: drag with one finger to pan, pinch with two to zoom, tap to selec
 This applies to new library builds. Uploaded self-contained HTML files are snapshots and need regeneration. Host apps can impose their own frame dimensions or touch restrictions; verify their mobile clients separately. Responsive browser checks do not establish physical iOS/Android gesture acceptance.
 
 Responsive browser checks covered narrow and short viewports. Physical iOS/Android gestures and host mobile apps remain unverified.
+
+## Next-release stability example
+
+Build the unreleased source and open `dist/stability-embed.html`. Its compact width selector exercises real 340 px and 390 px iframe boxes; scrollbars reduce the inner drawing width. KERO and the approved IRCA review projection share the same viewer controls and linked-selection API. Layers, inspection and navigation remain within each viewer. Use the native scroll area inside long menus; no document-wide overflow is required.
+
+Desktop narrow-width checks cover layout and mouse/keyboard interaction. They do not establish physical Android/iOS touch behavior, mobile GPU frame rates, battery use or host-specific Slack/Notion/Confluence acceptance. Touch gestures have separate deterministic regression tests; physical-device qualification remains a release limitation.
+
+The sample iframe trusts its own same-origin application. `allow-scripts allow-same-origin` is not a security boundary for untrusted same-origin HTML; use a separate origin and your host's CSP/sandbox policy when isolating third-party content.

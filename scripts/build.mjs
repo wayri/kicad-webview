@@ -35,7 +35,7 @@ const classic = await esbuild.build({ ...options, entryPoints: [path.join(root, 
 if (Object.values(classic.metafile.outputs).some(item => item.imports.length)) throw new Error('Classic distribution has external imports.');
 if (Object.values(result.metafile.outputs).some(item => item.imports.length))
   throw new Error('Distribution unexpectedly requires external JavaScript imports.');
-for (const name of ['embed.html', 'embed.mjs', 'example.html', 'example.mjs', 'altium-example.html', 'altium-example.mjs', 'direct.html', 'manufacturing.html', 'cdn.html', 'analysis.html', 'analysis.mjs', 'advanced.html', 'advanced.mjs', 'lite.html', 'lite-example.mjs', 'carousel.html', 'carousel.mjs', 'linked.html', 'linked.mjs', 'interactive.html', 'interactive.mjs', 'tft-graphics.mjs', 'hierarchy.html', 'hierarchy-example.mjs', 'presentation.html', 'presentation.mjs']) {
+for (const name of ['embed.html', 'embed.mjs', 'example.html', 'example.mjs', 'altium-example.html', 'altium-example.mjs', 'direct.html', 'manufacturing.html', 'cdn.html', 'analysis.html', 'analysis.mjs', 'advanced.html', 'advanced.mjs', 'lite.html', 'lite-example.mjs', 'carousel.html', 'carousel.mjs', 'linked.html', 'linked.mjs', 'interactive.html', 'interactive.mjs', 'tft-graphics.mjs', 'hierarchy.html', 'hierarchy-example.mjs', 'presentation.html', 'presentation.mjs', 'stability.html', 'stability.mjs', 'stability-embed.html', 'large-projects.html', 'large-projects.mjs', 'large-projects-embed.html']) {
   writeFileSync(path.join(output, name), readFileSync(path.join(root, 'examples', name), 'utf8')
     .replaceAll("'../src/kicad-viewer.mjs'", "'./kivi-viewer.js'")
     .replaceAll("'../src/index.mjs'", "'./kivi-viewer.js'")
@@ -69,12 +69,19 @@ for (const [source, target] of [
   ['docs/QA-0.8.0.md','QA-0.8.0.md'],
   ['docs/API-STABILITY.md','API-STABILITY.md'],
   ['docs/RELEASE-1.0.0.md','RELEASE-1.0.0.md'],
+  ['docs/RELEASE-1.1.0.md','RELEASE-1.1.0.md'],
+  ['docs/QA-1.1.0.md','QA-1.1.0.md'],
   ['docs/QA-1.0.0.md','QA-1.0.0.md'],
+  ['docs/STABILITY-NEXT.md','STABILITY-NEXT.md'],
+  ['docs/MEMORY-OPTIMIZATION.md','MEMORY-OPTIMIZATION.md'],
+  ['docs/QA-STABILITY-NEXT.md','QA-STABILITY-NEXT.md'],
+  ['docs/MOBILE-EMBEDS.md','MOBILE-EMBEDS.md'],
+  ['docs/PERFORMANCE.md','PERFORMANCE.md'],
   ['docs/EXPAND-MODE.md','EXPAND-MODE.md'],
   ['docs/WAYRICAD-RESULTS.md','WAYRICAD-RESULTS.md'],
   ['docs/MOBILE-PERFORMANCE.md','MOBILE-PERFORMANCE.md'],
   ['docs/INSPECTION-CONTROLS.md','INSPECTION-CONTROLS.md'],
-  ['docs/LARGE-PROJECTS.md','LARGE-PROJECTS.md'],
+  ['docs/LARGE-PROJECTS.md','LARGE-PROJECTS.md'], ['docs/LARGE-PROJECT-VALIDATION.md','LARGE-PROJECT-VALIDATION.md'], ['docs/PAD-ZONE-REFINEMENT.md','PAD-ZONE-REFINEMENT.md'],
   ['docs/PROJECT-TREE.md','PROJECT-TREE.md'],
   ['docs/VIEW-NAVIGATION.md','VIEW-NAVIGATION.md'],
   ['CONTRIBUTING.md','CONTRIBUTING.md'], ['SECURITY.md','SECURITY.md'], ['TRADEMARKS.md','TRADEMARKS.md'], ['README.md', 'README.md'], ['LICENSE', 'LICENSE'], ['LICENSING.md', 'LICENSING.md'],
@@ -90,6 +97,10 @@ for (const [source, target] of [
       .replaceAll('(../LICENSE)', '(LICENSE)')
       .replaceAll('(../README.md)', '(README.md)')
       .replaceAll('(../examples/altium-example.html)', '(altium-example.html)')
+      .replaceAll('(../examples/stability.html)', '(stability.html)')
+      .replaceAll('(../examples/stability-embed.html)', '(stability-embed.html)')
+      .replaceAll('(../examples/large-projects.html)', '(large-projects.html)')
+      .replaceAll('(../examples/large-projects-embed.html)', '(large-projects-embed.html)')
       .replaceAll('](docs/', '](')
       .replaceAll('./dist/kivi-viewer.js', './kivi-viewer.js')
       .replaceAll('dist/embed.html?', 'embed.html?')

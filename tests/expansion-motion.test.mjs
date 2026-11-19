@@ -40,3 +40,11 @@ test('atomic expansion restore cancels pending motion and settles exactly withou
  const motion=createExpansionMotion({request:fn=>{queued=fn;return 1;},cancel:()=>{queued=null;cancelled++;},update:v=>updates.push(v),settle:v=>settled.push(v)});
  motion.set(70);assert.equal(motion.running(),true);motion.set(100,{immediate:true});assert.equal(motion.get(),100);assert.equal(motion.target(),100);assert.equal(motion.running(),false);assert.equal(queued,null);assert.equal(cancelled,1);assert.deepEqual(updates,[100]);assert.deepEqual(settled,[100]);motion.dispose();
 });
+
+
+test('public immediate expansion restore cancels the real motion controller before returning',()=>{
+ const h=harness(),viewer={assertActive(){},view:'3d',renderer:{setExpand:value=>h.motion.set(value),restoreExpand:value=>h.motion.set(value,{immediate:true}),getExpand:()=>h.motion.get()}};
+ KiCadViewer.prototype.setExpand.call(viewer,100);assert.equal(h.frames.size,1);assert.equal(h.motion.get(),0);
+ KiCadViewer.prototype.setExpand.call(viewer,65,{animate:false});assert.equal(h.motion.get(),65);assert.equal(h.motion.running(),false);assert.equal(h.frames.size,0);h.step();assert.equal(h.motion.get(),65);
+ assert.throws(()=>KiCadViewer.prototype.setExpand.call(viewer,20,{animate:'yes'}),/boolean/);assert.equal(h.motion.get(),65);h.motion.dispose();
+});

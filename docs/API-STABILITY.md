@@ -23,3 +23,21 @@ Native file compatibility and numerical visualization remain bounded by their do
 Classic scripts, ES modules, the lightweight entry point, iframes and self-contained HTML remain available. Node.js is a development/build requirement, not a requirement for website visitors. Pin a package version or host an exact reviewed bundle, keep its source revision and legal notices, and verify CDN bytes after publication.
 
 MPL-2.0 permits free use, including commercially. Paid integration, customization, maintenance and support are optional. Hardware examples and third-party model assets retain separate terms and attribution.
+
+
+## Upgrading from 1.0.0 to the 1.1.0 candidate
+
+The core API identifier remains `1.0`. Layer preset/state types add `overview` and `preset`; manual edits, focus, restore and source replacement clear explicit preset state. Overview is offered only for 2D PCB.
+
+Saved views add optional schematic `instancePath` and 3D `expand`. Old links without these fields retain their prior behavior. Forward the fourth restore callback argument when resolving files:
+
+```js
+await restoreViewState(viewers, state, {
+  openFile: (index, path, signal, options) =>
+    viewers[index].openFile(path, {signal, ...options})
+});
+```
+
+`setExpand(amount)` remains animated. The additive `{animate:false}` option immediately restores a pose and cancels pending expansion frames. Read-only memory counters are available through `getRenderStats()`; they are renderer estimates/counters, not total process memory. Input acceptance ceilings are unchanged.
+
+This candidate is not yet available from npm/CDNs. Continue pinning published 1.0.0 until 1.1.0 is published and verified.

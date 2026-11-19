@@ -150,10 +150,10 @@ export class AdvancedKiCadViewer extends EventTarget {
     if(path===this.viewers[0].path)return viewer.loadSource(this.viewers[0].source,{...options,path});
     throw new Error('Choose a drawing from the loaded project.');
   }
-  async openFile(path,{pane=this.activePane,signal}={}){
-    this.assertActive();this.restorePending?.abort();++this.restoreTicket;this.restoring=false;this.restorePending=null;if(!Number.isInteger(pane)||pane<0||pane>1)throw new TypeError('Choose pane 0 or 1.');if(!this.files.some(file=>file.path===path)||!isDrawingPath(path)||/\.zip$/i.test(path))throw new Error('Choose a drawing from the loaded project.');
+  async openFile(path,{pane=this.activePane,signal,instancePath}={}){
+    this.assertActive();if(instancePath!==undefined&&(typeof instancePath!=="string"||instancePath.length>8192||!/^\/[^\x00-\x1f\x7f]+$/.test(instancePath)))throw new TypeError("Choose a bounded saved sheet instance path.");this.restorePending?.abort();++this.restoreTicket;this.restoring=false;this.restorePending=null;if(!Number.isInteger(pane)||pane<0||pane>1)throw new TypeError('Choose pane 0 or 1.');if(!this.files.some(file=>file.path===path)||!isDrawingPath(path)||/\.zip$/i.test(path))throw new Error('Choose a drawing from the loaded project.');
     const ticket=this.ticket;this.panePending||=[];this.panePending[pane]?.abort();const controller=new AbortController();this.panePending[pane]=controller;const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
-    try{const ok=await this.loadPaneFromProject(pane,path,{signal:controller.signal});if(!ok||this.disposed||ticket!==this.ticket||this.panePending[pane]!==controller)return false;this.setActivePane(pane);this.refresh();this.setStatus('Opened '+path+' in pane '+(pane+1)+'.');return true;}finally{signal?.removeEventListener('abort',abort);}
+    try{const ok=await this.loadPaneFromProject(pane,path,{signal:controller.signal,instancePath});if(!ok||this.disposed||ticket!==this.ticket||this.panePending[pane]!==controller)return false;this.setActivePane(pane);this.refresh();this.setStatus('Opened '+path+' in pane '+(pane+1)+'.');return true;}finally{signal?.removeEventListener('abort',abort);}
   }
   getFiles(){this.assertActive();return this.files.map(({path,url})=>({path,...(url?{url}:{})}));}
   crossProbe(index,item){
@@ -172,7 +172,7 @@ export class AdvancedKiCadViewer extends EventTarget {
     const current=()=>!this.disposed&&ticket===this.restoreTicket&&projectTicket===this.ticket&&this.projectReady;
     this.restoring=true;
     const check=()=>{if(controller.signal.aborted)throw new DOMException('View restoration was aborted.','AbortError');return current();};
-    try{const ok=await restoreViews(this.viewers,state,{signal:controller.signal,current,openFile:(pane,path,signal)=>this.loadPaneFromProject(pane,path,{signal})});if(!ok||!check())return false;
+    try{const ok=await restoreViews(this.viewers,state,{signal:controller.signal,current,openFile:(pane,path,signal,options)=>this.loadPaneFromProject(pane,path,{signal,...options})});if(!ok||!check())return false;
       if(state.theme){this.setTheme(state.theme);if(!check())return false;}if(state.layout){this.setLayout(state.layout);if(!check())return false;}if(state.activePane!==undefined){this.setActivePane(state.activePane);if(!check())return false;}if(state.linkedSelection!==undefined){this.linkedSelection=state.linkedSelection;this.linkToggle.checked=this.linkedSelection;}
       this.setStatus('Restored linked project view · saved source hashes verified.');return true;
     }catch(error){if(!current())return false;this.setStatus(error.message,true);throw error;}

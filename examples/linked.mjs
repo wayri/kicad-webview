@@ -6,10 +6,10 @@ try{
  await Promise.all(viewers.map((viewer,i)=>viewer.load('./demo/project.json',i===0?{file:'decoder.kicad_sch'}:i===2?{view:'3d'}:{})));
  links=linkViewers(viewers);links.addEventListener('link',e=>status.textContent='Linked '+e.detail.kind+' selection · 3D parts flip into focus.');
  links.addEventListener('linkerror',e=>status.textContent=e.detail.error.message);
- const restore=async()=>{const state=parseViewLink(location.href);if(!state)return;links.setEnabled(false);try{await restoreViewState(viewers,state,{openFile:(i,path,signal)=>viewers[i].openFile(path,{signal})});status.textContent='Restored linked views · exact saved source hashes verified.';}finally{links.setEnabled(true);}};
+ const restore=async()=>{const state=parseViewLink(location.href);if(!state)return;links.setEnabled(false);try{await restoreViewState(viewers,state,{openFile:(i,path,signal,options)=>viewers[i].openFile(path,{signal,...options})});status.textContent='Restored linked views · exact saved source hashes verified.';}finally{links.setEnabled(true);}};
  await restore();if(!parseViewLink(location.href))status.textContent='Ready · select a part, highlight a board net, or create a view link.';
- document.querySelector('#part').onclick=()=>{const part=viewers[0].getParts().find(p=>p.reference==='D1');if(part)viewers[0].selectPart(part.id);};
- document.querySelector('#net').onclick=()=>{viewers[1].selectNet('/VBAT');status.textContent='VBAT links layout and 3D; local net names are not guessed across schematic sheets.';};
+ document.querySelector('#part').onclick=()=>{const part=viewers[0].getParts().find(p=>p.reference==='R1');if(part)viewers[0].selectPart(part.id);};
+ document.querySelector('#net').onclick=()=>{viewers[1].selectNet('/bank1/ST02_TH',{locate:false});status.textContent='Saved ST02 links layout and 3D; local net names are not guessed across schematic sheets.';};
  document.querySelector('#clear').onclick=()=>viewers[0].clearSelection();
  document.querySelector('#share').onclick=async()=>{try{url.value=createViewLink(location.href,await captureViewState(viewers,{theme:'dark'}));url.hidden=false;url.focus();url.select();status.textContent='Copy the selected URL to restore these three views.';}catch(error){status.textContent=error.message;}};
  window.addEventListener('hashchange',()=>restore().catch(error=>status.textContent=error.message));

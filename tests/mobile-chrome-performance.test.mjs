@@ -1,6 +1,7 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as inspection from '../src/inspection-api.mjs';
 import {createViewerChrome} from '../src/viewer-chrome.mjs';
 
 class Element extends EventTarget {
@@ -55,4 +56,13 @@ test('opening inspector closes More and nested popups before exposing its tabs',
  const {viewer,chrome}=fixture();let opened=false;viewer.setInspectorOpen=value=>{opened=value;};
  chrome.moreMenu.open=true;chrome.layersMenu.open=true;chrome.inspectorButton.onclick();await Promise.resolve();
  assert.equal(opened,true);assert.equal(chrome.moreMenu.open,false);assert.equal(chrome.layersMenu.open,false);chrome.dispose();
+});
+
+
+test('Overview stays pressed independently of All even with identical outer-only layers',()=>{
+ const {viewer,chrome}=fixture();viewer.renderer={visibleLayers:new Set(['F.Cu','B.Cu']),draw(){}};viewer.getLayers=()=>['F.Cu','B.Cu'];viewer.assertActive=()=>{};viewer.emit=()=>{};
+ viewer.getLayerState=()=>inspection.getLayerState(viewer);viewer.setLayerPreset=p=>inspection.setLayerPreset(viewer,p);viewer.updateControls=()=>chrome.update();
+ const nodes=node=>[node,...node.children.flatMap(nodes)],button=name=>nodes(chrome.layersMenu).find(n=>n.tag==='button'&&n.textContent===name);chrome.update();
+ for(let i=0;i<3;i++){button('All').onclick();assert.equal(button('All').getAttribute('aria-pressed'),'true');button('Overview').onclick();assert.equal(button('Overview').getAttribute('aria-pressed'),'true');assert.equal(button('All').getAttribute('aria-pressed'),'false');assert.deepEqual(viewer.getLayerState().visible,['F.Cu','B.Cu']);}
+ inspection.setLayers(viewer,['F.Cu']);assert.equal(button('Overview').getAttribute('aria-pressed'),'false');chrome.dispose();
 });

@@ -24,9 +24,9 @@ export class ViewerInset extends EventTarget {
     const button=(label,path,fn)=>{const b=make('button'),icon=make('span');b.type='button';b.title=label;b.setAttribute('aria-label',label);icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="'+path+'"/></svg>';b.append(icon);b.style.cssText='appearance:none;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;flex:0 0 30px;width:30px;height:30px;margin:0;padding:0;background:transparent;color:inherit;border:1px solid var(--viewer-border,#40566a);border-radius:5px;font:600 12px/1 system-ui;cursor:pointer';b.onclick=fn;return b;};
     this.closeButton=button('Close','M5 5l14 14M19 5 5 19',()=>this.dispose()); this.fitButton=button('Fit selection','M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5M8 8h8v8H8z',()=>this.focus()); header.append(title,this.fitButton,this.closeButton);
     this.mount=make('div');this.mount.style.cssText='flex:1;min-height:0;position:relative';this.root.append(header,this.mount);host.append(this.root);
-    const snapshots=[...new Set([parent,sourceViewer])].map(v=>({viewer:v,source:v.source,path:v.path}));
+    const snapshots=[...new Set([parent,sourceViewer])].map(v=>({viewer:v,source:v.source,path:v.path,instancePath:v.textInstancePath}));
     const listen=(v,type,fn)=>{v.addEventListener(type,fn);this.stops.push(()=>v.removeEventListener(type,fn));};
-    for(const item of snapshots){listen(item.viewer,'dispose',()=>this.dispose());listen(item.viewer,'ready',()=>{if(item.viewer.source!==item.source||item.viewer.path!==item.path)this.dispose();});}
+    for(const item of snapshots){listen(item.viewer,'dispose',()=>this.dispose());listen(item.viewer,'ready',()=>{if(item.viewer.source!==item.source||item.viewer.path!==item.path||item.viewer.textInstancePath!==item.instancePath)this.dispose();});}
     this.ready=this.initialize(selectedView, selection).catch(error=>{this.dispose();throw error;});
   }
   async initialize(view, selection) {
@@ -41,10 +41,10 @@ export class ViewerInset extends EventTarget {
     this.parent.addEventListener('highlightstylechange', highlight);
     const parent = this.parent;
     this.stops.push(() => parent.removeEventListener('themechange', theme), () => parent.removeEventListener('highlightstylechange', highlight));
-    const sourceBytes=source.source, path=source.path;
-    await this.viewer.loadSource(sourceBytes,{path,view,textVariables:source.textVariables,project:source.project,instancePath:source.textInstancePath});
+    const sourceBytes=source.source, path=source.path,instancePath=source.textInstancePath;
+    await this.viewer.loadSource(sourceBytes,{path,view,textVariables:source.textVariables,project:source.project,instancePath});
     if(this.disposed)return false;
-    if(source.disposed||source.source!==sourceBytes||source.path!==path){this.dispose();return false;}
+    if(source.disposed||source.source!==sourceBytes||source.path!==path||source.textInstancePath!==instancePath){this.dispose();return false;}
     const peers=[...new Set([this.parent,source,this.viewer])];let guard=false;
     for(const from of peers){const fn=event=>{
       if(guard||this.disposed||!event.detail||event.detail.path!==undefined&&event.detail.path!==from.path||event.detail.view!==undefined&&event.detail.view!==from.view)return;

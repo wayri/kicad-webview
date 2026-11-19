@@ -22,3 +22,22 @@ test('3D layer visibility forwards validated copper only and retains an independ
  const v=viewer('3d');let visible=['F.Cu','B.Cu'];v.renderer={getCopperLayers:()=>['F.Cu','In1.Cu','B.Cu'],getVisibleCopperLayers:()=>visible,setVisibleCopperLayers:names=>{visible=names;}};
  assert.throws(()=>api.setLayers(v,['Edge.Cuts']),/saved.*layer/);assert.deepEqual(visible,['F.Cu','B.Cu']);api.setLayerPreset(v,'none');assert.deepEqual(visible,[]);api.restoreLayerView(v);assert.deepEqual(visible,['F.Cu','B.Cu']);assert.throws(()=>api.focusLayer(v,'F.Cu'),/2D/);assert.equal(api.getLayerState(v).canFocus,false);
 });
+
+
+test('Overview selection is explicit, emits one state, and resets on manual edits, focus, restore and document replacement',()=>{
+ const v=viewer(),outer=['F.Cu','B.Cu','F.SilkS','B.SilkS','Edge.Cuts'];v.renderer.design={};v.getLayers=()=>[...outer,'In1.Cu','F.Fab','B.CrtYd'];const original=[...v.renderer.visibleLayers];
+ api.setLayerPreset(v,'all');api.setLayerPreset(v,'overview');assert.equal(api.getLayerState(v).preset,'overview');assert.deepEqual(api.getLayerState(v).visible,outer);assert.equal(v.events.filter(e=>e[0]==='layerschange').length,2);
+ api.setLayers(v,outer);assert.equal(api.getLayerState(v).preset,null);assert.equal(api.getLayerState(v).canRestore,true);api.restoreLayerView(v);assert.deepEqual(api.getLayerState(v).visible,original);assert.equal(api.getLayerState(v).preset,null);
+ api.setLayerPreset(v,'overview');api.focusLayer(v,'F.Cu');assert.equal(api.getLayerState(v).preset,null);api.restoreLayerView(v);
+ api.setLayerPreset(v,'overview');v.renderer.design={};v.renderer.visibleLayers=new Set(['B.Cu']);assert.equal(api.getLayerState(v).preset,null);assert.equal(api.getLayerState(v).canRestore,false);api.restoreLayerView(v);assert.deepEqual(api.getLayerState(v).visible,['B.Cu']);
+ v.getLayers=()=>outer;api.setLayerPreset(v,'all');const all=api.getLayerState(v).visible;api.setLayerPreset(v,'overview');assert.deepEqual(api.getLayerState(v).visible,all);assert.equal(api.getLayerState(v).preset,'overview');
+ for(const kind of ['3d','manufacturing']){v.view=kind;assert.throws(()=>api.setLayerPreset(v,'overview'),/2D PCB/);}
+});
+
+
+test('a renderer owns its new-document preset and snapshot before the host next reads layer state',()=>{
+ const v=viewer();v.renderer.design={};v.renderer.layerPresetName=null;v.renderer.layerPreset=()=>{};api.getLayerState(v);
+ // The native canvas resets itself on setDocument and may then receive an explicit preset.
+ v.renderer.design={};v.renderer.layerPresetName='overview';v.renderer.layerSnapshot=new Set(['B.Cu']);v.renderer.visibleLayers=new Set(['F.Cu','B.Cu']);
+ const state=api.getLayerState(v);assert.equal(state.preset,'overview');assert.equal(state.canRestore,true);api.restoreLayerView(v);assert.deepEqual(api.getLayerState(v).visible,['B.Cu']);assert.equal(api.getLayerState(v).preset,null);
+});
