@@ -21,3 +21,13 @@ test('compact connectivity returns identical saved net identities/members to ful
  let baseline;try{diff.projectObjects=(files,parsed,snapshot)=>original(files,parsed,snapshot);baseline=nets.build(files);}finally{diff.projectObjects=original;}
  assert.deepEqual(nets.build(files),baseline);
 });
+
+
+test('span-based quoted parsing preserves escape values, empty strings and large embedded payloads',()=>{
+ const values=['', 'plain', '水😀', 'line\nreturn\rtab\tquote"slash\\', '\\unknown'];
+ for(const value of values){const quoted=JSON.stringify(value);assert.equal(diff.parse('(kicad_pcb (property '+quoted+'))')[1][1].quoted,value);}
+ const payload='A'.repeat(4*1024*1024);assert.equal(diff.parse('(kicad_pcb (embedded_files (file (data "'+payload+'"))))')[1][1][1][1].quoted,payload);
+ assert.throws(()=>diff.parse('(kicad_pcb "unterminated)'),/Unterminated quoted/);
+ assert.throws(()=>diff.parse('(kicad_pcb "escape'+String.fromCharCode(92)),/Unterminated KiCad escape/);
+ assert.equal(diff.parseMetadata('(kicad_pcb (ignored "'+payload+'") (uuid "saved"))')[1][1].quoted,'saved');
+});

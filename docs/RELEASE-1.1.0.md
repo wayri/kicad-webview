@@ -24,3 +24,8 @@ Three isolated 100,000-object synthetic prepared-source runs showed a 29.6% redu
 See [candidate validation](QA-1.1.0.md). Physical-device qualification and attribution of earlier iframe-host observer diagnostics remain acceptance items. Slack/Notion/Confluence, the installed browser extension, VS Code and Android clients are not requalified by this SDK candidate. No npm/CDN availability is claimed for 1.1.0 until publication and byte verification.
 
 MPL-2.0 permits free use, including commercially; paid assistance is optional. Hardware and component model rights remain separate. No three-phase/inverter example was added.
+
+
+### Additional large-project work (source newer than the initial candidate archives)
+
+Span-based quoted strings, shared 2D/3D parsing, weak camera history, lazy local PCB reads, incremental shared-model accounting and bounded model graph admission reduce peak/retained allocations. Over-budget detailed models preserve selectable saved component proxies and diagnostics. See [memory evidence and limitations](MEMORY-OPTIMIZATION.md). The initial candidate archives predate this pass and must be regenerated from the final verified source before publication.

@@ -33,3 +33,14 @@ test('linked models use the same UUID, legacy tstamp or reference fallback as pa
   assert.equal(models[0].footprintId,component.id);
  }
 });
+
+
+test('3D parser reuses a validated mixed-atom tree without retokenizing or copying it',()=>{
+ const diff=require('../engine/design-diff.js'),source=fs.readFileSync(path.join(root,'fixtures/kero-encoder/Encoder.kicad_pcb'),'utf8'),ast=diff.parse(source),before=JSON.stringify(ast);
+ assert.deepEqual(parseKicadBoard(source,ast),parseKicadBoard(source));assert.equal(JSON.stringify(ast),before);
+ assert.deepEqual(parseKicadBoard('not a drawing; supplied validated AST owns parsing',ast),parseKicadBoard(source,ast));
+});
+test('prepared trees preserve empty quoted pad fields and numeric saved net codes',()=>{
+ const diff=require('../engine/design-diff.js'),source='(kicad_pcb (net 1 "GND") (footprint "Lib:P" (uuid "p") (at 0 0) (pad "" thru_hole circle (uuid "x") (at 1 2) (size 2 2) (drill 1) (layers "F.Cu" "B.Cu") (net 1 "GND"))))';
+ const board=parseKicadBoard(source,diff.parse(source));assert.equal(board.pads[0].name,'');assert.equal(board.pads[0].net,'GND');assert.deepEqual(board.pads[0].layers,['F.Cu','B.Cu']);assert.equal(board.pads[0].width,2);
+});

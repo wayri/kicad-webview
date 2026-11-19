@@ -141,7 +141,7 @@ export function orderedCopperLayerNames(
   return [...ordered, ...recovered];
 }
 
-type SExpr = string | SExpr[];
+type SExpr = string | number | {quoted:string} | SExpr[];
 type Node = SExpr[];
 
 const EPSILON = 0.015;
@@ -150,40 +150,21 @@ function isNode(value: SExpr | undefined): value is Node {
   return Array.isArray(value);
 }
 
-function tokenize(source: string): string[] {
-  const tokens: string[] = [];
-  let current = "";
-  let quoted = false;
-  let escaped = false;
-  const flush = () => {
-    if (current) tokens.push(current);
-    current = "";
-  };
-
-  for (const char of source) {
-    if (escaped) {
-      current += char;
-      escaped = false;
-    } else if (quoted && char === "\\") {
-      escaped = true;
-    } else if (char === "\"") {
-      quoted = !quoted;
-    } else if (quoted) {
-      current += char;
-    } else if (char === "(" || char === ")") {
-      flush();
-      tokens.push(char);
-    } else if (/\s/.test(char)) {
-      flush();
-    } else {
-      current += char;
-    }
+function* tokenize(source: string): Generator<string> {
+  let current="",quoted=false,escaped=false;
+  for(const char of source){
+    if(escaped){current+=char;escaped=false;}
+    else if(quoted&&char==="\\")escaped=true;
+    else if(char==='"')quoted=!quoted;
+    else if(quoted)current+=char;
+    else if(char==='('||char===')'){if(current){yield current;current="";}yield char;}
+    else if(/\s/.test(char)){if(current){yield current;current="";}}
+    else current+=char;
   }
-  flush();
-  return tokens;
+  if(current)yield current;
 }
 
-function parseSExpression(tokens: string[]): Node {
+function parseSExpression(tokens: Iterable<string>): Node {
   const root: Node = [];
   const stack: Node[] = [root];
   for (const token of tokens) {
@@ -210,13 +191,15 @@ function children(node: Node, key: string): Node[] {
 }
 
 function numberAt(node: Node | undefined, index: number, fallback = 0): number {
-  const value = Number(node?.[index]);
+  const value = Number(atomAt(node?.[index]));
   return Number.isFinite(value) ? value : fallback;
 }
 
+function atomAt(value:SExpr|undefined):string|number|undefined {
+  return value&&typeof value==='object'&&!Array.isArray(value)?value.quoted:typeof value==='string'||typeof value==='number'?value:undefined;
+}
 function stringAt(node: Node | undefined, index: number, fallback = ""): string {
-  const value = node?.[index];
-  return typeof value === "string" ? value : fallback;
+  const value=atomAt(node?.[index]);return typeof value==='string'?value:typeof value==='number'?String(value):fallback;
 }
 
 function pointAt(node: Node | undefined, key: string): Point | undefined {
@@ -246,7 +229,7 @@ function layerOf(node: Node, fallback = "F.Cu"): string {
 }
 
 function propertyOf(node: Node, name: string): string {
-  return children(node, "property").find((value) => stringAt(value, 1).toLowerCase() === name.toLowerCase())?.[2] as string ?? "";
+  return stringAt(children(node, "property").find((value) => stringAt(value, 1).toLowerCase() === name.toLowerCase()), 2);
 }
 
 function transformPoint(point: Point, origin: Point, rotation: number, mirrored: boolean): Point {
@@ -422,8 +405,8 @@ function boundsOf(points: Point[]): { minX: number; minY: number; maxX: number; 
   return { minX: xExtent.minimum, minY: yExtent.minimum, maxX: xExtent.maximum, maxY: yExtent.maximum };
 }
 
-export function parseKicadBoard(source: string): ParsedBoard {
-  const root = parseSExpression(tokenize(source));
+export function parseKicadBoard(source: string, preparedRoot?: Node): ParsedBoard {
+  const root = preparedRoot || parseSExpression(tokenize(source));
   if (root[0] !== "kicad_pcb") throw new Error("The selected file is not a KiCad PCB document.");
 
   const tracks: ParsedTrack[] = [];
@@ -504,7 +487,7 @@ export function parseKicadBoard(source: string): ParsedBoard {
     } else if (head === "via") {
       const at = pointAt(item, "at");
       if (!at) continue;
-      const viaLayers = child(item, "layers")?.slice(1).filter((value): value is string => typeof value === "string") ?? ["F.Cu", "B.Cu"];
+      const viaLayers = child(item, "layers")?.slice(1).map(atomAt).filter((value): value is string => typeof value === "string") ?? ["F.Cu", "B.Cu"];
       vias.push({
         id: nodeId(item, `via-${vias.length + 1}`),
         at,
@@ -535,10 +518,10 @@ export function parseKicadBoard(source: string): ParsedBoard {
       const mirrored = layer.startsWith("B.");
       const transform = (point: Point) => transformPoint(point, origin, rotation, mirrored);
       const reference = propertyOf(item, "Reference")
-        || children(item, "fp_text").find((text) => stringAt(text, 1) === "reference")?.[2] as string
+        || stringAt(children(item, "fp_text").find((text) => stringAt(text, 1) === "reference"), 2)
         || `REF${components.length + 1}`;
       const value = propertyOf(item, "Value")
-        || children(item, "fp_text").find((text) => stringAt(text, 1) === "value")?.[2] as string
+        || stringAt(children(item, "fp_text").find((text) => stringAt(text, 1) === "value"), 2)
         || "";
       const componentPads: ParsedPad[] = [];
       const localPadPoints: Point[] = [];
@@ -547,7 +530,7 @@ export function parseKicadBoard(source: string): ParsedBoard {
         const localAt = pointAt(padNode, "at") ?? [0, 0];
         localPadPoints.push(localAt);
         const size = child(padNode, "size");
-        const rawLayers = child(padNode, "layers")?.slice(1).filter((entry): entry is string => typeof entry === "string") ?? [layer];
+        const rawLayers = child(padNode, "layers")?.slice(1).map(atomAt).filter((entry): entry is string => typeof entry === "string") ?? [layer];
         const primaryLayer = rawLayers.includes("F.Cu") || rawLayers.includes("*.Cu")
           ? (mirrored ? "B.Cu" : "F.Cu")
           : rawLayers.find((entry) => entry.endsWith(".Cu")) ?? layer;

@@ -1,5 +1,7 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 import {createSharedGeometryCache} from './sharedGeometry.mjs';
+import {createModelTemplateCache} from './modelTemplates.mjs';
+import {createModelGraphBudget,preflightModelGLB,modelDecodeConcurrency} from './modelGraphBudget.mjs';
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {boardOrbitControls,setBoardPanMode} from "./orbitCamera.mjs";
@@ -151,8 +153,8 @@ export function mountBoard3D(container, source, options = {}) {
   options ||= {};
   const initialAppearance=appearanceName(options.appearance??'realistic');
   const initialDark = options.dark !== false;
-  const board = parseKicadBoard(source);
   const sourceAST=options.sourceSnapshot?(options.sourceParser||globalThis.KiCadDesignDiff).preparedFile(options.sourceSnapshot,options.sourceKey,source):globalThis.KiCadDesignDiff.parse(source),savedZones=sourceZoneGeometry(sourceAST);
+  const board = parseKicadBoard(source,sourceAST);
   const padDetails=padSourceDetails(sourceAST),nativePads=board.pads.map(pad=>({...pad,...padDetails.get(pad.id)}));
   const geometryDiagnostics=[...(board.geometryWarnings||[])];
   if (!board?.bounds || !Number.isFinite(board.width) || !Number.isFinite(board.height)) {
@@ -235,6 +237,8 @@ export function mountBoard3D(container, source, options = {}) {
   const gl=renderer.getContext(),graphics=graphicsProfile({maxTextureSize:renderer.capabilities.maxTextureSize,maxRenderbufferSize:gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),deviceMemory:globalThis.navigator?.deviceMemory,hardwareConcurrency:globalThis.navigator?.hardwareConcurrency,floatTargets:renderer.extensions.has('EXT_color_buffer_float'),android:/Android/i.test(globalThis.navigator?.userAgent||'')});
   const modelGeometryBudget=(graphics.constrained?32:graphics.premium?96:64)*1024*1024;
   const modelTextureBudget=(graphics.constrained?16:graphics.premium?64:32)*1024*1024;
+  const modelGraph=createModelGraphBudget(graphics.constrained?8192:32768);
+  const decodeConcurrency=modelDecodeConcurrency(graphics.constrained,board.components.length);
   if(!savedQuality&&!options.quality)initialQuality=graphics.defaultQuality;
   let active=true,contextLost=false,renderCount=0,pipeline=null,quality=initialQuality,shaderFailure=false;
   function updateBackground(){scene.background.setHex(host.dataset.theme==='dark'?0x171715:0xf7f5ee);}
@@ -534,20 +538,11 @@ export function mountBoard3D(container, source, options = {}) {
     options.onDiagnostics?.(['Linked component models: '+resolved+'/'+board.components.length,...messages]);
     notice.title = modelDiagnostics.join("\n");
   }
-  function glbIsSelfContained(bytes) {
-    if (bytes.byteLength < 20) return false;
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    if (view.getUint32(0, true) !== 0x46546c67 || view.getUint32(4, true) !== 2 ||
-        view.getUint32(8, true) !== bytes.byteLength || view.getUint32(16, true) !== 0x4e4f534a) return false;
-    const length = view.getUint32(12, true);
-    if (length > bytes.byteLength - 20) return false;
-    let descriptor;
-    try { descriptor = JSON.parse(new TextDecoder().decode(bytes.subarray(20, 20 + length))); }
-    catch { return false; }
-    return [...(descriptor.buffers || []), ...(descriptor.images || [])]
-      .every(item => !item.uri || /^data:/i.test(item.uri));
+  function retainModel(root,index){
+    try{modelGraph.checkTemplate(root,2+(modelGroups.has(index)?0:1));return resources.retain(root,modelGeometryBudget,modelTextureBudget);}
+    catch(error){resources.discard(root);throw error;}
   }
-  async function sceneFromAsset(entry, asset, consumeBytes) {
+  async function sceneFromAsset(entry, asset, consumeBytes, index) {
     const base64 = asset?.base64;
     const bytes = entry.embeddedAsset ? await globalThis.KiCadEmbeddedModels.decode(asset, fzstd.decompress)
       : globalThis.KiCadEmbeddedModels.decodeBase64(base64);
@@ -566,17 +561,17 @@ export function mountBoard3D(container, source, options = {}) {
         const material=materials.length===1?materials[0]:materials;
         group.add(new THREE.Mesh(geometry,material));
       }
-      return resources.retain(group,modelGeometryBudget,modelTextureBudget);
+      return retainModel(group,index);
     }
     if (entry.format === "glb") {
-      if (!glbIsSelfContained(bytes)) throw new Error("GLB has an external dependency or invalid header");
-      return resources.retain((await new GLTFLoader().parseAsync(bytes.buffer, "")).scene,modelGeometryBudget,modelTextureBudget);
+      try{preflightModelGLB(bytes,modelGraph.limit,{maxAccessorBytes:modelGeometryBudget,maxTextureBytes:modelTextureBudget,maxTextureDimension:graphics.maxDimension});}catch(error){if(['MODEL_GRAPH_BUDGET','MODEL_ALLOCATION_BUDGET'].includes(error.code))modelGraph.rejectPreflight();throw error;}
+      return retainModel((await new GLTFLoader().parseAsync(bytes.buffer, "")).scene,index);
     }
     const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
     if (/\b(?:Inline|ImageTexture|MovieTexture|AudioClip)\b|\burl\s*(?:\[|\")/i.test(text)) {
       throw new Error("VRML has an external resource reference");
     }
-    return resources.retain(new VRMLLoader().parse(text),modelGeometryBudget,modelTextureBudget);
+    return retainModel(new VRMLLoader().parse(text),index);
   }
   async function loadRepositoryModels(modelSource) {
     if (!options.boardPath) return;
@@ -585,26 +580,27 @@ export function mountBoard3D(container, source, options = {}) {
     catch (error) { modelDiagnostics.push(`Cannot read model references: ${error.message}`); showModelDiagnostics(); return; }
     modelDiagnostics.push(...inventory.diagnostics);
     showModelDiagnostics();
-    const cache = new Map();
+    const cache = createModelTemplateCache(inventory.models);
     const componentIndexes=new Map(board.components.map((component,index)=>[component.id,index]));
     let totalBytes = 0, cursor = 0;
     async function one(entry) {
       const index = componentIndexes.get(entry.footprintId);
-      if (index === undefined) { modelDiagnostics.push(`${entry.reference}: footprint identity not found`); return; }
+      if (index === undefined) { modelDiagnostics.push(`${entry.reference}: footprint identity not found`);cache.release(entry);return; }
       try {
-        const key = entry.assetKey || entry.path;
-        if (!cache.has(key)) cache.set(key, (async () => {
+        const template = await cache.get(entry, async () => {
           const asset = entry.embeddedAsset || await options.loadAsset?.(entry.path);
           if(!active)throw Error('3D viewer closed before model decoding.');
           return sceneFromAsset(entry, asset, bytes => {
             totalBytes += bytes;
             if (totalBytes > 24 * 1024 * 1024) throw new Error("Decoded 3D model assets exceed 24 MiB in this viewer");
-          });
-        })());
-        const template = await cache.get(key);
+          },index);
+        });
         if (!active) return;
-        const clone = template.clone(true);
-        resources.retain(clone,modelGeometryBudget,modelTextureBudget);
+        modelGraph.admit(template,2+(modelGroups.has(index)?0:1),()=>{
+        // The final occurrence takes the decoded graph itself; no later saved
+        // occurrence can need an untouched template after this synchronous step.
+        const clone = cache.isLastUse(entry)?template:template.clone(true);
+        resources.retainClone(clone,modelGeometryBudget,modelTextureBudget);
         let meshCount = 0;
         clone.traverse(object => {
           if (object.isMesh && object.geometry?.attributes?.position?.count) {
@@ -631,13 +627,14 @@ export function mountBoard3D(container, source, options = {}) {
         modelGroups.get(index).add(group);
         loadedModelIndexes.add(index);
         if (entry.format === "glb") modelDiagnostics.push(`${entry.reference}: GLB geometry is interpreted in millimetres.`);
+        });
 
       } catch (error) {
         modelDiagnostics.push(`${entry.reference}: ${entry.path}: ${error?.message || String(error)}`);
-      }
+      }finally{cache.release(entry);}
       modelUpdates.request();
     }
-    await Promise.all(Array.from({ length: Math.min(3, inventory.models.length) }, async () => {
+    await Promise.all(Array.from({ length: Math.min(decodeConcurrency, inventory.models.length) }, async () => {
       while (cursor < inventory.models.length && active) await one(inventory.models[cursor++]);
     }));
     cache.clear();stepClient?.dispose();stepClient=null;
@@ -1144,7 +1141,7 @@ export function mountBoard3D(container, source, options = {}) {
     getCopperLayers(){return copperPlan.map(layer=>layer.name);},
     getVisibleCopperLayers(){return visibleCopperLayers();},
     setVisibleCopperLayers,
-    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),padGeometryCache:sharedPadGeometry.stats(),selectionMaterials:selectionAppearance.stats(),appearance,netGlow:netGlow.stats(),effectiveLayerColors:Boolean(inspectedLayer)||explode.get()>0||appearance!=='realistic',renderedPixels:renderer.domElement.width*renderer.domElement.height,expansion:{amount:explode.get(),target:expansionMotion.target(),running:expansionMotion.running(),...explode.phases(),frames:expansionFrames,cpuMilliseconds:expansionCPUms,maxFrameMilliseconds:expansionMaxMs,frontComponentOffset:explode.componentOffset('F.Cu'),backComponentOffset:explode.componentOffset('B.Cu'),layerOffsets:copperPlan.map(layer=>({name:layer.name,offset:explode.offset(layer.name)}))},renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline?.occlusion),antialiasMethod:pipeline?'smaa':'none',renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
+    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),modelGraph:{...modelGraph.stats(),decodeConcurrency,imagePreflight:'png-jpeg'},padGeometryCache:sharedPadGeometry.stats(),selectionMaterials:selectionAppearance.stats(),appearance,netGlow:netGlow.stats(),effectiveLayerColors:Boolean(inspectedLayer)||explode.get()>0||appearance!=='realistic',renderedPixels:renderer.domElement.width*renderer.domElement.height,expansion:{amount:explode.get(),target:expansionMotion.target(),running:expansionMotion.running(),...explode.phases(),frames:expansionFrames,cpuMilliseconds:expansionCPUms,maxFrameMilliseconds:expansionMaxMs,frontComponentOffset:explode.componentOffset('F.Cu'),backComponentOffset:explode.componentOffset('B.Cu'),layerOffsets:copperPlan.map(layer=>({name:layer.name,offset:explode.offset(layer.name)}))},renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline?.occlusion),antialiasMethod:pipeline?'smaa':'none',renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
     restoreExpand:value=>setExplode(value,true),setExplode,getExplode:()=>explode.get(),setExpand:setExplode,getExpand:()=>explode.get(),
     setAnalysisOverlay(surface,options){const state=analysisController.setAnalysisOverlay(surface,options);syncExplodeAnalysis();return analysisState(state);},
     getAnalysisOverlayState:()=>analysisState(),

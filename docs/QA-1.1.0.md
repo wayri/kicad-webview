@@ -17,3 +17,12 @@ The 100,000-object prepared-source benchmark used three isolated processes per p
 - Live host adapter and installed-client checks when those products are separately updated.
 
 Preparing archives does not publish, submit to stores, install a client or update the live website. Core API 1.0 and MPL-2.0 remain unchanged.
+
+
+## Additional residency pass (newer than initial candidate archives)
+
+Canonical 3D/main builds and the complete serial suite passed **699 tests**, zero failures or skips. New checks cover span quoting, shared KERO mixed-atom AST equivalence, lazy local PCB reads and cancellation, weak camera-history ownership, 2,048 repeated model clones, model-template lifetime, graph admission, GLB accessor expansion and PNG/JPEG dimension admission.
+
+KERO and approved IRCA passed 20 linked net/clear cycles each on desktop and inside a 340 px iframe. IRCA retained all 50 modelled components (395 admitted model nodes, zero model-budget rejections). Full expansion preserved the camera and selection. Narrow light-theme layout had 320 px content width and 320 px scroll width, with no horizontal overflow. This uses a desktop GPU and does not qualify constrained-device limits or physical touch performance.
+
+Desktop console checks were clear; narrow iframe checking reproduced one previously observed unlocalized MutationObserver error without a viewer-control failure. Attribution remains open. The 100,000-object and 4 MiB quoted-payload benchmarks are parser-stage checks, not full browser/GPU memory measurements. Publication remains paused. Initial candidate archives do not contain this newer source and are retained only as prior-source evidence.

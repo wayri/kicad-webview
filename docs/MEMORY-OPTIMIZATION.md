@@ -41,3 +41,27 @@ Deterministic Three.js tests check 2,048 repeated occurrences using two source m
 The complete serial suite passed **673 tests**, zero failures or skips; canonical 3D/main builds passed. KERO and the approved IRCA projection passed linked-net/clear, expansion and immediate view restoration in desktop and 340 px iframe checks. IRCA retained its 50 modelled components. No new browser console warning/error was recorded in this memory pass. Previous iframe-host diagnostics and physical-device qualification remain separate acceptance items documented in the stability validation record.
 
 No acceptance ceilings were raised. Large distinct geometry, textures, full source trees and multiple simultaneously mounted viewers can still require substantial RAM. Use explicit loading, lazy 3D, a single active pane and Low/Balanced quality on constrained hosts. This release work does not provide streaming/out-of-core assembly rendering or guarantee that every file at the parser ceiling fits a phone. Preserve missing-model and unsupported-geometry diagnostics when evaluating large real projects.
+
+
+## Reader and assembly residency update (unreleased)
+
+Quoted values now use source spans instead of character-by-character string concatenation. In one isolated-process Node check of a 4 MiB quoted embedded payload, the previous reader added 128.1 MiB of retained heap after GC; the span reader added 0.106 MiB. Process RSS high water was 289.5 MiB versus 44.3 MiB. Source allocation preceded measurement and remained live in both processes. This is one focused parser measurement, not a full-viewer memory claim or a guarantee across JavaScript engines. Recheck the current reader with:
+
+```sh
+node --expose-gc --max-old-space-size=512 scripts/benchmark-quoted-memory.mjs 4
+```
+
+The 3D reader consumes the existing validated mixed-atom tree instead of tokenizing and parsing a second complete board. KERO equivalence tests compare all parsed 3D board fields with the standalone path, including saved identities and component references. Camera history keeps weak document holders; old drawings can be collected after navigation. A collected history entry safely misses rather than restoring a stale camera.
+
+`loadFiles()` retains inactive local PCB File/Blob handles without reading their bytes. Only the chosen PCB is decoded, and switching boards re-reads its handle. Source-string inputs stay as strings rather than taking a UTF-8 encode/decode round trip. This does not make schematic hierarchy, ZIP extraction or standalone HTML decoding lazy; those paths remain resident-memory operations with their existing bounds.
+
+Shared scene resources are accounted incrementally. Repeated static model occurrences reuse the recorded buffer accounting; a 2,048-occurrence test adds no geometry-attribute reads after initial registration. Instance color, skeleton and texture changes invalidate their relevant accounting. The model template cache releases finished template graphs and adopts the final occurrence directly while keeping shared resource ownership until disposal.
+
+Detailed model graphs are admitted before cloning: at most 32,768 model nodes on desktop and 8,192 on constrained devices. Wrappers count toward the limit. Excess detailed models retain saved footprint proxies and selection identities, and report a diagnostic. Decode concurrency is one on constrained devices or boards above 512 components, otherwise three. Graph limits reduce allocation spikes; proxy fallback is an explicit fidelity tradeoff, not missing components. Render statistics expose admissions, limits, rejections and concurrency.
+
+These limits are not a total browser-process quota. Distinct PCB geometry, source trees, inspection indexes, GPU driver allocations and loader-internal allocations remain relevant. True arbitrary-size out-of-core viewing would require geometry paging and level-of-detail data; this update does not claim that capability.
+
+
+GLB admission also validates accessor types, counts, strides, sparse ranges and buffer-view expansion before the loader allocates expanded arrays. Embedded PNG/JPEG headers are checked for device-specific dimensions and estimated RGBA/mipmap bytes before image decoding. Unsupported image formats retain the proxy with a diagnostic. These are per-model preflight limits backed by cumulative postdecode resource accounting; STEP/VRML kernel/loader internals and concurrent allocations are not covered by a hard quota. `modelGraph.imagePreflight` reports `png-jpeg`.
+
+A new single-run 100,000-object compact check retained 154.3 MiB above the already-loaded source baseline and reached 316.7 MiB process RSS high water through preparation. This confirms the larger workload still completes under a 512 MiB Node old-space cap; it excludes 3D geometry, browser/GPU allocations and subsequent inspection work.
