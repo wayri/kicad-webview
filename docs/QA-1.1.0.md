@@ -1,6 +1,6 @@
 # WebView 1.1.0 candidate validation
 
-Status: prepared locally; publication paused. The matching candidate manifest records source revision and archive hashes. Existing 1.0.0 assets are unchanged.
+Status: published on npm and GitHub; registry integrity and version-pinned CDN bytes verified. The matching candidate manifest records source revision and archive hashes. Existing 1.0.0 assets are unchanged.
 
 ## Verified source behavior
 

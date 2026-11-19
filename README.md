@@ -1,9 +1,9 @@
 <h1 align="center">KiCad WebView</h1>
 <p align="center">Interactive electronics. Anywhere on the web.</p>
 <p align="center"><a href="https://wayri.github.io/kicad-webview/">Live demos</a> · <a href="https://wayri.github.io/kicad-webview/docs/">Documentation</a> · <a href="https://wayri.github.io/kicad-webview/docs/api/">API reference</a> · <a href="https://github.com/wayri/kicad-webview/releases">Releases</a></p>
-<p align="center"><a href="LICENSE"><img alt="License: MPL 2.0" src="https://img.shields.io/badge/license-MPL_2.0-42dbca"></a> <a href="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml"><img alt="Viewer checks" src="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml/badge.svg?branch=main"></a> <a href="https://github.com/wayri/kicad-webview/releases"><img alt="Release 1.0.0" src="https://img.shields.io/badge/version-1.0.0-42dbca"></a> <a href="https://wayri.github.io/kicad-webview/docs/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue"></a> <a href="https://wayri.github.io/kicad-webview/sponsor/"><img alt="Sponsor development" src="https://img.shields.io/badge/Sponsor-development-ea4aaa?logo=githubsponsors&amp;logoColor=white"></a></p>
+<p align="center"><a href="LICENSE"><img alt="License: MPL 2.0" src="https://img.shields.io/badge/license-MPL_2.0-42dbca"></a> <a href="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml"><img alt="Viewer checks" src="https://github.com/wayri/kicad-webview/actions/workflows/ci.yml/badge.svg?branch=main"></a> <a href="https://github.com/wayri/kicad-webview/releases"><img alt="Release 1.1.0" src="https://img.shields.io/badge/version-1.1.0-42dbca"></a> <a href="https://wayri.github.io/kicad-webview/docs/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue"></a> <a href="https://wayri.github.io/kicad-webview/sponsor/"><img alt="Sponsor development" src="https://img.shields.io/badge/Sponsor-development-ea4aaa?logo=githubsponsors&amp;logoColor=white"></a></p>
 
-Prepared update: **1.1.0 candidate, not published**. See [release notes](docs/RELEASE-1.1.0.md), [validation](docs/QA-1.1.0.md) and [stability improvements/demo](docs/STABILITY-NEXT.md) and [large open-source project validation](docs/LARGE-PROJECT-VALIDATION.md). Published npm/CDN links continue to refer to 1.0.0 until the update is released.
+**1.1.0 is published on npm and GitHub.** See [release notes](docs/RELEASE-1.1.0.md), [validation](docs/QA-1.1.0.md) and [stability improvements/demo](docs/STABILITY-NEXT.md) and [large open-source project validation](docs/LARGE-PROJECT-VALIDATION.md). Version-pinned jsDelivr and UNPKG scripts/modules match the audited npm package.
 
 Embed read-only **KiCad schematics, PCB layouts and interactive 3D boards** in websites, blogs and applications. Inspect parts, pads, nets and layers; link views; navigate complete projects; or bundle a design and viewer into one portable HTML file. Gerber and Excellon support brings fabrication files into the same viewer.
 
@@ -11,7 +11,13 @@ Everything needed for native KiCad viewing runs in the browser. Visitors need no
 
 **Free to use, including commercially, under MPL-2.0.** Paid help with embedding, customization, maintenance, and support is optional; you do not need to buy services to use or integrate the library.
 
-## Version 1.0.0
+## Version 1.1.0
+
+This compatible 1.x update lowers large-project parser/model/geometry residency, preserves legacy and repeated-pad identity, and renders all 139 saved Marble copper contours without the former point-copy omissions. IRCA rounded jumper pads retain their mirrored and rotated shapes. Linked selection, layer colors, camera state and saved expansion remain intact.
+
+Validation: 713 tests, builds, packed consumer types/imports and archive audits passed. Marble and IRCA passed desktop and 340px iframe checks. The documented Marble source-preparation comparison reduced additional retained heap by 38.6%; this is not a whole-browser/GPU memory ceiling or physical-phone qualification. [Pad/zone evidence](docs/PAD-ZONE-REFINEMENT.md) · [Release/download](https://github.com/wayri/kicad-webview/releases/tag/v1.1.0).
+
+### Stable 1.0 core API
 
 The documented core embed API is now version **1.0**. Existing viewer methods, linked selection, saved view-state formats and the `setExplode` compatibility aliases remain available. Code that checks the old `EMBED_API_VERSION === '1.0-beta'` literal should accept `'1.0'`. [API stability and upgrade notes](docs/API-STABILITY.md).
 
@@ -37,7 +43,7 @@ New inspection controls include configurable highlight styles and source colors,
 ## Install from npm or use a CDN
 
 ~~~sh
-npm install @wayrisignals/kicad-webview@1.0.0
+npm install @wayrisignals/kicad-webview@1.1.0
 ~~~
 
 ~~~js
@@ -50,7 +56,7 @@ For direct browser use, pin the version and load the classic script. No npm inst
 
 ~~~html
 <div id="board" style="height:70dvh;min-height:360px"></div>
-<script src="https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@1.0.0/dist/kicad-webview.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@1.1.0/dist/kicad-webview.min.js"></script>
 <script>
   const viewer = new KiCadWebView.Viewer('#board', { theme:'dark' });
   viewer.load('/designs/project.zip', { view:'3d' }).catch(console.error);
@@ -58,7 +64,7 @@ For direct browser use, pin the version and load the classic script. No npm inst
 </script>
 ~~~
 
-The self-contained ES module is available at [jsDelivr](https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@1.0.0/dist/kivi-viewer.js) or [UNPKG](https://unpkg.com/@wayrisignals/kicad-webview@1.0.0/dist/kivi-viewer.js). The classic script is available from either CDN at the matching path. Self-host the package contents for offline use and keep its license and notices. The npm artifact contains the viewer, matching covered source, types, documentation and source-parameterized iframe entry; legacy board fixtures and fixture-backed example pages are excluded. Current [KERO, IRCA and credited public-board demonstrations](https://wayri.github.io/kicad-webview/) remain on the website.
+The self-contained ES module is available at [jsDelivr](https://cdn.jsdelivr.net/npm/@wayrisignals/kicad-webview@1.1.0/dist/kivi-viewer.js) or [UNPKG](https://unpkg.com/@wayrisignals/kicad-webview@1.1.0/dist/kivi-viewer.js). The classic script is available from either CDN at the matching path. Self-host the package contents for offline use and keep its license and notices. The npm artifact contains the viewer, matching covered source, types, documentation and source-parameterized iframe entry; legacy board fixtures and fixture-backed example pages are excluded. Current [KERO, IRCA and credited public-board demonstrations](https://wayri.github.io/kicad-webview/) remain on the website.
 
 The [linked hierarchy demo](https://wayri.github.io/assets/demos/hierarchy.html) combines this library’s selection and 3D focus APIs with a source-bound website sheet adapter. See the [integration guide](https://wayri.github.io/kicad-webview/docs/examples/#link-the-hierarchy-pcb-and-3d-assembly) for that host integration.
 

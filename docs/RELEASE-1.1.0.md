@@ -1,6 +1,6 @@
-# KiCad WebView 1.1.0 — candidate
+# KiCad WebView 1.1.0
 
-Prepared update; **not published**. The documented core embed API remains 1.0. Published 1.0.0 CDN/site assets keep their original bytes.
+**Published on npm and GitHub.** The npm tarball integrity and version-pinned jsDelivr/UNPKG classic and ES-module bytes match the audited release. The documented core embed API remains 1.0. Published 1.0.0 CDN/site assets keep their original bytes.
 
 ## Included
 
@@ -22,7 +22,7 @@ Three isolated 100,000-object synthetic prepared-source runs showed a 29.6% redu
 
 ## Acceptance and distribution
 
-The final source passed 713 tests, canonical builds, public type checks and desktop/narrow Marble and IRCA checks. Release archives must match this verified source; see [candidate validation](QA-1.1.0.md). Physical-device qualification and attribution of earlier iframe-host observer diagnostics remain acceptance items. Slack/Notion/Confluence, the installed browser extension, VS Code and Android clients are not requalified by this SDK candidate. No npm/CDN availability is claimed for 1.1.0 until publication and byte verification.
+The final source passed 713 tests, canonical builds, public type checks and desktop/narrow Marble and IRCA checks. Release archives must match this verified source; see [candidate validation](QA-1.1.0.md). Physical-device qualification and attribution of earlier iframe-host observer diagnostics remain acceptance items. Slack/Notion/Confluence, the installed browser extension, VS Code and Android clients are not requalified by this SDK candidate. npm latest is 1.1.0; the registry tarball and version-pinned CDN bytes have been verified.
 
 MPL-2.0 permits free use, including commercially; paid assistance is optional. Hardware and component model rights remain separate. No three-phase/inverter example was added.
 
