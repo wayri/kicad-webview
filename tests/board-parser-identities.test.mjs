@@ -60,3 +60,15 @@ test('zone-free 3D projection retains synthetic layer definitions and explicit s
  const source='(kicad_pcb (zone (layer "In1.Cu") (net 2) (net_name "POWER") (polygon (pts (xy 0 0) (xy 1 0) (xy 0 1)))))',diff=require('../engine/design-diff.js'),ast=diff.parse(source),full=parseKicadBoard(source,ast),compact=parseKicadBoard(source,ast,{zonePoints:false});
  for(const key of Object.keys(full).filter(k=>k!=='zones'))assert.deepEqual(compact[key],full[key],key);
 });
+test('rotated back-side footprints keep pad centres on the saved PCB nets',()=>{
+ const ast=require('../engine/design-diff.js'),pcb=require('../engine/pcb-renderer.js');
+ const source=`(kicad_pcb (version 20240108) (layers (0 "F.Cu" signal) (31 "B.Cu" signal))
+  (net 24 "/GPIO33") (net 25 "/GPIO32")
+  (footprint "Connector" (layer "B.Cu") (at 50 50 90) (uuid "fp") (property "Reference" "EXT2")
+   (pad "5" thru_hole circle (at -1.27 0 90) (size 2 2) (drill 1) (layers "*.Cu") (net 24 "/GPIO33") (uuid "pad-five"))
+   (pad "6" thru_hole circle (at 1.27 0 90) (size 2 2) (drill 1) (layers "*.Cu") (net 25 "/GPIO32") (uuid "pad-six"))))`;
+ const tree=ast.parse(source),layout=pcb.build(tree,'board.kicad_pcb'),{pads}=parseKicadBoard(source,tree);
+ assert.deepEqual(pads.map(p=>[p.id,p.name,p.net]),[['pad-five','5','/GPIO33'],['pad-six','6','/GPIO32']]);
+ assert.deepEqual(pads.map(p=>p.at),[[50,51.27],[50,48.73]]);
+ for(const pad of pads){const primitive=layout.primitives.find(p=>p.kind==='pad'&&p.uuid===pad.id);assert.deepEqual(pad.at,[primitive.padCenter.x,primitive.padCenter.y]);}
+});
