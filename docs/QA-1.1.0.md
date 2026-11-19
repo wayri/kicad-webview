@@ -4,7 +4,7 @@ Status: prepared locally; publication paused. The matching candidate manifest re
 
 ## Verified source behavior
 
-The latest residency source pass completed canonical 3D/main builds, strict TypeScript consumer checks and **699 passing tests, zero failures/skips**. The initial candidate had 673 tests and predates the residency additions. Versioned candidate checks and package inspection must also pass before handoff; their exact outcomes are recorded in the candidate receipt.
+The final pad/zone refinement completed canonical 3D/main builds, strict TypeScript consumer checks and **713 passing tests, zero failures/skips**. The earlier 699-test residency candidate and initial 673-test candidate predate the final geometry fixes. Versioned candidate checks and package inspection must also pass before handoff; their exact outcomes are recorded in the candidate receipt.
 
 Real KERO and approved IRCA review projection checks covered source-colored linked net selection, clear, expansion and immediate saved-state restoration on desktop and a 340 px iframe. IRCA retained 50 modelled components. Earlier stability checks included actual orbit/Pan drags, compact layer/inspection popups, light/dark themes and 390 px embeds. No new warning/error was recorded in the memory pass. This is desktop responsive-browser evidence, not physical phone or installed-client acceptance.
 
@@ -34,3 +34,8 @@ Pinned Marble (44,059,775 bytes, 1,006 parts) and OLIMEX ESP32-PoE passed online
 
 
 The linked Online candidate's GND stress check reported 48 rejected Marble pad outlines and 47 saved-zone contour omissions; IRCA reported two custom jumper-pad omissions (JP5/JP6). These selected counts are Online findings; the SDK shares the physical pad validator, but its exact selected counts were not measured here. This is a rendering acceptance limitation, not a complete-net geometry pass. See [classification and scope](LARGE-PROJECT-VALIDATION.md). Keep publication paused pending the remaining acceptance work.
+
+
+## Pad/zone follow-up
+
+The latest source passed 713 tests with zero failures/skips and canonical 3D/main builds. Marble's 139/139 copper contours and IRCA's two custom jumper pads were checked on desktop and 340 px embeds. Linked selection, expansion, layer toggles and IRCA's 50 models remain intact. See [measured scope and limits](PAD-ZONE-REFINEMENT.md). Earlier omission findings above are historical evidence. Online's final browser comparison is a separate gate. Publication remains paused.

@@ -70,3 +70,8 @@ A new single-run 100,000-object compact check retained 154.3 MiB above the alrea
 ## Large real online sources
 
 The pinned 44 MB Marble PCB and OLIMEX ESP32-PoE were checked through public raw URLs, desktop and 340 px embeds. Shared Marble preparation completed under a 768 MiB Node old-space cap; the separate comparison profile exhausted the cap. Browser samples still approach 1 GB during the transition to 3D, so no total-RAM ceiling is claimed. See [source hashes, counts, measured scope, results and remaining gates](LARGE-PROJECT-VALIDATION.md).
+
+
+## Pad and zone refinement
+
+The unreleased follow-up accepts every saved Marble copper contour with typed-buffer triangulation and fixed-size short AST forms. Additional prepared-stage heap falls 38.6% with identical object counts. [Refinement validation](PAD-ZONE-REFINEMENT.md) records the browser samples and their limits; no process-memory quota or physical-phone claim is implied.

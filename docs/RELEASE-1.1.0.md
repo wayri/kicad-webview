@@ -10,6 +10,7 @@ Prepared update; **not published**. The documented core embed API remains 1.0. P
 - Saved sheet-occurrence context through hierarchy navigation, shareable view state and insets. Changing to another occurrence closes a stale preview even when the filename is unchanged.
 - Shareable 3D views retain expansion. Restoration applies it immediately before the saved camera and selection, cancelling pending motion. `setExpand(value, {animate:false})` is available for explicit immediate resets; ordinary expansion remains animated.
 - Compact KERO/IRCA stability demos, mobile-width iframe host, memory counters, reproducible synthetic measurement and updated migration/integration documentation.
+- Reliable legacy and occurrence-based pad identity joins, validated IRCA rounded jumper copper, and all 139 saved Marble copper contours admitted without the former aggregate point-copy omission. Direct typed zone geometry and compact short parser forms reduce retained allocations; see [pad/zone evidence](PAD-ZONE-REFINEMENT.md).
 
 Existing net selection preserves 3D orbit/pan/zoom and expansion; deliberate part locating remains the focus/flip action. Source/layer-color highlights and selected-net-only gold vias retain their existing contract. The renderer keeps unsupported-geometry and missing-model disclosures.
 
@@ -21,7 +22,7 @@ Three isolated 100,000-object synthetic prepared-source runs showed a 29.6% redu
 
 ## Acceptance and distribution
 
-See [candidate validation](QA-1.1.0.md). Physical-device qualification and attribution of earlier iframe-host observer diagnostics remain acceptance items. Slack/Notion/Confluence, the installed browser extension, VS Code and Android clients are not requalified by this SDK candidate. No npm/CDN availability is claimed for 1.1.0 until publication and byte verification.
+The final source passed 713 tests, canonical builds, public type checks and desktop/narrow Marble and IRCA checks. Release archives must match this verified source; see [candidate validation](QA-1.1.0.md). Physical-device qualification and attribution of earlier iframe-host observer diagnostics remain acceptance items. Slack/Notion/Confluence, the installed browser extension, VS Code and Android clients are not requalified by this SDK candidate. No npm/CDN availability is claimed for 1.1.0 until publication and byte verification.
 
 MPL-2.0 permits free use, including commercially; paid assistance is optional. Hardware and component model rights remain separate. No three-phase/inverter example was added.
 
@@ -32,3 +33,6 @@ Span-based quoted strings, shared 2D/3D parsing, weak camera history, lazy local
 
 
 The explicit-load [large-project lab](../examples/large-projects.html) and [340 px embed host](../examples/large-projects-embed.html) exercise pinned Marble and OLIMEX source with compact controls, one active viewer and sampled memory disclosures. [Validation and upstream credits](LARGE-PROJECT-VALIDATION.md) distinguish successful source loading from complete CAD-model fidelity and physical-device qualification.
+
+
+The pad/zone follow-up fixes source identity joins, validates IRCA rounded custom pads, replaces capped zone point copies with typed geometry and compacts short AST forms. [Validation](PAD-ZONE-REFINEMENT.md) records source and responsive-browser checks, including their limits. No publication is implied.

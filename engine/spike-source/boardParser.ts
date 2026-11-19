@@ -1,5 +1,6 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 import { arcStepPlan } from '../spike/copperSurface.mjs';
+import { padSourceIdentity } from '../spike/padIdentity.mjs';
 export type Point = [number, number];
 export type ParsedTrack = { id: string; start: Point; end: Point; width: number; layer: string; net?: string };
 export type ParsedVia = { id: string; at: Point; size: number; drill: number; layers: string[]; net?: string };
@@ -405,7 +406,7 @@ function boundsOf(points: Point[]): { minX: number; minY: number; maxX: number; 
   return { minX: xExtent.minimum, minY: yExtent.minimum, maxX: xExtent.maximum, maxY: yExtent.maximum };
 }
 
-export function parseKicadBoard(source: string, preparedRoot?: Node): ParsedBoard {
+export function parseKicadBoard(source: string, preparedRoot?: Node, options: {zonePoints?: boolean} = {}): ParsedBoard {
   const root = preparedRoot || parseSExpression(tokenize(source));
   if (root[0] !== "kicad_pcb") throw new Error("The selected file is not a KiCad PCB document.");
 
@@ -415,6 +416,7 @@ export function parseKicadBoard(source: string, preparedRoot?: Node): ParsedBoar
   const pads: ParsedPad[] = [];
   const components: ParsedComponent[] = [];
   const zones: ParsedZone[] = [];
+  const zoneLayerNames = new Set<string>();
   const drawings: ParsedDrawing[] = [];
   const layers = new Set<string>();
   const layerDefinitions: ParsedLayerDefinition[] = [];
@@ -434,9 +436,11 @@ export function parseKicadBoard(source: string, preparedRoot?: Node): ParsedBoar
     return name || undefined;
   };
 
+  let footprintOccurrence=-1;
   for (const item of root) {
     if (!isNode(item) || !item.length) continue;
     const head = stringAt(item, 0);
+    if(head === "footprint" || head === "module")footprintOccurrence++;
     if (head === "layers") {
       item.slice(1).filter(isNode).forEach((layer) => {
         const name = stringAt(layer, 1);
@@ -501,11 +505,14 @@ export function parseKicadBoard(source: string, preparedRoot?: Node): ParsedBoar
       const polygonNodes = children(item, "filled_polygon");
       const selectedPolygons = polygonNodes.length ? polygonNodes : children(item, "polygon");
       selectedPolygons.forEach((polygon, index) => {
+        const pts=child(polygon, "pts");let pointCount=0;
+        for(const entry of pts || [])if(isNode(entry)&&stringAt(entry,0)==="xy")pointCount++;
+        if(pointCount<3)return;
+        const layer = layerOf(polygon, defaultLayer),net=netName(item);
+        layers.add(layer);zoneLayerNames.add(layer);
+        if(options.zonePoints===false)return;
         const points = pointsAt(polygon);
-        if (points.length < 3) return;
-        const layer = layerOf(polygon, defaultLayer);
-        zones.push({ id: `${nodeId(item, `zone-${zones.length + 1}`)}:${index}`, points, layer, net: netName(item) });
-        layers.add(layer);
+        zones.push({ id: `${nodeId(item, `zone-${zones.length + 1}`)}:${index}`, points, layer, net });
       });
     } else if (head.startsWith("gr_")) {
       const drawing = drawingFromNode(item, nodeId(item, `drawing-${drawings.length + 1}`));
@@ -537,7 +544,7 @@ export function parseKicadBoard(source: string, preparedRoot?: Node): ParsedBoar
         const drillNode = child(padNode, "drill");
         const drill = stringAt(drillNode, 1) === "oval" ? numberAt(drillNode, 2) : numberAt(drillNode, 1);
         const pad: ParsedPad = {
-          id: nodeId(padNode, `pad-${reference}-${stringAt(padNode, 1, String(index + 1))}`),
+          id: padSourceIdentity(padNode, reference, footprintOccurrence, index),
           name: stringAt(padNode, 1, String(index + 1)),
           at: transform(localAt),
           width: numberAt(size, 1, 1),
@@ -598,7 +605,7 @@ export function parseKicadBoard(source: string, preparedRoot?: Node): ParsedBoar
   [
     ...tracks.map((track) => track.layer),
     ...pads.flatMap((pad) => pad.layers),
-    ...zones.map((zone) => zone.layer),
+    ...zoneLayerNames,
     ...drawings.map((drawing) => drawing.layer),
   ].forEach((name) => {
     if (!name || name.includes("*") || knownLayerNames.has(name)) return;

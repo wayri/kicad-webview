@@ -53,3 +53,8 @@ Keep publication paused. Match source, built bundle, package hashes and document
 ### Linked Online rendering acceptance findings
 
 The corresponding KiCad Online candidate also opened pinned Marble at 340 px (316 px content width), retained 1,006 components and 12 copper layers, and preserved the camera on GND selection. Its diagnostic reported 48 selected pad primitives rejected by the 3D outline path and 47 saved-zone contour omissions; IRCA reported two custom 3V3 jumper-pad omissions (JP5 and JP6). These are explicit incomplete-geometry findings, not successful qualification of every selected primitive. Online reported no selected-primitive batch-limit hits; its 48 omissions were pad-outline rejections. Exact selected counts are Online findings, not a measurement of this SDK lab. The Online owner tracks baseline source classification and exact package readiness separately. Shared renderer limits mean this SDK must not claim complete custom-pad/zone fidelity from the scale tests above. Physical-phone and full-CAD qualification remain open; publication stays paused.
+
+
+## Follow-up source fix
+
+The pad/zone omissions above describe the earlier candidate. The follow-up resolves legacy pad joins and IRCA custom outlines, and accepts 139/139 Marble copper contours with zero copper-pad rejections. See [the new measured validation](PAD-ZONE-REFINEMENT.md) for scope, samples and remaining limits. Publication stays paused.

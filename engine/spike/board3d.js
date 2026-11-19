@@ -3,6 +3,8 @@ import {createSharedGeometryCache} from './sharedGeometry.mjs';
 import {createModelTemplateCache} from './modelTemplates.mjs';
 import {createModelGraphBudget,preflightModelGLB,modelDecodeConcurrency} from './modelGraphBudget.mjs';
 import * as THREE from "three";
+import {Earcut} from "three/src/extras/Earcut.js";
+import {savedZoneBufferGeometry} from "./zoneGeometry.mjs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {boardOrbitControls,setBoardPanMode} from "./orbitCamera.mjs";
 const BoardOrbitControls=boardOrbitControls(OrbitControls);
@@ -43,8 +45,8 @@ import { sphereFitDistance,boxFitDistance } from "./fitPolicy.mjs";
 import {createPresentationStudio} from "./presentationStudio.mjs";
 import { qualityName, qualityViewport, graphicsProfile, boardOcclusion, boardClipRange, boxNearDepth, configureOcclusionDepth, studioLights, studioMaterials, padHasMaskOpening, physicalColors } from "./renderQuality.mjs";
 import {createAnalysisOverlayController} from "./registeredResult3d.mjs";
-import { sourceZoneGeometry,drillLoopInsideBoard } from "./sourceGeometry.mjs";
-import { padSourceDetails } from "./padGeometry.mjs";
+import { createSourceZoneIndex,drillLoopInsideBoard } from "./sourceGeometry.mjs";
+import { padSourceDetails,padCopperAbsent } from "./padGeometry.mjs";
 import { MeasurementSession,distanceLabel,snapProjectedEdges } from "./measurement3d.mjs";
 import { boardViewPresets,boardViewPreset } from "./viewPresets.mjs";
 import {createSceneResources} from "./sceneResources.mjs";
@@ -153,8 +155,8 @@ export function mountBoard3D(container, source, options = {}) {
   options ||= {};
   const initialAppearance=appearanceName(options.appearance??'realistic');
   const initialDark = options.dark !== false;
-  const sourceAST=options.sourceSnapshot?(options.sourceParser||globalThis.KiCadDesignDiff).preparedFile(options.sourceSnapshot,options.sourceKey,source):globalThis.KiCadDesignDiff.parse(source),savedZones=sourceZoneGeometry(sourceAST);
-  const board = parseKicadBoard(source,sourceAST);
+  const sourceAST=options.sourceSnapshot?(options.sourceParser||globalThis.KiCadDesignDiff).preparedFile(options.sourceSnapshot,options.sourceKey,source):globalThis.KiCadDesignDiff.parse(source),savedZones=createSourceZoneIndex(sourceAST);
+  const board = parseKicadBoard(source,sourceAST,{zonePoints:false});
   const padDetails=padSourceDetails(sourceAST),nativePads=board.pads.map(pad=>({...pad,...padDetails.get(pad.id)}));
   const geometryDiagnostics=[...(board.geometryWarnings||[])];
   if (!board?.bounds || !Number.isFinite(board.width) || !Number.isFinite(board.height)) {
@@ -236,6 +238,8 @@ export function mountBoard3D(container, source, options = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: false, logarithmicDepthBuffer: true, alpha: false, powerPreference: "high-performance" });
   const gl=renderer.getContext(),graphics=graphicsProfile({maxTextureSize:renderer.capabilities.maxTextureSize,maxRenderbufferSize:gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),deviceMemory:globalThis.navigator?.deviceMemory,hardwareConcurrency:globalThis.navigator?.hardwareConcurrency,floatTargets:renderer.extensions.has('EXT_color_buffer_float'),android:/Android/i.test(globalThis.navigator?.userAgent||'')});
   const modelGeometryBudget=(graphics.constrained?32:graphics.premium?96:64)*1024*1024;
+  const zoneGeometryBudget=(graphics.constrained?32:64)*1024*1024;
+  const zoneGeometryStats={budgetBytes:zoneGeometryBudget,retainedBytes:0,renderedContours:0,vertices:0,rejected:0};
   const modelTextureBudget=(graphics.constrained?16:graphics.premium?64:32)*1024*1024;
   const modelGraph=createModelGraphBudget(graphics.constrained?8192:32768);
   const decodeConcurrency=modelDecodeConcurrency(graphics.constrained,board.components.length);
@@ -449,28 +453,33 @@ export function mountBoard3D(container, source, options = {}) {
     for(const batch of stroke.batches){const mesh=makeInstanced(groupFor(layer),batch.geometry,trackMaterial,batch.records,batch.place,viewportSceneIdentity('copper-track',layer,category+'-'+batch.part));if(mesh){visibilityRecord(mesh,category,layer);pickables.push(mesh);appearanceRecords.push({mesh,role:'tracks',layer});}}
     if(!stroke.batches.length)trackMaterial.dispose();
     }
-    const pads = nativePads.filter((item) => item.layer === layer || item.layers?.includes(layer)||item.layers?.includes('*.Cu'));
+    const pads = nativePads.filter((item) => !padCopperAbsent(item)&&(item.layer === layer || item.layers?.includes(layer)||item.layers?.includes('*.Cu')));
     const batches=new Map();let omittedPads=0;
-    for(const pad of pads){const key=JSON.stringify([pad.shape,pad.width,pad.height,pad.roundrectRatio,pad.drill,pad.drillShape,pad.drillWidth,pad.drillHeight,pad.drillOffset]);if(!batches.has(key)){const outline=smoothPadOutline(pad);if(!outline||batches.size>=256){omittedPads++;continue;}if(outline.tessellation.limited)geometryDiagnostics.push(`${layer}: a pad contour retains validated geometry because the 0.0025 mm tolerance could not be met within hole-containment/display limits.`);batches.set(key,{outline,pads:[]});}batches.get(key).pads.push(pad);}
+    for(const pad of pads){const key=JSON.stringify([pad.shape,pad.width,pad.height,pad.roundrectRatio,pad.drill,pad.drillShape,pad.drillWidth,pad.drillHeight,pad.drillOffset,pad.customAnchor,pad.customPrimitives]);if(!batches.has(key)){const outline=smoothPadOutline(pad);if(!outline||batches.size>=256){omittedPads++;continue;}if(outline.tessellation.limited)geometryDiagnostics.push(`${layer}: a pad contour retains validated geometry because the 0.0025 mm tolerance could not be met within hole-containment/display limits.`);batches.set(key,{outline,pads:[]});}batches.get(key).pads.push(pad);}
     if(omittedPads)geometryDiagnostics.push(`${layer}: ${omittedPads} unsupported/ambiguous pad shapes omitted; no rectangular stand-ins were substituted.`);
     const padMaterial=batches.size?copperCapMaterials(THREE,'pad',{color:0xffffff,...studioMaterials.copper}):null;
     for(const [key,batch]of batches){const geometry=padExtrusion(batch.outline,placement.thickness);
       const padMesh=makeInstanced(groupFor(layer),geometry,padMaterial,batch.pads,(object,pad)=>{const[x,y]=world(pad.at);object.position.set(x,y,placement.base);object.rotation.z=(pad.rotation||0)*Math.PI/180;},viewportSceneIdentity('copper-pad',layer,key));
       if(padMesh){visibilityRecord(padMesh,'pads',layer);pickables.push(padMesh);appearanceRecords.push({mesh:padMesh,role:'pads',layer,pads:batch.pads});}
     }
-    for (const zone of savedZones.records.filter((item) => item.layer === layer)) {
-      if (zone.points.length < 3) continue;
-      if(!zone.filled){const geometry=new THREE.BufferGeometry().setFromPoints(zone.points.map(point=>{const [x,y]=world(point);return new THREE.Vector3(x,y,z);}));const boundary=new THREE.LineLoop(geometry,new THREE.LineBasicMaterial({color:layerThreeColor(layer),transparent:true,opacity:.6}));groupFor(layer).add(boundary);visibilityRecord(boundary,'polygons',layer);continue;}
-      const zoneShape = new THREE.Shape();
-      pathFor(zone.points, world).getPoints().forEach((point, index) => {
-        if (index === 0) zoneShape.moveTo(point.x, point.y); else zoneShape.lineTo(point.x, point.y);
-      });
-      const mesh = new THREE.Mesh(new THREE.ShapeGeometry(zoneShape),
-        configureCopperDepth(new THREE.MeshStandardMaterial({color,...studioMaterials.copper,side:THREE.DoubleSide,...copperDepthPolicy('zone')}),'zone'));
-      mesh.position.z=['F.Cu','B.Cu'].includes(layer)?zoneSurfaceZ(layer,placement):z; mesh.userData.record = { ...zone, type: "Zone" };
-      groupFor(layer).add(mesh);visibilityRecord(mesh,'fills',layer); pickables.push(mesh);
+    const zoneMaterial=configureCopperDepth(new THREE.MeshStandardMaterial({color,...studioMaterials.copper,side:THREE.DoubleSide,...copperDepthPolicy('zone')}),'zone');
+    let usedZoneMaterial=false;
+    for (const zone of savedZones.forLayer(layer)) {
+      let geometry;
+      try{
+        const built=savedZoneBufferGeometry(THREE,zone,{world,triangulate:Earcut.triangulate,maxBytes:zoneGeometryBudget-zoneGeometryStats.retainedBytes});
+        geometry=built.geometry;zoneGeometryStats.retainedBytes+=built.bytes;zoneGeometryStats.renderedContours++;zoneGeometryStats.vertices+=built.vertices;
+      }catch(error){zoneGeometryStats.rejected++;geometryDiagnostics.push(`${layer}: saved zone ${zone.id} contour ${zone.contour}: ${error.message}`);continue;}
+      if(!zone.filled){const boundary=new THREE.LineLoop(geometry,new THREE.LineBasicMaterial({color,transparent:true,opacity:.6}));boundary.position.z=z;groupFor(layer).add(boundary);visibilityRecord(boundary,'polygons',layer);continue;}
+      usedZoneMaterial=true;
+      const mesh=new THREE.Mesh(geometry,zoneMaterial);
+      mesh.position.z=['F.Cu','B.Cu'].includes(layer)?zoneSurfaceZ(layer,placement):z;
+      // Picking and net matching need identity, not a second copy of every point.
+      mesh.userData.record={id:zone.id,net:zone.net,layer,filled:true,contour:zone.contour,type:'Zone'};
+      groupFor(layer).add(mesh);visibilityRecord(mesh,'fills',layer);pickables.push(mesh);
       appearanceRecords.push({mesh,role:'zone',layer});translucency.add(mesh,'zone');
     }
+    if(!usedZoneMaterial)zoneMaterial.dispose();
   // Annuli follow only saved span endpoints, including blind/buried inner layers.
   for(const [key,batch]of viaBatches){
     if(batch.span.from!==layer&&batch.span.to!==layer)continue;
@@ -482,12 +491,10 @@ export function mountBoard3D(container, source, options = {}) {
   for(const layer of copperPlan.filter(layer=>!layer.internal))buildCopperLayer(layer.name);
   function ensureInternalCopper(){
     const layers=copperPlan.filter(layer=>layer.internal&&!renderedCopperLayers.has(layer.name));if(!layers.length)return;
-    const zones=sourceZoneGeometry(sourceAST,1000,500000,layers.map(layer=>layer.name));savedZones.records.push(...zones.records);
     const diagnosticStart=geometryDiagnostics.length;
     for(const layer of layers)buildCopperLayer(layer.name);resources.retain(boardGroup);
     modelDiagnostics.push(...geometryDiagnostics.slice(diagnosticStart));
     if(layers.some(layer=>layer.basis==='illustrative'))modelDiagnostics.push('Internal copper has saved XY coordinates and layer order; elevations are illustrative because a complete saved stackup is unavailable.');
-    if(zones.truncated)modelDiagnostics.push('Internal copper reached the saved polygon/point budget. Omitted contours: '+Object.entries(zones.omittedByLayer).map(([name,count])=>name+' ('+count+')').join(', ')+'.');
     showModelDiagnostics();
   }
   const parts = new THREE.Group(); boardGroup.add(parts);
@@ -522,8 +529,8 @@ export function mountBoard3D(container, source, options = {}) {
   }
   const modelDiagnostics = Array.isArray(options.assetWarnings)
     ? options.assetWarnings.filter(item => typeof item === "string").slice(0, 48).map(item => item.slice(0, 500)) : [];
-  if(savedZones.unfilled)modelDiagnostics.push(`${savedZones.unfilled} zones have no saved copper fill; only their boundaries are shown.`);
-  if(savedZones.truncated)modelDiagnostics.push('Saved zone display reached its polygon/point budget. Omitted contours: '+Object.entries(savedZones.omittedByLayer).map(([name,count])=>name+' ('+count+')').join(', ')+'.');
+  if(savedZones.stats().unfilled)modelDiagnostics.push(`${savedZones.stats().unfilled} zones have no saved copper fill; only their boundaries are shown.`);
+  if(savedZones.stats().omitted||savedZones.stats().invalid)modelDiagnostics.push('Saved zone index: '+savedZones.stats().omitted+' contours exceed the descriptor budget; '+savedZones.stats().invalid+' invalid contours were rejected.');
   modelDiagnostics.push(...geometryDiagnostics);
   showModelDiagnostics();
   let modelUpdateCPUms=0;
@@ -1141,7 +1148,7 @@ export function mountBoard3D(container, source, options = {}) {
     getCopperLayers(){return copperPlan.map(layer=>layer.name);},
     getVisibleCopperLayers(){return visibleCopperLayers();},
     setVisibleCopperLayers,
-    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),modelGraph:{...modelGraph.stats(),decodeConcurrency,imagePreflight:'png-jpeg'},padGeometryCache:sharedPadGeometry.stats(),selectionMaterials:selectionAppearance.stats(),appearance,netGlow:netGlow.stats(),effectiveLayerColors:Boolean(inspectedLayer)||explode.get()>0||appearance!=='realistic',renderedPixels:renderer.domElement.width*renderer.domElement.height,expansion:{amount:explode.get(),target:expansionMotion.target(),running:expansionMotion.running(),...explode.phases(),frames:expansionFrames,cpuMilliseconds:expansionCPUms,maxFrameMilliseconds:expansionMaxMs,frontComponentOffset:explode.componentOffset('F.Cu'),backComponentOffset:explode.componentOffset('B.Cu'),layerOffsets:copperPlan.map(layer=>({name:layer.name,offset:explode.offset(layer.name)}))},renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline?.occlusion),antialiasMethod:pipeline?'smaa':'none',renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
+    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),zones:{...savedZones.stats(),...zoneGeometryStats},modelGraph:{...modelGraph.stats(),decodeConcurrency,imagePreflight:'png-jpeg'},padGeometryCache:sharedPadGeometry.stats(),selectionMaterials:selectionAppearance.stats(),appearance,netGlow:netGlow.stats(),effectiveLayerColors:Boolean(inspectedLayer)||explode.get()>0||appearance!=='realistic',renderedPixels:renderer.domElement.width*renderer.domElement.height,expansion:{amount:explode.get(),target:expansionMotion.target(),running:expansionMotion.running(),...explode.phases(),frames:expansionFrames,cpuMilliseconds:expansionCPUms,maxFrameMilliseconds:expansionMaxMs,frontComponentOffset:explode.componentOffset('F.Cu'),backComponentOffset:explode.componentOffset('B.Cu'),layerOffsets:copperPlan.map(layer=>({name:layer.name,offset:explode.offset(layer.name)}))},renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline?.occlusion),antialiasMethod:pipeline?'smaa':'none',renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
     restoreExpand:value=>setExplode(value,true),setExplode,getExplode:()=>explode.get(),setExpand:setExplode,getExpand:()=>explode.get(),
     setAnalysisOverlay(surface,options){const state=analysisController.setAnalysisOverlay(surface,options);syncExplodeAnalysis();return analysisState(state);},
     getAnalysisOverlayState:()=>analysisState(),

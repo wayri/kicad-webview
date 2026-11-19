@@ -44,3 +44,19 @@ test('prepared trees preserve empty quoted pad fields and numeric saved net code
  const diff=require('../engine/design-diff.js'),source='(kicad_pcb (net 1 "GND") (footprint "Lib:P" (uuid "p") (at 0 0) (pad "" thru_hole circle (uuid "x") (at 1 2) (size 2 2) (drill 1) (layers "F.Cu" "B.Cu") (net 1 "GND"))))';
  const board=parseKicadBoard(source,diff.parse(source));assert.equal(board.pads[0].name,'');assert.equal(board.pads[0].net,'GND');assert.deepEqual(board.pads[0].layers,['F.Cu','B.Cu']);assert.equal(board.pads[0].width,2);
 });
+
+
+test('3D source projection omits unused zone point copies while preserving layers, bounds and saved copper metadata',()=>{
+ const source='(kicad_pcb (layers (0 "F.Cu" signal) (2 "In1.Cu" signal) (31 "B.Cu" signal)) (zone (uuid "z") (layer "In1.Cu") (filled_polygon (layer "In1.Cu") (pts (xy 0 0) (xy 10 0) (xy 0 10)))))',diff=require('../engine/design-diff.js'),ast=diff.parse(source),full=parseKicadBoard(source,ast),compact=parseKicadBoard(source,ast,{zonePoints:false});
+ assert.equal(full.zones.length,1);assert.equal(compact.zones.length,0);for(const key of Object.keys(full).filter(k=>k!=='zones'))assert.deepEqual(compact[key],full[key],key);
+});
+test('missing pad IDs remain distinct across repeated pad numbers and match source metadata joins',async()=>{
+ const {padSourceDetails}=await import('../engine/spike/padGeometry.mjs'),diff=require('../engine/design-diff.js'),source='(kicad_pcb (module "J" (at 0 0) (fp_text reference "J1") (pad "6" thru_hole oval (at 0 0) (size 2 1.5) (drill oval 1 .5)) (pad "6" smd rect (at 2 0) (size 1 1))))',ast=diff.parse(source),board=parseKicadBoard(source,ast),details=padSourceDetails(ast);
+ assert.notEqual(board.pads[0].id,board.pads[1].id);assert.equal(details.get(board.pads[0].id).drillShape,'oval');assert.equal(details.get(board.pads[1].id).drillShape,undefined);
+});
+
+
+test('zone-free 3D projection retains synthetic layer definitions and explicit saved net names',()=>{
+ const source='(kicad_pcb (zone (layer "In1.Cu") (net 2) (net_name "POWER") (polygon (pts (xy 0 0) (xy 1 0) (xy 0 1)))))',diff=require('../engine/design-diff.js'),ast=diff.parse(source),full=parseKicadBoard(source,ast),compact=parseKicadBoard(source,ast,{zonePoints:false});
+ for(const key of Object.keys(full).filter(k=>k!=='zones'))assert.deepEqual(compact[key],full[key],key);
+});

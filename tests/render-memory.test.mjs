@@ -31,3 +31,11 @@ test('span-based quoted parsing preserves escape values, empty strings and large
  assert.throws(()=>diff.parse('(kicad_pcb "escape'+String.fromCharCode(92)),/Unterminated KiCad escape/);
  assert.equal(diff.parseMetadata('(kicad_pcb (ignored "'+payload+'") (uuid "saved"))')[1][1].quoted,'saved');
 });
+
+
+test('small-form compaction preserves nested public AST values and metadata parse behavior',()=>{
+ const source='(kicad_pcb (uuid "root") (zone (layer "F.Cu") (polygon (pts (xy 1 2) (xy -3.5 4e-2) (xy 5 6)))) (property "K" "V" (at 1 2 90)))';
+ const ast=diff.parse(source);assert.deepEqual(ast[2][2][1][1],['xy',1,2]);assert.deepEqual(ast[2][2][1][2],['xy',-3.5,.04]);assert.equal(ast[1][1].quoted,'root');
+ assert.deepEqual(diff.parseMetadata(source),['kicad_pcb',['uuid',{quoted:'root'}],['property',{quoted:'K'},{quoted:'V'}]]);
+ const nested=diff.parse('(kicad_pcb (a (b (c x))) (d q))');assert.deepEqual(nested,['kicad_pcb',['a',['b',['c','x']]],['d','q']]);
+});
