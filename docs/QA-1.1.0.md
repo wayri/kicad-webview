@@ -31,3 +31,6 @@ Desktop console checks were clear; narrow iframe checking reproduced one previou
 ## Large public-source checks
 
 Pinned Marble (44,059,775 bytes, 1,006 parts) and OLIMEX ESP32-PoE passed online source loading and desktop/340 px iframe layout/3D, full-net/camera, expansion and layer-toggle checks. Model CAD is deliberately absent from these manifests and proxy limitations are disclosed. This pass recorded no console warnings/errors; it does not resolve attribution of the earlier host observer error or qualify physical mobile devices. See [detailed measurements and credits](LARGE-PROJECT-VALIDATION.md). Both publication and installed-client changes remain paused.
+
+
+The linked Online candidate's GND stress check reported 48 rejected Marble pad outlines and 47 saved-zone contour omissions; IRCA reported two custom jumper-pad omissions (JP5/JP6). These selected counts are Online findings; the SDK shares the physical pad validator, but its exact selected counts were not measured here. This is a rendering acceptance limitation, not a complete-net geometry pass. See [classification and scope](LARGE-PROJECT-VALIDATION.md). Keep publication paused pending the remaining acceptance work.
