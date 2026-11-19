@@ -4,7 +4,7 @@ Status: prepared locally; publication paused. The matching candidate manifest re
 
 ## Verified source behavior
 
-The preceding memory/stability source pass completed canonical 3D/main builds, strict TypeScript consumer checks and **673 passing tests, zero failures/skips**. Versioned candidate checks and package inspection must also pass before handoff; their exact outcomes are recorded in the candidate receipt.
+The latest residency source pass completed canonical 3D/main builds, strict TypeScript consumer checks and **699 passing tests, zero failures/skips**. The initial candidate had 673 tests and predates the residency additions. Versioned candidate checks and package inspection must also pass before handoff; their exact outcomes are recorded in the candidate receipt.
 
 Real KERO and approved IRCA review projection checks covered source-colored linked net selection, clear, expansion and immediate saved-state restoration on desktop and a 340 px iframe. IRCA retained 50 modelled components. Earlier stability checks included actual orbit/Pan drags, compact layer/inspection popups, light/dark themes and 390 px embeds. No new warning/error was recorded in the memory pass. This is desktop responsive-browser evidence, not physical phone or installed-client acceptance.
 
@@ -26,3 +26,8 @@ Canonical 3D/main builds and the complete serial suite passed **699 tests**, zer
 KERO and approved IRCA passed 20 linked net/clear cycles each on desktop and inside a 340 px iframe. IRCA retained all 50 modelled components (395 admitted model nodes, zero model-budget rejections). Full expansion preserved the camera and selection. Narrow light-theme layout had 320 px content width and 320 px scroll width, with no horizontal overflow. This uses a desktop GPU and does not qualify constrained-device limits or physical touch performance.
 
 Desktop console checks were clear; narrow iframe checking reproduced one previously observed unlocalized MutationObserver error without a viewer-control failure. Attribution remains open. The 100,000-object and 4 MiB quoted-payload benchmarks are parser-stage checks, not full browser/GPU memory measurements. Publication remains paused. Initial candidate archives do not contain this newer source and are retained only as prior-source evidence.
+
+
+## Large public-source checks
+
+Pinned Marble (44,059,775 bytes, 1,006 parts) and OLIMEX ESP32-PoE passed online source loading and desktop/340 px iframe layout/3D, full-net/camera, expansion and layer-toggle checks. Model CAD is deliberately absent from these manifests and proxy limitations are disclosed. This pass recorded no console warnings/errors; it does not resolve attribution of the earlier host observer error or qualify physical mobile devices. See [detailed measurements and credits](LARGE-PROJECT-VALIDATION.md). Both publication and installed-client changes remain paused.

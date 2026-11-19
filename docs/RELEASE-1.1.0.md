@@ -29,3 +29,6 @@ MPL-2.0 permits free use, including commercially; paid assistance is optional. H
 ### Additional large-project work (source newer than the initial candidate archives)
 
 Span-based quoted strings, shared 2D/3D parsing, weak camera history, lazy local PCB reads, incremental shared-model accounting and bounded model graph admission reduce peak/retained allocations. Over-budget detailed models preserve selectable saved component proxies and diagnostics. See [memory evidence and limitations](MEMORY-OPTIMIZATION.md). The initial candidate archives predate this pass and must be regenerated from the final verified source before publication.
+
+
+The explicit-load [large-project lab](../examples/large-projects.html) and [340 px embed host](../examples/large-projects-embed.html) exercise pinned Marble and OLIMEX source with compact controls, one active viewer and sampled memory disclosures. [Validation and upstream credits](LARGE-PROJECT-VALIDATION.md) distinguish successful source loading from complete CAD-model fidelity and physical-device qualification.

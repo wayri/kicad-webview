@@ -65,3 +65,8 @@ These limits are not a total browser-process quota. Distinct PCB geometry, sourc
 GLB admission also validates accessor types, counts, strides, sparse ranges and buffer-view expansion before the loader allocates expanded arrays. Embedded PNG/JPEG headers are checked for device-specific dimensions and estimated RGBA/mipmap bytes before image decoding. Unsupported image formats retain the proxy with a diagnostic. These are per-model preflight limits backed by cumulative postdecode resource accounting; STEP/VRML kernel/loader internals and concurrent allocations are not covered by a hard quota. `modelGraph.imagePreflight` reports `png-jpeg`.
 
 A new single-run 100,000-object compact check retained 154.3 MiB above the already-loaded source baseline and reached 316.7 MiB process RSS high water through preparation. This confirms the larger workload still completes under a 512 MiB Node old-space cap; it excludes 3D geometry, browser/GPU allocations and subsequent inspection work.
+
+
+## Large real online sources
+
+The pinned 44 MB Marble PCB and OLIMEX ESP32-PoE were checked through public raw URLs, desktop and 340 px embeds. Shared Marble preparation completed under a 768 MiB Node old-space cap; the separate comparison profile exhausted the cap. Browser samples still approach 1 GB during the transition to 3D, so no total-RAM ceiling is claimed. See [source hashes, counts, measured scope, results and remaining gates](LARGE-PROJECT-VALIDATION.md).
