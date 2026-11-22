@@ -1,6 +1,6 @@
 # Interaction and memory follow-up — unreleased
 
-This source update follows 1.1.0. It is not published and keeps the existing UI style and core API. Source geometry, layer colors, camera-preserving net selection and selected-net-only gold vias remain unchanged.
+This source update follows 1.1.1, retaining its saved back-side pad placement fix. It is not published and keeps the existing UI style and core API. Source geometry, layer colors, camera-preserving net selection and selected-net-only gold vias remain unchanged.
 
 ## Fixed paths
 
