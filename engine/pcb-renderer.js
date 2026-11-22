@@ -9,7 +9,7 @@
   const value = (item) => item && typeof item === "object" && !Array.isArray(item) ? item.quoted : item;
   const kind = (node) => Array.isArray(node) ? String(value(node[0])) : "";
   const children = (node, name) => Array.isArray(node) ? node.filter((part) => Array.isArray(part) && kind(part) === name) : [];
-  const child = (node, name) => children(node, name)[0];
+  const child = (node, name) => Array.isArray(node) ? node.find(part => Array.isArray(part) && kind(part) === name) : undefined;
   const field = (node, name) => value(child(node, name)?.[1]);
   const num = (item, fallback = 0) => { const result = Number(value(item)); return Number.isFinite(result) ? result : fallback; };
   const point = (node, name) => {

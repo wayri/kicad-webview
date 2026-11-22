@@ -64,8 +64,12 @@
     names.forEach((_,code)=>ensure(code));
     const byUuid=new Map(), padPrimitives=new Map(), footprints=new Map(records.filter((r)=>r.kind === "footprint").map((r)=>[r.key,r]));
     for (const p of primitives) if (p.uuid) {
-      if (!byUuid.has(p.uuid)) byUuid.set(p.uuid,[]);
-      byUuid.get(p.uuid).push(p);
+      // Most UUIDs refer to one track. Allocate a list only when a
+      // saved object actually has multiple drawing primitives.
+      const current = byUuid.get(p.uuid);
+      if (current === undefined) byUuid.set(p.uuid, p);
+      else if (Array.isArray(current)) current.push(p);
+      else byUuid.set(p.uuid, [current, p]);
       if (p.kind === "pad" && p.ownerUuid && p.name != null) {
         const key=JSON.stringify([p.ownerUuid,String(p.name)]);
         if (!padPrimitives.has(key)) padPrimitives.set(key,[]);
@@ -86,13 +90,19 @@
       // Pad primitives may have the footprint UUID only in older files. Never
       // highlight the entire footprint or a different pad sharing that owner.
       const parent=record.kind === "pad" ? footprints.get(record.key.slice(0,record.key.lastIndexOf("/pad:"))) : null;
-      const candidates=uuid ? byUuid.get(uuid) || [] : parent ? padPrimitives.get(JSON.stringify([
-        parent.metadata.uuid,String(value(record.form[1]))])) || [] : [];
-      spend(candidates.length);
-      net.primitives.push(...candidates.filter((p)=> record.kind === "pad" ? p.kind === "pad" || p.kind === "drill" :
-        record.kind === "zone" ? ["zone","zone-outline"].includes(p.kind) :
-          record.kind === "segment" ? p.kind === "track" : record.kind === "arc" ? p.kind === "arc" || p.kind === "track" :
-            p.kind === "via" || p.kind === "drill"));
+      const candidates = uuid ? byUuid.get(uuid) : parent ? padPrimitives.get(JSON.stringify([
+        parent.metadata.uuid, String(value(record.form[1]))])) : undefined;
+      const accepts = p => record.kind === "pad" ? p.kind === "pad" || p.kind === "drill" :
+        record.kind === "zone" ? p.kind === "zone" || p.kind === "zone-outline" :
+        record.kind === "segment" ? p.kind === "track" : record.kind === "arc" ? p.kind === "arc" || p.kind === "track" :
+        p.kind === "via" || p.kind === "drill";
+      if (Array.isArray(candidates)) {
+        spend(candidates.length);
+        for (const p of candidates) if (accepts(p)) net.primitives.push(p);
+      } else if (candidates) {
+        spend(1);
+        if (accepts(candidates)) net.primitives.push(candidates);
+      }
       net.members.push({uuid, reference:parent?.metadata.properties.Reference || "", pad:record.kind === "pad" ? String(value(record.form[1])) : "",
         kind:record.kind, position:record.metadata.position});
       const stat=({pad:"pads",segment:"tracks",arc:"tracks",via:"vias",zone:"zones"})[record.kind];
@@ -275,6 +285,7 @@
       if(!recordsByPath.has(record.path))recordsByPath.set(record.path,[]);
       recordsByPath.get(record.path).push(record);
       const count=(counts.get(record.key)||0)+1;counts.set(record.key,count);record.id=count===1 ? record.key : `${record.key}#${count}`;}
+    counts.clear();
     const nets=[], warnings=[], seenWarnings=new Set();
     let membershipWork=0;
     const spend=count=>{membershipWork+=count;if(membershipWork>400000)throw new Error('Net geometry membership exceeds the 400,000-reference work limit.');};
@@ -286,7 +297,9 @@
       const uuidCounts=new Map();for(const record of records){const uuid=record.metadata.uuid;if(uuid)uuidCounts.set(uuid,(uuidCounts.get(uuid)||0)+1);
         if(['sheet','symbol'].includes(kind(record.form)))for(const pin of children(record.form,'pin')){const pinUuid=field(pin,'uuid');if(pinUuid)uuidCounts.set(pinUuid,(uuidCounts.get(pinUuid)||0)+1);}}
 
-      const ambiguous=new Set([...uuidCounts].filter(([,count])=>count>1).map(([uuid])=>uuid));
+      const ambiguous = new Set();
+      for (const [uuid, count] of uuidCounts) if (count > 1) ambiguous.add(uuid);
+      uuidCounts.clear();
       if(ambiguous.size)warn(file.path+': '+ambiguous.size+' duplicate saved UUIDs excluded from net geometry membership.');
       const primitives=ambiguous.size?originalPrimitives.filter(p=>![p.uuid,p.pinUuid,p.savedPinUuid].some(id=>id&&ambiguous.has(id))):originalPrimitives;
       if (primitives.length>MAX_RENDER_PRIMITIVES) throw new Error("Too many render primitives for net selection.");

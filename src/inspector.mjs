@@ -6,7 +6,7 @@ const MAX_PARTS = 50000, MAX_RECORDS = 500000, MAX_FIELDS = 64, MAX_RESULTS = 10
 const value = item => item && typeof item === 'object' && !Array.isArray(item) ? item.quoted : item;
 const kind = node => Array.isArray(node) ? value(node[0]) : '';
 const children = (node, name) => Array.isArray(node) ? node.filter(item => kind(item) === name) : [];
-const child = (node, name) => children(node, name)[0];
+const child = (node, name) => Array.isArray(node) ? node.find(item => kind(item) === name) : undefined;
 const field = (node, name) => value(child(node, name)?.[1]);
 const identity = node => String(field(node, 'uuid') || field(node, 'tstamp') || '');
 const text = input => input === undefined || input === null ? '' : String(input).slice(0, 4096);
@@ -22,22 +22,33 @@ const unique = values => [...new Set(values.filter(Boolean))];
 export function buildInspectionModel(ast, { kind: documentKind, path = '', design, connectivity } = {}) {
   const parts = [], byId = new Map(), byUuid = new Map(), primitiveByUuid = new Map(), primitiveByOwner = new Map(), warnings = [];
   if (connectivity?.warnings) warnings.push(...connectivity.warnings.slice(0, 1000));
-  const candidates = new Set(); let candidateCount = 0;
+  const identityCounts = new Map(); let candidateCount = 0;
   const partNodes = children(ast, documentKind === 'pcb' ? 'footprint' : 'symbol');
   for (const node of partNodes.slice(0, MAX_PARTS)) {
-    if (identity(node)) candidates.add(identity(node)); candidateCount++;
-    for (const form of node) if (kind(form) === 'pad' && candidateCount++ < MAX_RECORDS && identity(form)) candidates.add(identity(form));
+    if (identity(node)) identityCounts.set(identity(node), 0); candidateCount++;
+    for (const form of node) if (kind(form) === 'pad' && candidateCount++ < MAX_RECORDS && identity(form)) identityCounts.set(identity(form), 0);
   }
-  for (const node of ast || []) if (['segment', 'arc', 'via', 'zone'].includes(kind(node)) && candidateCount++ < MAX_RECORDS && identity(node)) candidates.add(identity(node));
-  for (const p of (design?.primitives || []).slice(0, MAX_PRIMITIVES)) if (p.uuid && !p.frame) candidates.add(p.uuid);
-  const identityCounts = new Map([...candidates].map(uuid => [uuid, 0])), stack = Array.isArray(ast) ? [{ node: ast, index: 0 }] : [];
-  while (stack.length) {
-    const frame = stack.at(-1); if (frame.index >= frame.node.length) { stack.pop(); continue; }
-    const form = frame.node[frame.index++]; if (!Array.isArray(form)) continue;
-    if (['uuid', 'tstamp'].includes(kind(form))) { const uuid = String(value(form[1]) || ''); if (identityCounts.has(uuid)) identityCounts.set(uuid, identityCounts.get(uuid) + 1); }
-    else stack.push({ node: form, index: 0 });
+  for (const node of ast || []) if (['segment', 'arc', 'via', 'zone'].includes(kind(node)) && candidateCount++ < MAX_RECORDS && identity(node)) identityCounts.set(identity(node), 0);
+  for (const p of (design?.primitives || []).slice(0, MAX_PRIMITIVES)) if (p.uuid && !p.frame) identityCounts.set(p.uuid, 0);
+  const forms = Array.isArray(ast) ? [ast] : [], offsets = [0];
+  while (forms.length) {
+    const depth = forms.length - 1;
+    const node = forms[depth];
+    if (offsets[depth] >= node.length) { forms.pop(); continue; }
+    const form = node[offsets[depth]++];
+    if (!Array.isArray(form)) continue;
+    if (['uuid', 'tstamp'].includes(kind(form))) {
+      const uuid = String(value(form[1]) || '');
+      const count = identityCounts.get(uuid);
+      if (count !== undefined) identityCounts.set(uuid, count + 1);
+    } else {
+      offsets[forms.length] = 0;
+      forms.push(form);
+    }
   }
-  const ambiguous = new Set([...identityCounts].filter(([, count]) => count > 1).map(([uuid]) => uuid));
+  const ambiguous = new Set();
+  for (const [uuid, count] of identityCounts) if (count > 1) ambiguous.add(uuid);
+  identityCounts.clear();
   if (ambiguous.size) warnings.push(`${ambiguous.size} duplicated saved UUIDs: ambiguous object lookup and owner-group highlighting are disabled.`);
   if (candidateCount > MAX_RECORDS || documentKind === 'manufacturing' && (design?.camLayers || []).reduce((count, layer) => count + (layer.operations?.length || 0), 0) > MAX_RECORDS)
     warnings.push('Object lookup is limited to 500,000 saved records.');

@@ -3,7 +3,6 @@
 ((root) => {
   "use strict";
   const MAX_FILE = 256 * 1024 * 1024;
-  const MAX_MODERN_FILE = 256 * 1024 * 1024;
   const sourceByteLimit = () => MAX_FILE;
   const MAX_PROJECT = 512 * 1024 * 1024;
   const MAX_FILES = 128;
@@ -72,17 +71,17 @@
       if(!legacy)throw Error('Legacy schematic adapter is unavailable; reload the extension.');
       return legacy.parse(source,options);
     }
-    const board = /^\s*\(kicad_pcb(?:\s|\))/.test(source);
-    const modern = board || /^\s*\(kicad_sch(?:\s|\))/.test(source);
-    const byteLimit=modern?MAX_MODERN_FILE:MAX_FILE;
     // UTF-8 uses at most three bytes per UTF-16 code unit. Avoid a full-size
     // temporary byte array when that upper bound already proves the input fits.
-    if(source.length>byteLimit||source.length>byteLimit/3&&sourceByteLength(source)>byteLimit)throw new Error("KiCad file exceeds browser parser size limits.");
-    const nodeLimit = modern ? 12000000 : MAX_NODES;
+    if(source.length>MAX_FILE||source.length>MAX_FILE/3&&sourceByteLength(source)>MAX_FILE)throw new Error("KiCad file exceeds browser parser size limits.");
     const stack = [], roots = [];
+    // Canonical saved vertices dominate large copper fills. Consume the whole
+    // form at once, leaving uncommon whitespace, comments and malformed forms
+    // to the general parser.
+    const coordinate = /\(xy[ \t]+([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)[ \t]+([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)[ \t]*\)/y;
     let i = 0, nodes = 0, skippedDepth=0;
     const append = (item) => {
-      if (++nodes > nodeLimit) throw new Error("KiCad file has too many S-expression nodes.");
+      if (++nodes > MAX_NODES) throw new Error("KiCad file has too many S-expression nodes.");
       if(!skippedDepth)(stack.at(-1) || roots).push(item);
     };
     while (i < source.length) {
@@ -92,6 +91,18 @@
       if (ch === ";") { while (i < source.length && source[i] !== "\n") i++; continue; }
       if (ch === "(") {
         if (stack.length >= MAX_DEPTH) throw new Error("KiCad S-expression is too deep.");
+        if (!options.metadataOnly && stack.length && source.startsWith('(xy', i)) {
+          coordinate.lastIndex = i;
+          const match = coordinate.exec(source);
+          if (match) {
+            const x = Number(match[1]), y = Number(match[2]);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error("Invalid numeric KiCad value.");
+            nodes += 3; // The name and both coordinates, in addition to the form.
+            append(['xy', x, y]);
+            i = coordinate.lastIndex;
+            continue;
+          }
+        }
         if(options.metadataOnly&&!skippedDepth){let allowed=null;
           if(stack.length===1)allowed=METADATA_FIELDS;
           else if(stack.length===2&&['symbol','footprint','module'].includes(stack.at(-1)?.[0]))allowed=METADATA_OBJECT_FIELDS;
@@ -108,7 +119,7 @@
         // of growable coordinate/attribute arrays. The public tree shape stays
         // identical; replace only a completed child, never a live stack frame.
         if(!skippedDepth&&node.length>0&&node.length<=4){
-          const compact=node.length===1?[node[0]]:node.length===2?[node[0],node[1]]:node.length===3?[node[0],node[1],node[2]]:[node[0],node[1],node[2],node[3]];
+          const compact = node.slice();
           const parent=stack.at(-1)||roots;parent[parent.length-1]=compact;
         }
         if(skippedDepth&&stack.length<skippedDepth)skippedDepth=0; i++; continue;
@@ -155,7 +166,7 @@
   const value = (item) => item && typeof item === "object" && !Array.isArray(item) ? item.quoted : item;
   const kindOf = (form) => Array.isArray(form) ? String(value(form[0])) : "";
   const children = (form, kind) => form.filter((item) => Array.isArray(item) && kindOf(item) === kind);
-  const child = (form, kind) => children(form, kind)[0];
+  const child = (form, kind) => form.find(item => Array.isArray(item) && kindOf(item) === kind);
   const second = (form, kind) => value(child(form, kind)?.[1]);
   function point(form) {
     for (const name of ["at", "start", "center", "end", "xy"]) {
