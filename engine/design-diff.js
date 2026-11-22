@@ -63,6 +63,23 @@
   }
   const METADATA_FIELDS=new Set(["version","generator","generator_version","uuid","paper","title_block","property","sheet","symbol","footprint","module","sheet_instances","legacy_source","legacy_diagnostic"]);
   const METADATA_OBJECT_FIELDS=new Set(["property","uuid","path","instances"]);
+  // Only prepared viewer trees use this representation. Keep ordinary
+  // parse and comparison trees compatible with existing consumers.
+  function packSavedFill(form) {
+    if (form.length < 4) return;
+    for (let i = 1; i < form.length; i++) {
+      const point = form[i];
+      if (!Array.isArray(point) || point.length !== 3 || point[0] !== 'xy' ||
+          !Number.isFinite(point[1]) || !Number.isFinite(point[2])) return;
+    }
+    const coordinates = new Float64Array((form.length - 1) * 2);
+    for (let i = 1; i < form.length; i++) {
+      coordinates[(i - 1) * 2] = form[i][1];
+      coordinates[(i - 1) * 2 + 1] = form[i][2];
+    }
+    form.length = 1;
+    form.push(coordinates);
+  }
   function parse(source, options = {}) {
     if (typeof source !== "string") throw new TypeError("KiCad source must be a string.");
     if (/^\s*PCBNEW-BOARD/.test(source))throw Error('Legacy .brd boards are detected but this drawing format is not yet rendered. Open and save a separate .kicad_pcb copy in KiCad.');
@@ -118,6 +135,9 @@
         // Fixed-size small forms avoid retaining the spare capacity of millions
         // of growable coordinate/attribute arrays. The public tree shape stays
         // identical; replace only a completed child, never a live stack frame.
+        if (options.compactCopper && node[0] === 'pts' && stack.length === 3 &&
+            stack[0][0] === 'kicad_pcb' && stack[1][0] === 'zone' &&
+            stack[2][0] === 'filled_polygon') packSavedFill(node);
         if(!skippedDepth&&node.length>0&&node.length<=4){
           const compact = node.slice();
           const parent=stack.at(-1)||roots;parent[parent.length-1]=compact;
@@ -262,8 +282,8 @@
     return { key, scope: key, signature:forConnectivity?null:signature(), metadata: {
       uuid: identityValue.uuid, position, properties: props }, path, kind, label, form };
   }
-  function collect(path, content, onParsed = null, {forConnectivity=false,parseOnly=false} = {}, preparedAst) {
-    const rootForm = preparedAst || parse(content);
+  function collect(path, content, onParsed = null, {forConnectivity=false,parseOnly=false,compactCopper=false} = {}, preparedAst) {
+    const rootForm = preparedAst || parse(content, {compactCopper});
     onParsed?.(rootForm);
     const rootKind = kindOf(rootForm);
     if (rootKind !== "kicad_sch" && rootKind !== "kicad_pcb") throw new Error("Expected a KiCad schematic or board.");
@@ -296,8 +316,8 @@
   }
   // Job-scoped snapshots reuse validated source without retaining projects globally.
   const preparedProjects = new WeakMap();
-  function prepareProject(files, {forConnectivity=false} = {}) {
-    const parsed = new Map(), records = projectObjects(files, (file, ast) => parsed.set(file.path, ast), null, {forConnectivity,parseOnly:forConnectivity});
+  function prepareProject(files, {forConnectivity=false,compactCopper=false} = {}) {
+    const parsed = new Map(), records = projectObjects(files, (file, ast) => parsed.set(file.path, ast), null, {forConnectivity,parseOnly:forConnectivity,compactCopper:forConnectivity&&compactCopper});
     const snapshot = Object.freeze({});
     preparedProjects.set(snapshot, {files: files.map(file => ({path: file.path, content: file.content})), parsed, records:forConnectivity?null:records, forConnectivity});
     return snapshot;
@@ -308,7 +328,7 @@
     if (expectedContent !== undefined && !state.files.some(file => file.path === path && file.content === expectedContent)) throw new Error('Prepared KiCad file differs from source.');
     return state.parsed.get(path);
   }
-  function projectObjects(files, onParsed = null, snapshot = null, {forConnectivity=false,parseOnly=false} = {}) {
+  function projectObjects(files, onParsed = null, snapshot = null, {forConnectivity=false,parseOnly=false,compactCopper=false} = {}) {
     if (snapshot) {
       const state = preparedProjects.get(snapshot);
       if (!state || !Array.isArray(files) || files.length !== state.files.length ||
@@ -335,7 +355,7 @@
       const size = sourceByteLength(file.content);
       total += size;
       if (size > MAX_FILE || total > MAX_PROJECT) throw new Error("KiCad project exceeds browser comparison size limits.");
-      for (const object of collect(file.path, file.content, ast => onParsed?.(file, ast), {forConnectivity,parseOnly})) objects.push(object);
+      for (const object of collect(file.path, file.content, ast => onParsed?.(file, ast), {forConnectivity,parseOnly,compactCopper})) objects.push(object);
     }
     return objects;
   }

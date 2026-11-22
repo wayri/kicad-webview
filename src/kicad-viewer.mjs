@@ -18,7 +18,6 @@ import { viewerOwners as owners } from './viewer-host.mjs';
 import { resolveSource, fetchAsset } from './source-loader.mjs';
 import { readZip } from './archive/zip.mjs';
 import { normalizeFiles, localSource, manufacturingDesign } from './manufacturing-input.mjs';
-import { mountManufacturing } from './manufacturing-canvas.mjs';
 import { isKiCadPath, isDrawingPath, isManufacturingPath } from './source-types.mjs';
 import { detectManufacturing } from './manufacturing/index.mjs';
 import { createViewerChrome } from './viewer-chrome.mjs';
@@ -117,7 +116,7 @@ export class KiCadViewer extends EventTarget {
 
   loadInput(input, { view, signal, ...options } = {}, preservedProject = null) {
     return this.runOperation(signal, async operation => {
-      operation.stage('Fetching design…');
+      operation.stage('Fetching designâ€¦');
       const result = await resolveSource(input, { ...options, baseURL: options.baseURL || this.host.ownerDocument.baseURI, signal: operation.signal });
       if (!operation.current()) return false; operation.check();
       if (result.archive) {
@@ -183,7 +182,7 @@ export class KiCadViewer extends EventTarget {
   async showSource(source, { path = '', view, project = null, credentials = 'omit', textVariables = project?.textVariables || {}, instancePath } = {}, operation) {
     this.assertActive();
     if (typeof source === 'string' && detectManufacturing(source,path)) return this.showManufacturing([{source,path}],{path,view,project,credentials},operation);
-    operation.stage?.('Preparing drawing geometry…');
+    operation.stage?.('Preparing drawing geometryâ€¦');
     if (!textVariables || typeof textVariables!=='object' || Array.isArray(textVariables) || Object.keys(textVariables).length>256 || Object.entries(textVariables).some(([key,value])=>key.length>200 || typeof value!=='string' || value.length>8192)) throw new TypeError('Supply at most 256 text variables with string values (8192 characters each).');
     textVariables=Object.freeze({...textVariables});
     // Reuse one bounded parse for geometry, connectivity and later 3D mounts.
@@ -191,7 +190,7 @@ export class KiCadViewer extends EventTarget {
     const sourceParser = viewerSourceParser;
     const sourceKey = path;
     const sourceSnapshot = /\.kicad_(?:pcb|sch)$/i.test(path)
-      ? sourceParser.prepareProject([{path, content: source}],{forConnectivity:true}) : null;
+      ? sourceParser.prepareProject([{path, content: source}],{forConnectivity:true,compactCopper:true}) : null;
     const ast = sourceSnapshot ? sourceParser.preparedFile(sourceSnapshot, sourceKey, source)
       : sourceParser.parse(source);
     const kind = ast[0] === 'kicad_pcb' ? 'pcb' : ast[0] === 'kicad_sch' ? 'schematic' : null;
@@ -309,8 +308,9 @@ export class KiCadViewer extends EventTarget {
   }
 
   async mountView(view, candidate, operation) {
-    operation.stage?.(view==='3d'?'Preparing 3D view…':'Preparing drawing view…');
+    operation.stage?.(view==='3d'?'Preparing 3D viewâ€¦':'Preparing drawing viewâ€¦');
     const engine = view === '3d' ? await awaitOperation(loadThree(), operation.signal) : null;
+    const manufacturing = view === 'manufacturing' ? await awaitOperation(import('./manufacturing-canvas.mjs'), operation.signal) : null;
     if (!operation.current()) return false; operation.check();
     const state = candidate || this, token = Symbol('mounted renderer');
     const assetController = new AbortController();
@@ -337,7 +337,7 @@ export class KiCadViewer extends EventTarget {
           onAnalysisProbe: probe => { if (mounted()) this.emit('analysisprobe', {probe,path:this.path,view:'3d'}); },
         });
       } else if (view === 'manufacturing') {
-        renderer = mountManufacturing(mount, { dark: this.theme === 'dark' }); renderer.setDocument(state.design);
+        renderer = manufacturing.mountManufacturing(mount, { dark: this.theme === 'dark' }); renderer.setDocument(state.design);
         renderer.addEventListener('kicad:select', event => { if (mounted()) this.handleSelection(event.detail, view); });
         renderer.addEventListener('measure', event => { if (mounted()) this.emit('measure', event.detail); });
       } else {

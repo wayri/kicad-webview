@@ -17,9 +17,16 @@
     if (!entry || !Number.isFinite(Number(value(entry[1]))) || !Number.isFinite(Number(value(entry[2])))) return null;
     return { x: num(entry[1]), y: num(entry[2]) };
   };
-  const pointsFromForm = (form) => children(form, "xy").map((xy) => ({ x: num(xy[1]), y: num(xy[2]) }));
+  const pointsFromForm = form => {
+    const packed = form?.[1];
+    if (!(packed instanceof Float64Array)) return children(form, "xy").map(xy => ({ x: num(xy[1]), y: num(xy[2]) }));
+    const points = new Array(packed.length / 2);
+    for (let i = 0; i < points.length; i++) points[i] = { x: packed[i * 2], y: packed[i * 2 + 1] };
+    return points;
+  };
   const points = (node) => pointsFromForm(child(node, "pts"));
   function hasPolygonPoints(form) {
+    if (form?.[1] instanceof Float64Array) return form[1].length >= 6;
     let found = 0;
     for (const item of form || []) if (kind(item) === "xy" && ++found === 3) return true;
     return false;

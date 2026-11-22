@@ -31,3 +31,24 @@ test('zone index diagnostics reject invalid saved contours and bound descriptor 
  const ast=['kicad_pcb',['zone',['layer',{quoted:'F.Cu'}],['polygon',['pts',['xy',0,0],['xy',1,0],['xy',NaN,1]]]]];assert.equal(createSourceZoneIndex(ast).stats().invalid,1);
  const valid=parse('(kicad_pcb (zone (layers "F.Cu" "B.Cu") (polygon '+form([[0,0],[2,0],[0,2]])+')))');assert.equal(createSourceZoneIndex(valid,{maxContours:1}).stats().omitted,1);
 });
+
+test('prepared fills preserve exact 2D hit geometry and 3D triangulation',()=>{
+ const {prepareProject,preparedFile}=require('../engine/design-diff.js'),{build:draw}=require('../engine/pcb-renderer.js');
+ const content='(kicad_pcb (zone (uuid "z") (layer "F.Cu") (filled_polygon (layer "F.Cu") '+
+  form([[-0,0],[4.123456789123,0],[4,4],[0,4],[0,0],[1,1],[1,3],[3,3],[3,1],[1,1],[0,0]])+
+  ') (filled_polygon (layer "B.Cu") (pts (xy 0 0 extra) (xy 4 0) (xy 0 4)))))';
+ const path='board.kicad_pcb',plain=parse(content),snapshot=prepareProject([{path,content}],{forConnectivity:true,compactCopper:true});
+ const packed=preparedFile(snapshot,path,content);
+ const contour=createSourceZoneIndex(packed).forLayer('F.Cu')[0];
+ assert.ok(contour.sourcePoints[1] instanceof Float64Array);
+ assert.equal(contour.sourcePoints.length,2);
+ assert.equal(contour.sourcePoints[1][2],4.123456789123);
+ assert.ok(Array.isArray(createSourceZoneIndex(packed).forLayer('B.Cu')[0].sourcePoints[1]));
+ assert.deepEqual(draw(packed,path).primitives,draw(plain,path).primitives);
+ assert.deepEqual(sourceZoneGeometry(packed),sourceZoneGeometry(plain));
+ const a=build(contour).geometry,b=build(createSourceZoneIndex(plain).forLayer('F.Cu')[0]).geometry;
+ try {
+  assert.deepEqual(a.attributes.position.array,b.attributes.position.array);
+  assert.deepEqual(a.index.array,b.index.array);
+ } finally {a.dispose();b.dispose();}
+});

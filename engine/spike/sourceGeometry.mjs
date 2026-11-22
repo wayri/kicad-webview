@@ -31,7 +31,7 @@ export function sourceZoneGeometry(ast,maxPolygons=1000,maxPoints=500000,allowed
    const net=String(value(child(zone,'net_name')?.[1])||nets.get(netCode)||(typeof netCode==='string'?netCode:''));
    for(const polygon of filled?fills:children(zone,'polygon')){
     const pts=child(polygon,'pts')||[];
-    let size=0;
+    let size=pts[1] instanceof Float64Array ? pts[1].length / 2 : 0;
     for(const item of pts)if(kind(item)==='xy'&&Number.isFinite(Number(value(item[1])))&&Number.isFinite(Number(value(item[2]))))size++;
     if(size<3)continue;
     const ownLayer=value(child(polygon,'layer')?.[1]);
@@ -61,7 +61,10 @@ export function sourceZoneGeometry(ast,maxPolygons=1000,maxPoints=500000,allowed
    if(remainingPolygons<=0||size>remainingPoints)continue;
    remainingPolygons--;remainingPoints-=size;
   }
-  const points=children(pts,'xy').map(node=>[Number(value(node[1])),Number(value(node[2]))]).filter(point=>point.every(Number.isFinite));
+  const packed=pts[1];
+  const points=packed instanceof Float64Array
+   ? Array.from({length:packed.length/2},(_,i)=>[packed[i*2],packed[i*2+1]])
+   : children(pts,'xy').map(node=>[Number(value(node[1])),Number(value(node[2]))]).filter(point=>point.every(Number.isFinite));
   records.push({points,layer,filled,id:String(id||'saved-zone-'+ordinal),net});
   counts.set(layer,counts.get(layer)-1);
  }
@@ -86,7 +89,7 @@ export function createSourceZoneIndex(ast,{maxContours=100000}={}){
   const id=value(child(zone,'uuid')?.[1])||value(child(zone,'tstamp')?.[1]);
   const netCode=value(child(zone,'net')?.[1]),net=String(value(child(zone,'net_name')?.[1])||nets.get(netCode)||(typeof netCode==='string'?netCode:''));
   for(const polygon of filled?fills:children(zone,'polygon')){
-   const pts=child(polygon,'pts')||[];let size=0,bad=false;
+   const pts=child(polygon,'pts')||[];let size=pts[1] instanceof Float64Array ? pts[1].length / 2 : 0,bad=false;
    for(const node of pts)if(kind(node)==='xy'){if(!Number.isFinite(Number(value(node[1])))||!Number.isFinite(Number(value(node[2]))))bad=true;size++;}
    if(bad||size<3){invalid++;continue;}
    const ownLayer=value(child(polygon,'layer')?.[1]);
