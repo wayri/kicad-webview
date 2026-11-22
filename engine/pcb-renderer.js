@@ -17,7 +17,31 @@
     if (!entry || !Number.isFinite(Number(value(entry[1]))) || !Number.isFinite(Number(value(entry[2])))) return null;
     return { x: num(entry[1]), y: num(entry[2]) };
   };
-  const points = (node) => children(child(node, "pts"), "xy").map((xy) => ({ x: num(xy[1]), y: num(xy[2]) }));
+  const pointsFromForm = (form) => children(form, "xy").map((xy) => ({ x: num(xy[1]), y: num(xy[2]) }));
+  const points = (node) => pointsFromForm(child(node, "pts"));
+  function hasPolygonPoints(form) {
+    let found = 0;
+    for (const item of form || []) if (kind(item) === "xy" && ++found === 3) return true;
+    return false;
+  }
+  function createZonePointCache() {
+    // An outline on multiple layers shares one exact point array while used in 2D.
+    let byForm = new WeakMap(), contours = 0, vertices = 0;
+    return {
+      get(form) {
+        let positions = byForm.get(form);
+        if (!positions) {
+          positions = pointsFromForm(form);
+          byForm.set(form, positions);
+          contours++;
+          vertices += positions.length;
+        }
+        return positions;
+      },
+      release() { byForm = new WeakMap(); contours = vertices = 0; },
+      stats() { return { contours, vertices }; },
+    };
+  }
   const uuid = (node) => String(field(node, "uuid") || field(node, "tstamp") || "");
   const hasAtom = (node, atom) => Array.isArray(node) && node.some((part) => !Array.isArray(part) && value(part) === atom);
   const hasFlag = (node, name) => Array.isArray(node) && node.some((part) => {
@@ -85,6 +109,7 @@
   function build(ast, path = "", options = {}) {
     const warnings = [], primitives = [];let curvePoints=0;
     if (kind(ast) !== "kicad_pcb") throw new Error("Expected a KiCad PCB AST.");
+    const zonePointCache = options.deferZonePoints ? createZonePointCache() : null;
     const compatibility=Compatibility?.inspect(ast);
     warnings.push(...(compatibility?.warnings||[]));
     const variableText=Compatibility?.textResolver(ast,{...options,path},message=>{if(!warnings.includes(message))warnings.push(message);}),variableFields=new Map();
@@ -94,6 +119,18 @@
       if (primitives.length >= MAX_RENDER_PRIMITIVES) throw new Error("PCB has too many render primitives.");
       primitives.push(primitive);
     };
+    function addZonePolygon(polygon, layers, style) {
+      const form = child(polygon, "pts");
+      const positions = zonePointCache ? null : pointsFromForm(form);
+      if (zonePointCache ? !hasPolygonPoints(form) : positions.length < 3) return;
+      for (const layer of layers) {
+        const primitive = { type:"polygon", points:positions, layer, color:colorFor(layer), ...style };
+        if (zonePointCache) Object.defineProperty(primitive, "points", {
+          get: () => zonePointCache.get(form), enumerable:true, configurable:true,
+        });
+        push(primitive);
+      }
+    }
     const warned = new Set();
     const warn = (label, node) => {
       if (warned.has(label) || warnings.length >= 1000) return;
@@ -303,8 +340,8 @@
         const filled = children(node,"filled_polygon");
         if (filled.length) {
           for (const region of filled) {
-            const regionLayer = String(field(region,"layer") || layer), pts = points(region);
-            if (pts.length >= 3) push({ type:"polygon", points:pts, layer:regionLayer, color:colorFor(regionLayer),
+            const regionLayer = String(field(region,"layer") || layer);
+            addZonePolygon(region, [regionLayer], {
               // Filled contours may bridge cut-outs with doubled-back segments.
               // Those segments close the fill; they are not copper outlines.
               fill:true, stroke:false, opacity:.22, uuid:uuid(node) || undefined, kind:"zone" });
@@ -313,9 +350,8 @@
           warn("Unfilled zone",node);
         }
         const outlineLayers=(child(node,'layers')||[]).slice(1).map(item=>String(value(item)));
-        for(const polygon of children(node,'polygon')){const pts=points(polygon);if(pts.length<3)continue;
-          for(const outlineLayer of outlineLayers.length?outlineLayers:[layer])push({type:'polygon',points:pts,layer:outlineLayer,color:colorFor(outlineLayer),fill:false,width:.15,uuid:uuid(node)||undefined,kind:'zone-outline'});
-        }
+        for (const polygon of children(node,'polygon')) addZonePolygon(polygon, outlineLayers.length ? outlineLayers : [layer],
+          {fill:false,width:.15,uuid:uuid(node)||undefined,kind:'zone-outline'});
       } else if (["gr_line","gr_arc","gr_rect","gr_circle","gr_poly","gr_curve","gr_text"].includes(type)) drawShape(node,layer);
       else if (["gr_text_box","gr_bitmap","dimension","target"].includes(type)) warn(type,node);
     }
@@ -324,7 +360,12 @@
       item.kind === "track" ? 0 : item.kind === "via" ? 1 : item.kind === "pad" ? 2 :
       item.kind === "drill" ? 3 : 0;
     primitives.sort((a,b) => priority(a)-priority(b));
-    return { primitives, page, warnings, compatibility, layers:layerNames.length ? layerNames : [...new Set(primitives.map((item) => item.layer))], path };
+    const design = { primitives, page, warnings, compatibility, layers:layerNames.length ? layerNames : [...new Set(primitives.map((item) => item.layer))], path };
+    if (zonePointCache) Object.defineProperties(design, {
+      releaseZonePoints: { value:zonePointCache.release },
+      zonePointStats: { value:zonePointCache.stats },
+    });
+    return design;
   }
   root.KiCadPCBRenderer = { build, colorFor };
   if (typeof module === "object" && module.exports) module.exports = root.KiCadPCBRenderer;

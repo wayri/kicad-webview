@@ -199,7 +199,8 @@ export class KiCadViewer extends EventTarget {
     view ||= kind; this.validateView(view, kind);
     const loadedSheets=kind==='schematic'&&project?.memory ? project.files.filter(file=>/\.kicad_sch$/i.test(file.path)).map(file=>({path:file.path,content:file.source,...(file.path===path?{ast}:{})})) : [{path,ast}];
     const textContext=kind==='schematic' ? globalThis.KiCadFileCompatibility.textContext(loadedSheets,path,{instancePath,parse:source=>sourceParser.parseMetadata(source)}) : {};
-    const design = (kind === 'pcb' ? globalThis.KiCadPCBRenderer : globalThis.KiCadSchematicRenderer).build(ast, path, {...textContext,textVariables});
+    const design = kind === 'pcb' ? globalThis.KiCadPCBRenderer.build(ast, path, {textVariables,deferZonePoints:true})
+      : globalThis.KiCadSchematicRenderer.build(ast, path, {...textContext,textVariables});
     let connectivity = { nets: [], warnings: [] };
     try { connectivity = viewerNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]]), sourceSnapshot); }
     catch (error) { connectivity.warnings.push('Net selection unavailable: ' + error.message); }
@@ -359,6 +360,7 @@ export class KiCadViewer extends EventTarget {
     this.assetController = assetController; this.renderer = renderer; this.view = view; this.renderingNotes = notes;
     mount.style.visibility = ''; this.stage.replaceChildren(mount);
     this.analysis?.attach(); this.viewMemory.restore(this); this.inspector.syncRenderer(); this.bindCamera(); this.updateControls(); this.updateStatus();
+    if (view === '3d') this.design.releaseZonePoints?.();
     this.emit('ready', { view, path: this.path, revision: this.project?.revision || null, warnings: [...(this.design.warnings || [])] });
     this.emit('viewchange', { view, path: this.path }); this.reportCamera();
     return true;
@@ -390,7 +392,10 @@ export class KiCadViewer extends EventTarget {
   getRenderStats() {
     this.assertActive();
     const stats = this.view === '3d' ? this.renderer?.getRenderStats?.() : null;
-    return stats == null ? null : structuredClone(stats);
+    if (stats == null) return null;
+    const result = structuredClone(stats);
+    if (this.design?.zonePointStats) result.zonePointCache = this.design.zonePointStats();
+    return result;
   }
 
   /** Fit one named 3D presentation camera without replacing source or selection. */

@@ -308,3 +308,67 @@ test('named sources parse once across geometry, nets and 3D switches; snapshots 
     a.dispose();assert.equal(a.sourceSnapshot,null);
   } finally {a.dispose();b.dispose();globalThis.KiCadDesignDiff=previous;globalThis.KiCadNetModel=previousNets;delete globalThis.SpikeBoard3D;}
 });
+
+test('zone coordinates remain deferred until 2D and are released only when 3D replaces it', async () => {
+  const { viewer } = fixture();
+  const source = board.replace('(gr_rect', `(net 1 "GND")
+    (zone (uuid "plane") (net 1) (layer "F.Cu")
+      (filled_polygon (layer "F.Cu") (pts (xy 10 20) (xy 20 20) (xy 10 30))))
+    (gr_rect`);
+  const pcbRenderer = globalThis.KiCadPCBRenderer;
+  const build = pcbRenderer.build;
+  let design, ast, failMount = false, supersede = false, newerView, selection;
+  pcbRenderer.build = (...args) => { design = build(...args); return design; };
+  globalThis.SpikeBoard3D = { mountBoard3D(host, content, { sourceSnapshot, sourceParser, sourceKey }) {
+    const prepared = sourceParser.preparedFile(sourceSnapshot, sourceKey, content);
+    if (!ast) assert.deepEqual(design.zonePointStats(), { contours: 0, vertices: 0 });
+    ast ??= prepared;
+    assert.equal(prepared, ast);
+    if (failMount) throw new Error('3D unavailable');
+    if (supersede) newerView = viewer.setView('pcb');
+    return { dispose() {}, setSelection(value) { selection = value; }, getRenderStats() { return { gpuTextures: 2 }; } };
+  } };
+  try {
+    assert.equal(await viewer.loadSource(source, { path: 'board.kicad_pcb', view: '3d' }), true);
+    assert.deepEqual(viewer.getRenderStats(), { gpuTextures: 2, zonePointCache: { contours: 0, vertices: 0 } });
+    const zone = design.primitives.find(p => p.uuid === 'plane');
+    const net = viewer.getNets().find(entry => entry.name === 'GND');
+    assert.equal(net.count, 1);
+    assert.equal(viewer.selectNet(net.id), true);
+    assert.deepEqual(selection.netNames, ['GND']);
+    assert.deepEqual(design.zonePointStats(), { contours: 0, vertices: 0 });
+
+    await viewer.setView('pcb');
+    const originalPoints = zone.points;
+    const previous = viewer.renderer;
+    const dispose = previous.dispose.bind(previous);
+    previous.dispose = () => { assert.equal(zone.points, originalPoints); dispose(); };
+    failMount = true;
+    await assert.rejects(viewer.setView('3d'), /3D unavailable/);
+    assert.equal(viewer.renderer, previous);
+    assert.equal(previous.disposed, false);
+    assert.equal(zone.points, originalPoints);
+    failMount = false;
+
+    supersede = true;
+    assert.equal(await viewer.setView('3d'), false);
+    assert.equal(await newerView, true);
+    assert.equal(viewer.view, 'pcb');
+    assert.equal(zone.points, originalPoints);
+    supersede = false;
+
+    const active2d = viewer.renderer;
+    assert.equal(await viewer.setView('3d'), true);
+    assert.equal(active2d.disposed, true);
+    assert.deepEqual(design.zonePointStats(), { contours: 0, vertices: 0 });
+    assert.deepEqual(viewer.getNets().find(entry => entry.name === 'GND'), net);
+    await viewer.setView('pcb');
+    assert.equal(design.primitives.find(p => p.uuid === 'plane'), zone);
+    assert.deepEqual(zone.points, originalPoints);
+    assert.notEqual(zone.points, originalPoints);
+  } finally {
+    viewer.dispose();
+    pcbRenderer.build = build;
+    delete globalThis.SpikeBoard3D;
+  }
+});

@@ -355,7 +355,7 @@ export function mountBoard3D(container, source, options = {}) {
     return layerEnabled.get(layer.name)&&(!layer.internal||appearance==='translucent'||explode.get()>0);
   }
   const explode=createExplodeView(THREE,{layers:copperPlan},{maxGap:Math.max(.8,Math.min(8,extent*.45/Math.max(1,copperPlan.length-1))),componentLift:Math.max(6,Math.min(40,extent*.15))}),viaExplode=[],overlayExplodeGuard=createExplodeOverlayGuard();
-  const translucency=createTranslucentAppearance(),appearanceRecords=[];let appearance='realistic',selectionAppearanceReady=false;
+  const translucency=createTranslucentAppearance(),appearanceRecords=[];let appearance='realistic',selectionAppearanceReady=false,selectionSubstrateMatches=false,selectionHasNets=false,selectionIsNetOnly=false;
   const appearanceLabel=document.createElement('label');appearanceLabel.append(document.createTextNode('Appearance'));
   const appearanceSelect=document.createElement('select');appearanceSelect.setAttribute('aria-label','3D board appearance');
   for(const [value,label]of [['realistic','Realistic'],['layers','Layer colors'],['translucent','Translucent']]){const option=document.createElement('option');option.value=value;option.textContent=label;appearanceSelect.append(option);}appearanceLabel.append(appearanceSelect);
@@ -409,7 +409,7 @@ export function mountBoard3D(container, source, options = {}) {
   const silkGroup=new THREE.Group();boardGroup.add(silkGroup);
   function syncExpansionFade(){
     const fade=Math.min(1-explode.phases().layers*.98,inspectedLayer ? .08 : 1),alpha=(appearance==='translucent'?.12:1)*fade;
-    const isolated=selectionAppearanceReady&&selectionDisplayStyle.mode==='isolate'&&hasSavedSelection(externalSelection)&&!selectionMatcher(externalSelection,board)(substrate.userData.record);
+    const isolated=selectionAppearanceReady&&selectionDisplayStyle.mode==='isolate'&&hasSavedSelection(externalSelection)&&!selectionSubstrateMatches;
     for(const material of (Array.isArray(substrate.material)?substrate.material:[substrate.material])){
       const opacity=isolated?0:Math.min(alpha,material.userData.selectionOpacityCap??1),transparent=opacity<1;
       if(material.transparent!==transparent){material.transparent=transparent;material.needsUpdate=true;}
@@ -728,7 +728,7 @@ export function mountBoard3D(container, source, options = {}) {
     for(const layer of copperPlan){const group=copperGroups.get(layer.name);if(group){explode.layer(group,layer.name);group.visible=copperVisible(layer);}}
     for(const mesh of silkGroup.children){const layer=visibilityRecords.find(record=>record.mesh===mesh)?.layer;explode.layer(mesh,layer==='B.SilkS'?'B.Cu':'F.Cu');}
     for(const {mesh,span}of viaExplode)explode.barrels(mesh,span);
-    updateComponentVisibility();setSelection(externalSelection);if(selected?.object&&!selectionNetNames(externalSelection,board).size){showHighlight(selected.object,selected.instanceId);bounds.getCenter(selected.point);}
+    updateComponentVisibility();if(selectionIsNetOnly)netGlow.syncTransforms();else if(hasSavedSelection(externalSelection))setSelection(externalSelection);if(selected?.object&&!selectionHasNets){showHighlight(selected.object,selected.instanceId);bounds.getCenter(selected.point);}
     syncExpansionFade();syncExplodeAnalysis();refreshClippingBounds();updateTerminalLabels();explodeOutput.textContent=Math.round(amount)+'%';explodeSlider.setAttribute('aria-valuetext',Math.round(amount)+' percent expanded');
     explodeNotice.hidden=amount===0;explodeNotice.textContent='Display-only expansion: components lift first, then copper separates and substrate fades. '+(copperPlan.some(layer=>layer.basis==='illustrative')?'Internal elevations are illustrative. ':'')+'Registered results and measurements resume at 0%.';
     expansionFrames++;const elapsed=performance.now()-started;expansionCPUms+=elapsed;expansionMaxMs=Math.max(expansionMaxMs,elapsed);
@@ -755,7 +755,7 @@ export function mountBoard3D(container, source, options = {}) {
     const option=document.createElement('option');option.value=value;option.textContent=label;inspectSelect.append(option);
   }
   layerOptions.append(inspectLabel);
-  const partsToggle=toggle('Parts',true,visible=>{parts.visible=!inspectedLayer&&visible;renderer.shadowMap.needsUpdate=true;});
+  const partsToggle=toggle('Parts',true,visible=>{parts.visible=!inspectedLayer&&visible;if(hasSavedSelection(externalSelection))setSelection(externalSelection);renderer.shadowMap.needsUpdate=true;});
   const silkToggle=toggle('Silkscreen',true,visible=>{silkGroup.visible=!inspectedLayer&&visible;});
   inspectSelect.onchange=()=>{
     inspectedLayer=inspectSelect.value||null;
@@ -916,10 +916,11 @@ export function mountBoard3D(container, source, options = {}) {
   const selectionNotice = document.createElement('div'); selectionNotice.className = 'hint'; selectionNotice.style.bottom = '42px'; selectionNotice.hidden = true; stage.append(selectionNotice);
   function setSelection(selection = {}) {
     graphicsHealth.invalidate();invalidate();
-    externalSelection = selection || {};
+    externalSelection = selection || {};selectionIsNetOnly=false;selectionSubstrateMatches=false;selectionHasNets=false;
     if(!hasSavedSelection(externalSelection)){netGlow.clear();groupGeometry.setDrawRange(0,0);selectionNotice.hidden=true;selectionNotice.style.display='none';highlight.visible=false;groupHighlight.visible=false;selectionAppearance.restore();syncExpansionFade();return{highlighted:0,matched:0,limited:false};}
-    const netNames=selectionNetNames(externalSelection,board);if(netNames.size)ensureInternalCopper();const matches=selectionMatcher(externalSelection,board);
+    const netNames=selectionNetNames(externalSelection,board);if(netNames.size)ensureInternalCopper();const matches=selectionMatcher(externalSelection,board);selectionSubstrateMatches=matches(substrate.userData.record);selectionHasNets=netNames.size>0;
     if(pureNetSelection(externalSelection,netNames)){
+      selectionIsNetOnly=true;
       const result=countNetSelection(pickables,matches);selectionWorkload.netOnlyUpdates++;selectionWorkload.netRecordsScanned+=result.visitedRecords;selectionWorkload.netBoundsAvoided+=result.matchedRecords;
       groupGeometry.setDrawRange(0,0);selectionNotice.hidden=true;selectionNotice.style.display='none';highlight.visible=false;groupHighlight.visible=false;
       selectionAppearance.update(matches,result.matched>0&&selectionDim,record=>netNames.has(record?.net),{...selectionDisplayStyle,expanded:explode.get()>0,netContext:netNames.size>0});

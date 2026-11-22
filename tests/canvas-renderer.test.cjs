@@ -124,27 +124,83 @@ test('zone fill and outline toggles independently control drawing and picking wi
  painted.length=0;canvas.setZoneVisibility({filled:false,outlines:false});assert.ok(painted.includes(edge));assert.ok(!painted.includes(fill)&&!painted.includes(outline));
  canvas.dispose();
 });
-test('large-board gesture previews skip repeated painting and settle back to the source camera',()=>{
- let frame,timer,painted=0,disposed=false;const {transform}=require('../engine/motion-webgl.js');
- class Motion{constructor(){this.gl={MAX_TEXTURE_SIZE:1,getParameter:()=>4096};}upload(snapshot,saved){this.saved=saved;}show(current){return Boolean(transform(this.saved,current));}hide(){}dispose(){disposed=true;}}
- const {canvas,listeners,element}=runtime(1,{KiCadMotionWebGL:{Motion,MAX_PIXELS:16000000},requestAnimationFrame:fn=>(frame=fn,1),cancelAnimationFrame:()=>{frame=null;},setTimeout:fn=>(timer=fn,1),clearTimeout:()=>{timer=null;}});
+test('gesture snapshots are coalesced, capped, reused and released',()=>{
+ let frame,timer,painted=0,created=0,scheduled=0,disposed=0;const snapshots=[],{transform}=require('../engine/motion-webgl.js');
+ class Motion{constructor(){created++;this.gl={MAX_TEXTURE_SIZE:1,getParameter:()=>4096};}upload(snapshot,saved){snapshots.push(snapshot);this.saved=saved;}show(current){return Boolean(transform(this.saved,current));}hide(){}dispose(){disposed++;}}
+ const {canvas,listeners,element}=runtime(3,{KiCadMotionWebGL:{Motion,MAX_PIXELS:16000000},requestAnimationFrame:fn=>(frame=fn,++scheduled),cancelAnimationFrame:()=>{frame=null;},setTimeout:fn=>(timer=fn,1),clearTimeout:()=>{timer=null;}});
  const primitives=Array.from({length:5000},(_,i)=>({type:'circle',x:i%100,y:Math.floor(i/100),r:.2,layer:'F.Cu'}));
- canvas.setDocument({primitives,layers:['F.Cu']},'large.kicad_pcb');canvas.paint=()=>painted++;
- listeners.get('pointerdown')({button:2,clientX:400,clientY:300,pointerId:1,preventDefault(){}});assert.ok(painted>0);painted=0;
+ canvas.paint=()=>painted++;canvas.setDocument({primitives,layers:['F.Cu']},'large.kicad_pcb');painted=0;
+ const down={button:2,clientX:400,clientY:300,pointerId:1,preventDefault(){}};
+ const move=(x,y)=>listeners.get('pointermove')({clientX:x,clientY:y,pointerId:1});
+ listeners.get('pointerdown')(down);assert.equal(painted,0);assert.equal(created,0);assert.equal(scheduled,0);
  let frames=0;canvas.addEventListener('kicad:viewframe',()=>frames++);
- listeners.get('pointermove')({clientX:420,clientY:310});frame();assert.equal(canvas.motionActive,true);assert.equal(painted,0);assert.equal(element.style.opacity,'0');assert.equal(frames,1);
- const camera=canvas.cameraState();listeners.get('pointerup')({pointerId:1});assert.equal(canvas.motionActive,false);assert.equal(element.style.opacity,'');assert.ok(painted>0);assert.deepEqual(canvas.cameraState(),camera);
- listeners.get('wheel')({clientX:400,clientY:300,deltaY:-10,preventDefault(){}});frame();assert.equal(canvas.motionActive,true);timer();assert.equal(canvas.motionActive,false);
- listeners.get('pointerdown')({button:2,clientX:400,clientY:300,pointerId:1,preventDefault(){}});listeners.get('pointermove')({clientX:420,clientY:300});frame();assert.equal(canvas.motionActive,true);canvas.motion.onLost();assert.equal(canvas.motionActive,false);assert.equal(canvas.motionFailed,true);assert.equal(element.style.opacity,'');
- canvas.acceleration='off';assert.equal(canvas.prepareMotion(),false);canvas.dispose();assert.equal(disposed,true);assert.equal(timer,null);
+ for(let i=1;i<=20;i++)move(400+i,310);
+ assert.equal(scheduled,1);assert.equal(painted,0);assert.equal(created,0);frame();
+ const [snapshot]=snapshots;
+ assert.equal(created,1);assert.ok(snapshot.width*snapshot.height<=4000000);assert.ok(snapshot.width*snapshot.height>3900000);assert.ok(painted>0);
+ assert.equal(canvas.motionActive,true);assert.equal(element.style.opacity,'0');assert.equal(frames,1);
+ painted=0;move(430,310);frame();assert.equal(painted,0);assert.equal(snapshots.length,1);
+ const camera=canvas.cameraState();listeners.get('pointerup')({pointerId:1});assert.equal(painted,0);frame();
+ assert.equal(canvas.motionActive,false);assert.equal(element.style.opacity,'');assert.ok(painted>0);assert.deepEqual(canvas.cameraState(),camera);
+ let resized=0;
+ for(const key of ['width','height']){let value=snapshot[key];Object.defineProperty(snapshot,key,{get:()=>value,set:next=>{resized++;value=next;}});}
+ painted=0;listeners.get('wheel')({clientX:400,clientY:300,deltaY:-10,preventDefault(){}});assert.equal(painted,0);frame();
+ assert.equal(canvas.motionActive,true);assert.equal(snapshots.length,2);assert.equal(snapshots[1],snapshot);assert.equal(resized,0);
+ timer();assert.equal(canvas.motionActive,true);frame();assert.equal(canvas.motionActive,false);
+ canvas.dispose();assert.equal(disposed,1);assert.equal(snapshot.width*snapshot.height,1);assert.equal(canvas.motionSnapshot,null);assert.equal(canvas.motionTimer,null);
+});
+
+test('dense motion previews bound context painting while preserving saved picks and selected detail',()=>{
+ let frame,timer,created=0,scheduled=0,labels=0;
+ class Motion{constructor(){created++;}}
+ const {canvas,listeners,element}=runtime(3,{KiCadMotionWebGL:{Motion,MAX_PIXELS:16000000},requestAnimationFrame:fn=>(frame=fn,++scheduled),
+   cancelAnimationFrame:()=>{frame=null;},setTimeout:fn=>(timer=fn,1),clearTimeout:()=>{timer=null;}});
+ const copper=Array.from({length:20000},(_,i)=>({type:'circle',x:i%200/3,y:Math.floor(i/200)/3,r:.1,layer:'F.Cu',uuid:`pad-${i}`,kind:'pad',fill:true}));
+ const highlight=copper[1],pick=copper[18];
+ const owner='selected-part',selection={...copper[3],kind:'footprint-hit',uuid:owner,ownerUuid:owner},child={...copper[3],uuid:'part-pad',ownerUuid:owner};
+ const outline={type:'line',points:[{x:0,y:0},{x:67,y:0}],layer:'Edge.Cuts'};
+ const text={type:'text',text:'Saved legend',x:10,y:10,layer:'F.Cu'};
+ const zone={type:'polygon',kind:'zone',fill:true,points:[{x:1,y:1},{x:4,y:1},{x:4,y:4}],layer:'F.Cu'};
+ const primitives=[...copper,selection,child,outline,text,zone],painted=[];
+ canvas.paint=p=>painted.push(p);canvas.drawNetNames=()=>labels++;
+ canvas.setDocument({primitives,layers:['F.Cu','Edge.Cuts']},'dense.kicad_pcb');
+ canvas.viewport.camera.bbox={x:-10,y:-10,w:90,h:60};canvas.selected=selection;canvas.setNetHighlight({primitives:[highlight]});
+ painted.length=0;labels=0;
+ listeners.get('pointerdown')({button:2,clientX:400,clientY:300,pointerId:1,preventDefault(){}});
+ for(let i=1;i<=20;i++)listeners.get('pointermove')({clientX:400+i,clientY:300,pointerId:1});
+ assert.equal(scheduled,1);assert.equal(painted.length,0);frame();
+ assert.equal(element.style.opacity,'');assert.equal(created,0);assert.equal(canvas.motionSnapshot,null);
+ assert.ok(painted.filter(p=>p.uuid?.startsWith('pad-')&&p!==highlight).length<=2800);assert.ok(painted.includes(highlight));
+ assert.ok(painted.includes(selection));assert.ok(painted.includes(child));assert.ok(painted.includes(outline));
+ assert.ok(!painted.includes(text));assert.ok(!painted.includes(zone));assert.equal(labels,0);
+ const hits=canvas.query(pick,1);assert.equal(hits[0],pick);
+ painted.length=0;listeners.get('pointerup')({pointerId:1});assert.equal(painted.length,0);frame();
+ assert.equal(painted.length,primitives.length);assert.ok(painted.includes(text));assert.ok(painted.includes(zone));assert.equal(labels,1);
+ assert.deepEqual(canvas.query(pick,1),hits);
+ painted.length=0;listeners.get('wheel')({clientX:400,clientY:300,deltaY:-10,preventDefault(){}});assert.equal(painted.length,0);frame();
+ assert.equal(created,0);assert.equal(labels,1);assert.ok(painted.length<=2804);timer();frame();assert.equal(labels,2);
+ canvas.dispose();
 });
 
 test('WebGL initialization failure restores a visible CPU drawing',()=>{
  let frame;class Motion{constructor(){throw Error('GPU disabled');}}
  const {canvas,listeners,element}=runtime(1,{KiCadMotionWebGL:{Motion,MAX_PIXELS:16000000},requestAnimationFrame:fn=>(frame=fn,1),cancelAnimationFrame(){}});
  canvas.setDocument({primitives:Array.from({length:4096},()=>({type:'circle',x:0,y:0,r:1,layer:'F.Cu'})),layers:['F.Cu']},'board.kicad_pcb');
- listeners.get('pointerdown')({button:2,clientX:400,clientY:300,pointerId:1,preventDefault(){}});listeners.get('pointermove')({clientX:410,clientY:300});frame();
+ listeners.get('pointerdown')({button:2,clientX:400,clientY:300,pointerId:1,preventDefault(){}});listeners.get('pointermove')({clientX:410,clientY:300,pointerId:1});frame();
  assert.equal(canvas.motionFailed,true);assert.equal(canvas.motionActive,false);assert.equal(element.style.opacity,'');canvas.dispose();
+});
+
+test('lost gesture context releases its snapshot and schedules a visible CPU frame',()=>{
+ let frame,painted=0,disposed=0;
+ class Motion{constructor(){this.gl={MAX_TEXTURE_SIZE:1,getParameter:()=>4096};}upload(snapshot,saved){this.saved=saved;}show(){return true;}hide(){}dispose(){disposed++;}}
+ const {canvas,listeners,element}=runtime(1,{KiCadMotionWebGL:{Motion,MAX_PIXELS:16000000},requestAnimationFrame:fn=>(frame=fn,1),cancelAnimationFrame(){}});
+ canvas.paint=()=>painted++;
+ canvas.setDocument({primitives:Array.from({length:4096},()=>({type:'circle',x:0,y:0,r:1,layer:'F.Cu'})),layers:['F.Cu']},'board.kicad_pcb');
+ listeners.get('pointerdown')({button:2,clientX:400,clientY:300,pointerId:1,preventDefault(){}});listeners.get('pointermove')({clientX:410,clientY:300,pointerId:1});frame();
+ const {motionSnapshot:snapshot,motion}=canvas;assert.equal(canvas.motionActive,true);
+ painted=0;motion.onLost();assert.equal(painted,0);assert.equal(disposed,1);assert.equal(snapshot.width*snapshot.height,1);
+ assert.equal(canvas.motionFailed,true);assert.equal(canvas.motion,null);assert.equal(element.style.opacity,'');frame();assert.ok(painted>0);
+ canvas.dispose();assert.equal(disposed,1);
 });
 
 test('large-board indexing preserves paint and pick results while narrowing local searches',()=>{

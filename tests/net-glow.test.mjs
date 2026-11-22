@@ -35,3 +35,22 @@ test('saved endpoint annuli and blind via spans keep gold when copper palettes c
   glow.dispose();geometry.dispose();material.dispose();
  }
 });
+
+
+test('expansion refreshes only selected transforms without scanning copper membership or reallocating',()=>{
+ const scene=new THREE.Scene(),geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial();
+ const source=new THREE.InstancedMesh(geometry,material,10000),matrix=new THREE.Matrix4();
+ source.userData={identity:'spike:via-barrel:through:saved',records:Array.from({length:10000},(_,i)=>({id:String(i),net:i===7?'GND':'VCC'}))};
+ source.setMatrixAt(7,matrix.makeTranslation(2,3,0));scene.add(source);
+ let visits=0,shown=true;const glow=createNetGlow(THREE,{scene,objects:()=>{visits++;return[source];},visible:()=>shown});
+ glow.update(new Set(['GND']),{color:'source'});
+ const overlay=scene.getObjectByName('Selected net shine-through').children[0],initial=glow.stats(),buffer=overlay.instanceMatrix,displayMaterial=overlay.material;
+ for(let i=1;i<=40;i++){
+  source.position.z=i;source.setMatrixAt(7,matrix.makeTranslation(2,3,i/2));glow.syncTransforms();
+  assert.equal(overlay.matrix.elements[14],i);overlay.getMatrixAt(0,matrix);assert.equal(matrix.elements[14],i/2);
+ }
+ assert.equal(visits,1);assert.equal(glow.stats().recordScans,initial.recordScans);assert.equal(glow.stats().sourceScans,initial.sourceScans);
+ assert.equal(overlay.instanceMatrix,buffer);assert.equal(overlay.material,displayMaterial);assert.equal(overlay.geometry,geometry);assert.equal(displayMaterial.color.getHex(),0xc5aa6c);
+ shown=false;glow.syncTransforms();assert.equal(glow.stats().instances,0);shown=true;glow.syncTransforms();assert.equal(glow.stats().instances,1);
+ glow.clear();glow.syncTransforms();assert.equal(glow.stats().retainedMeshes,0);glow.dispose();source.dispose();geometry.dispose();material.dispose();
+});

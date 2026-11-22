@@ -5,6 +5,11 @@
 
   "use strict";
 
+  const MOTION_MIN_PRIMITIVES=4096;
+  const DENSE_PREVIEW_MIN_PRIMITIVES=20000;
+  const DENSE_PREVIEW_PAINT_LIMIT=2800;
+  const MOTION_SNAPSHOT_MAX_PIXELS=4000000;
+
   const finitePoint = p => Number.isFinite(p?.x) && Number.isFinite(p?.y);
   // Bound backing stores on high-DPI tablets without changing world/CSS units.
   function canvasViewport(width,height,deviceRatio=1){
@@ -242,21 +247,22 @@
       super();this.host=host;this.geometryBounds=new WeakMap();this.frameRequest=null;this.canvas=document.createElement('canvas');this.canvas.className='owned-canvas';this.canvas.tabIndex=0;this.canvas.setAttribute('aria-label','Interactive KiCad drawing; click to select, right-drag to pan, wheel to zoom');host.append(this.canvas);
 
       this.ctx=this.canvas.getContext('2d');if(!this.ctx)throw new Error('Canvas2D rendering is unavailable.');this.viewport={camera:new Camera()};this.primitives=[];this.visibleLayers=new Set();this.dark=Boolean(options.dark);this.pcb=Boolean(options.pcb);this.grid=false;this.selected=null;this.drag=null;this.netHighlight=null;this.netPrimitives=new Set();this.isolateNet=false;this.paperVisible=!this.pcb;this.activeLayer='F.Cu';this.focusedLayer=null;this.layerFocusMode='dim';this.layerSnapshot=null;this.layerPresetName=null;
-      this.acceleration=options.acceleration==='off'?'off':'auto';this.motion=null;this.motionActive=false;this.motionFailed=false;this.motionTimer=null;this.wheelMotion=false;
+      this.acceleration=options.acceleration==='off'?'off':'auto';this.motion=null;this.motionSnapshot=null;this.motionActive=false;this.motionFailed=false;this.motionTimer=null;this.wheelMotion=false;this.touchMotion=false;
 
       this.layers={query_point:at=>this.query(at).map(p=>({bbox:{context:{uuid:p.uuid,reference:p.reference,kind:p.kind,name:p.name,pinNumber:p.pinNumber,pinName:p.pinName,ownerUuid:p.ownerUuid,connectPoint:p.connectPoint,parent:p.ownerUuid?{uuid:p.ownerUuid}:null},primitive:p}}))};
 
       this.handlers=[];const listen=(name,fn,opts)=>{this.canvas.addEventListener(name,fn,opts);this.handlers.push(()=>this.canvas.removeEventListener(name,fn,opts));};
 
-      listen('pointerdown',e=>{if(e.button===1||e.button===2){e.preventDefault();this.drag={x:e.clientX,y:e.clientY,moved:false};this.canvas.setPointerCapture(e.pointerId);this.prepareMotion();}});
+      listen('pointerdown',e=>{if(e.button===1||e.button===2){e.preventDefault();this.drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false};this.canvas.setPointerCapture(e.pointerId);}});
 
-      listen('pointermove',e=>{if(!this.drag)return;const dx=e.clientX-this.drag.x,dy=e.clientY-this.drag.y;if(Math.abs(dx)+Math.abs(dy)>0)this.drag.moved=true;const c=this.viewport.camera;c.center.x-=dx/c.zoom*(c.flipped?-1:1);c.center.y-=dy/c.zoom;this.drag.x=e.clientX;this.drag.y=e.clientY;this.requestDraw();});
+      listen('pointermove',e=>{if(!this.drag||e.pointerId!==this.drag.id)return;const dx=e.clientX-this.drag.x,dy=e.clientY-this.drag.y;if(!dx&&!dy)return;this.drag.moved=true;const c=this.viewport.camera;c.center.x-=dx/c.zoom*(c.flipped?-1:1);c.center.y-=dy/c.zoom;this.drag.x=e.clientX;this.drag.y=e.clientY;this.requestDraw();});
 
-      listen('pointerup',e=>{if(this.drag){this.drag=null;this.finishMotion();}if(this.canvas.hasPointerCapture(e.pointerId))this.canvas.releasePointerCapture(e.pointerId);});listen('pointercancel',()=>{this.drag=null;this.finishMotion();});listen('lostpointercapture',()=>{if(this.drag){this.drag=null;this.finishMotion();}});
+      const endDrag=e=>{if(!this.drag||this.drag.id!==e.pointerId)return;const moved=this.drag.moved;this.drag=null;if(moved)this.requestDraw();};
+      listen('pointerup',e=>{endDrag(e);if(this.canvas.hasPointerCapture(e.pointerId))this.canvas.releasePointerCapture(e.pointerId);});listen('pointercancel',endDrag);listen('lostpointercapture',endDrag);
 
       listen('click',e=>{if(e.pointerType==='touch'&&this.touchNetPick?.(e))return;const r=this.canvas.getBoundingClientRect(),at=this.viewport.camera.screen_to_world({x:e.clientX-r.left,y:e.clientY-r.top});const hit=this.query(at)[0];this.select(hit?{primitive:hit,context:{uuid:hit.uuid,reference:hit.reference,kind:hit.kind,name:hit.name,pinNumber:hit.pinNumber,pinName:hit.pinName,ownerUuid:hit.ownerUuid,connectPoint:hit.connectPoint,parent:hit.ownerUuid?{uuid:hit.ownerUuid}:null}}:null,{multi:Boolean(e.ctrlKey||e.metaKey||e.shiftKey)});});
 
-      listen('wheel',e=>{e.preventDefault();this.prepareMotion();const r=this.canvas.getBoundingClientRect(),p={x:e.clientX-r.left,y:e.clientY-r.top},c=this.viewport.camera,before=c.screen_to_world(p);c.zoom=Math.max(.001,Math.min(10000,c.zoom* Math.exp(-Math.max(-100,Math.min(100,e.deltaY))*.004)));const after=c.screen_to_world(p);c.center.x+=before.x-after.x;c.center.y+=before.y-after.y;if(typeof setTimeout==='function'){this.wheelMotion=true;if(this.motionTimer!==null)clearTimeout(this.motionTimer);this.motionTimer=setTimeout(()=>this.finishMotion(),120);}this.requestDraw();},{passive:false});
+      listen('wheel',e=>{e.preventDefault();const r=this.canvas.getBoundingClientRect(),p={x:e.clientX-r.left,y:e.clientY-r.top},c=this.viewport.camera,before=c.screen_to_world(p);c.zoom=Math.max(.001,Math.min(10000,c.zoom* Math.exp(-Math.max(-100,Math.min(100,e.deltaY))*.004)));const after=c.screen_to_world(p);c.center.x+=before.x-after.x;c.center.y+=before.y-after.y;if(typeof setTimeout==='function'){this.wheelMotion=true;if(this.motionTimer!==null)clearTimeout(this.motionTimer);this.motionTimer=setTimeout(()=>{this.motionTimer=null;this.wheelMotion=false;this.requestDraw();},120);}this.requestDraw();},{passive:false});
 
       listen('contextmenu',e=>e.preventDefault());
 
@@ -359,30 +365,54 @@
     paperColor(){return this.dark?'#1c2029':'#fdfdff';}
 
     cameraState(){const c=this.viewport.camera;return {x:c.center.x,y:c.center.y,zoom:c.zoom,width:c.width,height:c.height,flipped:c.flipped};}
+    canUseMotionTexture(){return !this.disposed&&this.acceleration!=='off'&&!this.motionFailed&&this.primitives.length>=MOTION_MIN_PRIMITIVES&&this.primitives.length<DENSE_PREVIEW_MIN_PRIMITIVES&&!this.renderPrimitives&&Boolean(root.KiCadMotionWebGL);}
     prepareMotion(){
-      if(this.disposed||this.acceleration==='off'||this.motionFailed||this.primitives.length<4096||this.renderPrimitives||!root.KiCadMotionWebGL)return false;
+      if(!this.canUseMotionTexture())return false;
       try{
-        if(!this.motion){this.motion=new root.KiCadMotionWebGL.Motion(this.host);this.motion.onLost=()=>{this.motionFailed=true;this.finishMotion();};}
-        if(this.motion.saved)return true;
-        const c=this.viewport.camera,dpr=this.pixelRatio||1,w=c.width,h=c.height,width=Math.round(w*1.5*dpr),height=Math.round(h*1.5*dpr),max=this.motion.gl.getParameter(this.motion.gl.MAX_TEXTURE_SIZE);
-        if(width*height>root.KiCadMotionWebGL.MAX_PIXELS||width>max||height>max)return false;
-        const snapshot=document.createElement('canvas');snapshot.width=width;snapshot.height=height;
-        const context=snapshot.getContext('2d');if(!context)return false;
+        if(!this.motion){this.motion=new root.KiCadMotionWebGL.Motion(this.host);this.motion.onLost=()=>{this.motionFailed=true;this.hideMotion();this.releaseMotion();this.requestDraw();};}
+        const c=this.viewport.camera,w=c.width,h=c.height,snapshotWidth=w*1.5,snapshotHeight=h*1.5;
+        const max=this.motion.gl.getParameter(this.motion.gl.MAX_TEXTURE_SIZE),maxPixels=Math.min(MOTION_SNAPSHOT_MAX_PIXELS,root.KiCadMotionWebGL.MAX_PIXELS);
+        const ratio=Math.min(this.pixelRatio||1,Math.sqrt(maxPixels/snapshotWidth/snapshotHeight),max/snapshotWidth,max/snapshotHeight);
+        const width=Math.max(1,Math.floor(snapshotWidth*ratio)),height=Math.max(1,Math.floor(snapshotHeight*ratio));
+        const snapshot=this.motionSnapshot||=document.createElement('canvas');
+        // Shrink the old width first to stay within the pixel cap during reallocation.
+        if(snapshot.width>width)snapshot.width=width;
+        if(snapshot.height!==height)snapshot.height=height;
+        if(snapshot.width!==width)snapshot.width=width;
+        const context=snapshot.getContext('2d');if(!context)throw Error('Canvas2D motion snapshot is unavailable.');
         const originalCanvas=this.canvas,originalContext=this.ctx;let saved;
-        try{this.canvas=snapshot;this.ctx=context;c.width=w*1.5;c.height=h*1.5;saved=this.cameraState();this.drawGeometry();}
+        try{this.canvas=snapshot;this.ctx=context;c.width=snapshotWidth;c.height=snapshotHeight;saved=this.cameraState();this.drawGeometry(true,ratio);}
         finally{this.canvas=originalCanvas;this.ctx=originalContext;c.width=w;c.height=h;}
         this.motion.upload(snapshot,saved);return true;
-      }catch{this.motionFailed=true;this.motion?.dispose();this.motion=null;return false;}
+      }catch{this.motionFailed=true;this.releaseMotion();return false;}
     }
     motionFrame(){
-      if(!this.drag&&!this.wheelMotion)return false;
-      if(!this.prepareMotion())return false;
+      if(!this.canUseMotionTexture())return false;
       const state=this.cameraState(),dpr=this.pixelRatio||1;
-      if(!this.motion.show(state,dpr)){this.motion.saved=null;if(!this.prepareMotion()||!this.motion.show(state,dpr))return false;}
-      this.canvas.style.opacity='0';this.motionActive=true;this.dispatchEvent(new CustomEvent('kicad:viewframe'));return true;
+      if(this.motion?.saved&&!this.motion.show(state,dpr))this.motion.saved=null;
+      if(!this.motion?.saved&&(!this.prepareMotion()||!this.motion.show(state,dpr)))return false;
+      this.canvas.style.opacity='0';this.motionActive=true;return true;
+    }
+    hideMotion(){this.motion?.hide();this.canvas.style.opacity='';this.motionActive=false;}
+    releaseMotion(){
+      this.motion?.dispose();this.motion=null;
+      if(this.motionSnapshot){this.motionSnapshot.width=this.motionSnapshot.height=1;this.motionSnapshot=null;}
     }
     finishMotion(){if(this.motionTimer!==null){clearTimeout(this.motionTimer);this.motionTimer=null;}if(this.frameRequest!==null&&typeof cancelAnimationFrame==='function')cancelAnimationFrame(this.frameRequest);this.frameRequest=null;this.wheelMotion=false;if(!this.disposed)this.draw();}
-    requestDraw(){if(typeof requestAnimationFrame!=='function'){this.draw();return;}if(this.frameRequest===null)this.frameRequest=requestAnimationFrame(()=>{this.frameRequest=null;if(!this.disposed&&!this.motionFrame())this.draw();});}
+    requestDraw(){
+      if(this.disposed||this.frameRequest!==null)return;
+      if(typeof requestAnimationFrame!=='function'){this.draw();return;}
+      this.frameRequest=requestAnimationFrame(()=>{
+        this.frameRequest=null;
+        if(this.disposed)return;
+        if(!this.drag?.moved&&!this.wheelMotion&&!this.touchMotion){this.draw();return;}
+        if(!this.motionFrame()){
+          this.hideMotion();
+          this.drawGeometry(true);
+        }
+        this.dispatchEvent(new CustomEvent('kicad:viewframe'));
+      });
+    }
     // Font metrics include alignment and baseline. Cache in world coordinates so
     // panning avoids both measuring and painting offscreen labels; zoom/flip
     // invalidate the entry, including minimum screen-size fonts. Without full
@@ -428,13 +458,15 @@
     inView(p,view){let box;if(p.type==='text')box=this.textBounds(p);else{box=this.geometryBounds.get(p);if(box===undefined){box=spatialBounds(p);this.geometryBounds.set(p,box||null);}}if(!box)return true;const margin=3/this.viewport.camera.zoom;return box.x+box.w>=view.x-margin&&box.x<=view.x+view.w+margin&&box.y+box.h>=view.y-margin&&box.y<=view.y+view.h+margin;}
     draw(){
       if(this.motionTimer!==null){clearTimeout(this.motionTimer);this.motionTimer=null;}this.wheelMotion=false;
-      if(this.acceleration==='off'&&this.motion){this.motion.dispose();this.motion=null;}
-      this.motion?.hide();if(this.motion)this.motion.saved=null;this.canvas.style.opacity='';this.motionActive=false;this.drawGeometry();this.dispatchEvent(new CustomEvent('kicad:viewframe'));
+      this.hideMotion();
+      if(!this.canUseMotionTexture())this.releaseMotion();
+      else if(this.motion)this.motion.saved=null;
+      this.drawGeometry();this.dispatchEvent(new CustomEvent('kicad:viewframe'));
     }
-    drawGeometry(){
+    drawGeometry(preview=false,dpr=this.pixelRatio||1){
 
       if(this.disposed)return;
-      const c=this.viewport.camera,ctx=this.ctx,dpr=this.pixelRatio||1;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=this.background();ctx.fillRect(0,0,this.canvas.width,this.canvas.height);ctx.setTransform(dpr,0,0,dpr,0,0);
+      const c=this.viewport.camera,ctx=this.ctx;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=this.background();ctx.fillRect(0,0,this.canvas.width,this.canvas.height);ctx.setTransform(dpr,0,0,dpr,0,0);
 
       if(this.grid&&c.zoom>2){let step=Number.isFinite(this.gridPitch)&&this.gridPitch>=.001&&this.gridPitch<=100?this.gridPitch:(c.zoom>12?1:5);while(step*c.zoom<5)step*=10;const b=c.bbox;ctx.fillStyle=this.dark?'#2b3b46':'#d3d3c7';let count=0;for(let x=Math.ceil(b.x/step)*step;x<b.x+b.w&&count<20000;x+=step)for(let y=Math.ceil(b.y/step)*step;y<b.y+b.h&&count++<20000;y+=step){const s=c.world_to_screen({x,y});ctx.fillRect(s.x,s.y,1,1);}}
 
@@ -442,7 +474,16 @@
 
       const view=c.bbox;
       const margin=3/c.zoom,selectedPaint=[],drillPaint=[];
-      if(this.renderPrimitives)this.renderPrimitives(ctx,c,this);else for(const p of this.candidates({x:view.x-margin,y:view.y-margin,w:view.w+2*margin,h:view.h+2*margin})){
+      const candidates=this.renderPrimitives?[]:this.candidates({x:view.x-margin,y:view.y-margin,w:view.w+2*margin,h:view.h+2*margin});
+      const densePreview=preview&&this.primitives.length>=DENSE_PREVIEW_MIN_PRIMITIVES&&candidates.length>DENSE_PREVIEW_PAINT_LIMIT;
+      const step=densePreview?Math.ceil(candidates.length/DENSE_PREVIEW_PAINT_LIMIT):1;
+      const selectedOwner=densePreview&&this.selected?.kind==='footprint-hit'?(this.selected.ownerUuid||this.selected.uuid):null;
+      if(this.renderPrimitives)this.renderPrimitives(ctx,c,this);else for(let i=0;i<candidates.length;i++){
+        const p=candidates[i],matches=this.netPrimitives.has(p);
+        if(densePreview&&!matches&&p!==this.selected&&!(selectedOwner&&p.ownerUuid===selectedOwner)&&!p.frame&&p.layer!=='Edge.Cuts'){
+          // Stagger the sample across groups so interleaved layers can remain visible.
+          if(i%step!==Math.floor(i/step)%step||p.type==='text'||p.type==='image'||p.kind==='zone'||p.hole)continue;
+        }
 
         if(!this.geometryVisible(p)||!this.inView(p,view))continue;
 
@@ -450,7 +491,7 @@
 
         if(!p.frame&&p.layer&&!this.visibleLayers.has(p.layer))continue;
 
-        const matches=this.netPrimitives.has(p),dim=this.netHighlight&&!p.frame&&!matches,layerDim=this.focusedLayer&&!p.frame&&p.layer!==this.focusedLayer;
+        const dim=this.netHighlight&&!p.frame&&!matches,layerDim=this.focusedLayer&&!p.frame&&p.layer!==this.focusedLayer;
 
         if(layerDim&&this.layerFocusMode==='isolate'&&!p.hole&&p.layer!=='Edge.Cuts')continue;
 
@@ -466,7 +507,7 @@
       // Keep saved net copper above faint context, with physical drill cutouts last.
       for(const {p,style}of selectedPaint)this.paint(p,style);
       for(const {p,style}of drillPaint)this.paint(p,style);
-      this.drawNetNames();
+      if(!preview)this.drawNetNames();
       if(this.selected&&!this.netHighlight&&this.geometryVisible(this.selected)&&(!this.selected.layer||this.visibleLayers.has(this.selected.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||this.selected.layer===this.focusedLayer)&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(this.selected))){const b=bounds([this.selected],true);if(b){const a=c.world_to_screen(b);ctx.strokeStyle='#80f0b7';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(a.x-4,a.y-4,(c.flipped?-1:1)*b.w*c.zoom+8,b.h*c.zoom+8);ctx.setLineDash([]);}}
 
     }
@@ -505,7 +546,7 @@
 
     }
 
-    dispose(){if(this.disposed)return;this.disposed=true;this.hatchPatterns?.clear();this.releaseImages();if(this.frameRequest!==null&&typeof cancelAnimationFrame==='function')cancelAnimationFrame(this.frameRequest);this.frameRequest=null;if(this.motionTimer!==null)clearTimeout(this.motionTimer);this.motionTimer=null;this.motion?.dispose();this.motion=null;this.observer.disconnect();for(const stop of this.handlers)stop();this.handlers=[];this.primitives=[];this.design=null;this.document=null;this.selected=null;this.netHighlight=null;this.netPrimitives.clear();this.netNames?.clear();this.netClassColors?.clear();this.layerSnapshot=null;this.canvas.width=this.canvas.height=1;this.canvas.remove();}
+    dispose(){if(this.disposed)return;this.disposed=true;this.hatchPatterns?.clear();this.releaseImages();if(this.frameRequest!==null&&typeof cancelAnimationFrame==='function')cancelAnimationFrame(this.frameRequest);this.frameRequest=null;if(this.motionTimer!==null)clearTimeout(this.motionTimer);this.motionTimer=null;this.releaseMotion();this.observer.disconnect();for(const stop of this.handlers)stop();this.handlers=[];this.primitives=[];this.design=null;this.document=null;this.selected=null;this.netHighlight=null;this.netPrimitives.clear();this.netNames?.clear();this.netClassColors?.clear();this.layerSnapshot=null;this.canvas.width=this.canvas.height=1;this.canvas.remove();}
 
   }
 
