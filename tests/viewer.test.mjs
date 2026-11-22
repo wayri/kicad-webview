@@ -372,3 +372,27 @@ test('zone coordinates remain deferred until 2D and are released only when 3D re
     delete globalThis.SpikeBoard3D;
   }
 });
+
+test('worksheet loads standalone and follows saved project settings across drawings', async () => {
+  const {viewer} = fixture();
+  const template = '(kicad_wks (version 20231118) (setup (left_margin 7) (bottom_margin 9)) (line (start 2 3 lbcorner) (end 6 3 lbcorner)) (tbtext "${TITLE}" (pos 10 5 ltcorner)))';
+  const other = '(page_layout (tbtext "Schematic %T" (pos 10 5 ltcorner)))';
+  const pcb = board.replace('(paper "A4")','(paper "A4") (title_block (title "PCB title"))');
+  const sch = schematic.replace('(paper "A4")','(paper "A4") (title_block (title "Sheet title"))');
+  const project = JSON.stringify({pcbnew:{page_layout_descr_file:'pcb.kicad_wks'},schematic:{page_layout_descr_file:'sch.kicad_wks'}});
+  try {
+    await viewer.loadFiles([{path:'design.kicad_pcb',source:pcb},{path:'design.kicad_sch',source:sch},
+      {path:'design.kicad_pro',source:project},{path:'pcb.kicad_wks',source:template},{path:'sch.kicad_wks',source:other}]);
+    const frame = viewer.design.primitives.filter(p=>p.kind==='custom-worksheet');
+    assert.deepEqual(frame[0].points,[{x:9,y:198},{x:13,y:198}]);
+    assert.equal(frame[1].text,'PCB title');
+    assert.equal(viewer.design.primitives.find(p=>p.uuid==='edge').layer,'Edge.Cuts');
+    await viewer.openFile('design.kicad_sch');
+    assert.equal(viewer.design.primitives.find(p=>p.kind==='custom-worksheet').text,'Schematic Sheet title');
+    await viewer.openFile('pcb.kicad_wks');
+    assert.equal(viewer.view,'schematic');
+    assert.equal(viewer.design.primitives.find(p=>p.kind==='custom-worksheet').points[0].x,9);
+    await assert.rejects(viewer.loadSource('(garbage)',{path:'invalid.kicad_wks'}),/worksheet template/);
+    assert.equal(viewer.path,'pcb.kicad_wks');
+  } finally { viewer.dispose(); }
+});

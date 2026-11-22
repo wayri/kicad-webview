@@ -5,7 +5,7 @@ export type Theme = 'light' | 'dark';
 export type HighlightMode = 'dim' | 'bright' | 'isolate';
 export type HighlightColor = 'accent' | 'source';
 export interface HighlightStyle { mode: HighlightMode; color: HighlightColor; }
-export type LayerPreset = 'all' | 'overview' | 'none' | 'front' | 'back' | 'copper';
+export type LayerPreset = 'all' | 'overview' | 'none' | 'front' | 'back' | 'copper' | 'outline';
 export interface LayerState { preset: LayerPreset | null; layers: string[]; visible: string[]; focused: string | null; focusMode: 'dim' | 'isolate'; canFocus: boolean; canRestore: boolean; }
 export type BoardAppearance = 'realistic' | 'layers' | 'translucent';
 export interface RenderActivityStats { documentVisible: boolean; intersecting: boolean; hasSize: boolean; contextAvailable: boolean; paused: boolean; dirty: boolean; pending: boolean; requestCount: number; scheduledFrames: number; renderCallbacks: number; suppressedInvalidations: number; cancelledFrames: number; skippedFrames: number; resumeCount: number; observesIntersection: boolean; }
@@ -17,13 +17,15 @@ export type DrawingView = 'pcb' | 'schematic' | '3d' | 'manufacturing';
 export interface ProjectFile { path: string; url: string; }
 export interface ProjectFileInfo { path: string; url?: string; }
 export type DeepReadonly<T> = T extends object ? { readonly [K in keyof T]: DeepReadonly<T[K]> } : T;
-export interface ProjectManifest { files: ProjectFile[]; entry?: string; }
+export interface ProjectManifest { files: ProjectFile[]; entry?: string; worksheet?: string; }
 export interface LocalSource { path: string; source?: string; bytes?: Uint8Array | ArrayBuffer; }
 export interface LoadOptions {
   view?: DrawingView; file?: string; ref?: string; signal?: AbortSignal;
   baseURL?: string; credentials?: 'omit' | 'same-origin';
   /** Explicit project variables; no environment or implicit project-file access. */
   textVariables?: Record<string,string>;
+  /** Explicit .kicad_wks source text for this drawing. */
+  worksheetSource?: string;
   /** Exact saved hierarchy instance path when a loaded sheet is reused. */
   instancePath?: string;
 }
@@ -82,7 +84,7 @@ export declare class KiCadViewer extends EventTarget {
   getSelection(): ViewSelection | null; getSelectionPosition(): {x:number;y:number;layer:string|null}|null; selectObject(id: string, options?: {locate?: boolean; pinNumber?: string | number}): boolean;
   getNets(): SavedNet[]; selectNet(idOrUniqueName: string, options?: { locate?: boolean }): boolean;
   getSheets(): SheetLink[]; clearSelection(): void; setInspectorOpen(open: boolean): void;
-  setView(view: DrawingView, options?: {signal?: AbortSignal}): Promise<boolean>; fit(): void;
+  setView(view: DrawingView, options?: {signal?: AbortSignal}): Promise<boolean>; fit(): void; fitPage(): boolean;
   /** Optional studio presets: photoreal-fast omits screen-space effects; presentation adds GPU-intensive effects. Returns actual quality after fallback. */
   setRenderQuality(quality: 'low'|'balanced'|'high'|'presentation'|'photoreal-fast'): 'low'|'balanced'|'high'|'presentation'|'photoreal-fast';
   /** Animate 0–100% expansion: lift components, separate colored copper, fade substrate, stretch vias. */

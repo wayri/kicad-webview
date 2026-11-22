@@ -240,10 +240,9 @@
         { x: a.x, y: b.y }], color, width, ...(fill ? { fill } : {}), ...owner });
     }
     if (Worksheet) {
-      for (const primitive of Worksheet.build(page, path, sheetOptions)) emit(primitive);
+      for (const primitive of (sheetOptions.worksheet ? sheetOptions.worksheet(page,path,sheetOptions,resolveText,warn) : Worksheet.build(page,path,sheetOptions))) emit(primitive);
     } else warn("Default worksheet module is unavailable.");
-    warn("Custom .kicad_wks layouts are not rendered; the KiCad default drawing sheet is shown.");
-    if (page.titleBlock.comments.slice(4).some(Boolean)) warn("The KiCad default drawing sheet displays only comments 1–4.");
+    if (!sheetOptions.worksheet && page.titleBlock.comments.slice(4).some(Boolean)) warn("The KiCad default drawing sheet displays only comments 1–4.");
     function drawGraphic(node, map, owner, color = COLOR.symbol) {
       const kind = typeOf(node), width = lineWidth(node, 0.15), fill = fillType(node);owner={...owner,...graphicStyle(node)};
       if (kind === "bezier") {

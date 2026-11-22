@@ -15,3 +15,14 @@ test('canonical vertex scanning preserves exact values and fallback forms', () =
   assert.deepEqual(parseMetadata(`(kicad_pcb (version 20240108) (zone ${fast}))`),
     ['kicad_pcb', ['version', 20240108]]);
 });
+
+test('direct copper packing preserves signed zero and general parser fallback', () => {
+  const fill = points => `(kicad_pcb (zone (filled_polygon (pts ${points}))))`;
+  const ordinary = '(xy -0 0) (xy 1.123456789123 2) (xy 0 1)';
+  const points = (source, options) => parse(source, options)[1][1][1];
+  assert.deepEqual(points(fill(ordinary), {compactCopper:true}),
+    ['pts', new Float64Array([-0,0,1.123456789123,2,0,1])]);
+  const unusual = fill(ordinary + ' ; retained fallback\n (xy 0 2 extra)');
+  assert.deepEqual(points(unusual, {compactCopper:true}), points(unusual));
+  assert.throws(() => parse(fill(ordinary + ' (xy 1e999 2)'), {compactCopper:true}), /Invalid numeric/);
+});

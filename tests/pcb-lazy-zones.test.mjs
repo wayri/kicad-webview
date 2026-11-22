@@ -42,3 +42,13 @@ test('deferred saved contours preserve bridged cutouts, exact coordinates and sh
   assert.notEqual(filled.points, priorPoints);
   assert.equal(front.points, back.points);
 });
+
+test('packed zone fit and picking preserve cutouts without creating coordinate objects', () => {
+ const ast=parse('(kicad_pcb (zone (uuid "plane") (layer "F.Cu") (filled_polygon (layer "F.Cu") (pts (xy 0 0) (xy 10 0) (xy 10 10) (xy 0 10) (xy 0 0) (xy 3 3) (xy 3 7) (xy 7 7) (xy 7 3) (xy 3 3) (xy 0 0)))))',{compactCopper:true});
+ const design=build(ast,'board.kicad_pcb',{deferZonePoints:true});
+ const zone=design.primitives.find(p=>p.kind==='zone');
+ assert.deepEqual(bounds([zone]),{x:0,y:0,w:10,h:10});
+ assert.equal(hitPrimitive(zone,{x:1,y:2},0),true);
+ assert.equal(hitPrimitive(zone,{x:5,y:5},0),false);
+ assert.deepEqual(design.zonePointStats(),{contours:0,vertices:0});
+});

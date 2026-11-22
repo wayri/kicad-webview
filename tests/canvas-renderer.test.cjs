@@ -426,3 +426,27 @@ test('Dim PCB net paints faint gray vias before selected copper and drills last 
   canvas.restoreLayers();canvas.setNetHighlight(null);painted.length=0;canvas.draw();assert.deepEqual(painted.map(x=>x.p.uuid),['selected','hole','context-via','selected-via']);assert.equal(JSON.stringify(source),original);assert.equal(canvas.netPrimitives.size,0);canvas.dispose();
  }
 });
+
+test('outline preset keeps saved board edges and cutouts apart from copper', () => {
+ const {canvas}=runtime();
+ const edge={type:'line',points:[{x:10,y:10},{x:20,y:10}],layer:'Edge.Cuts'};
+ const cutout={type:'circle',x:15,y:15,r:2,layer:'Edge.Cuts'};
+ const track={...edge,layer:'F.Cu'};
+ canvas.setDocument({primitives:[edge,cutout,track],layers:['Edge.Cuts','F.Cu']},'outline.kicad_pcb');
+ canvas.layerPreset('outline');
+ const painted=[];canvas.paint=p=>painted.push(p);canvas.draw();
+ assert.deepEqual(painted,[edge,cutout]);
+ canvas.dispose();
+});
+
+test('consecutive straight copper strokes share paths and picks still use saved tracks', () => {
+ const {canvas,operations}=runtime();
+ const tracks=Array.from({length:512},(_,i)=>({type:'line',kind:'track',layer:'F.Cu',width:.2,
+   points:[{x:0,y:i/10},{x:5,y:i/10}],uuid:'track-'+i}));
+ canvas.setDocument({primitives:tracks,layers:['F.Cu']},'tracks.kicad_pcb');
+ operations.length=0;canvas.draw();
+ assert.equal(operations.filter(op=>op[0]==='stroke').length,2);
+ assert.equal(operations.filter(op=>op[0]==='lineTo').length,512);
+ assert.ok(canvas.query({x:2,y:2}).includes(tracks[20]));
+ canvas.dispose();
+});

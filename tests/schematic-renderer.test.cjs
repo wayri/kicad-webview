@@ -78,7 +78,7 @@ test("page outline, title block fields, sheet box, pins and network primitives r
   assert.equal(result.primitives.find((item) => item.uuid === "junction-1").r, 0.5);
   assert.equal(result.primitives.filter((item) => item.uuid === "nc-1").length, 2);
   assert.ok(result.primitives.some((item) => item.uuid === "sheet-1" && item.kind === "sheet-pin" && item.text === "VCC"));
-  assert.ok(result.warnings.some((warning) => /Custom .kicad_wks/.test(warning)));
+  assert.ok(!result.warnings.some((warning) => /Custom .kicad_wks/.test(warning)));
 });
 
 test("derived symbols inherit embedded graphics and selected body style", () => {

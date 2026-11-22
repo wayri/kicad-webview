@@ -1,4 +1,5 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
+import { parseManufacturing } from './manufacturing/index.mjs';
 /* CAM image renderer. Clear operations erase only their own layer. World units: mm, Y up. */
 export function fitCamera(bounds, width, height) {
   const b = bounds || { x: 0, y: 0, w: 100, h: 100 };
@@ -82,4 +83,18 @@ export function mountManufacturing(host, { dark = false } = {}) {
   on('keydown',event=>{if(event.key==='Escape'){selected=null;measureStart=measureEnd=null;draw();}else if(event.key.toLowerCase()==='f'){api.zoom_to_board();draw();}});
   const observer=typeof ResizeObserver==='function'?new ResizeObserver(resize):null;observer?.observe(host);resize();
   return api;
+}
+
+export function manufacturingDesign(files, options={}) {
+  const layers=[],warnings=[];let bounds=null,format='manufacturing',operationCount=0,pathChars=0;
+  for(const file of files){const source=file.source??new TextDecoder('utf-8',{fatal:true}).decode(file.bytes);
+    const parsed=parseManufacturing(source,{...options,...options.importOptions?.[file.path],path:file.path});
+    if(files.length===1)format=parsed.format;
+    for(const layer of parsed.layers)for(const operation of layer.operations){operationCount++;pathChars+=operation.path.length;if(operationCount>200000||pathChars>16000000)throw new Error('Manufacturing collection exceeds 200000 operations or 16 million path characters.');}
+    for(const note of parsed.warnings)if(warnings.length<500)warnings.push(file.path+': '+note);
+    for(const layer of parsed.layers){const id=file.path+(parsed.layers.length>1?' / '+layer.id:'');layers.push({...layer,id,name:id,operations:layer.operations.map(operation=>({...operation,id:file.path+':'+operation.id}))});}
+    const b=parsed.bounds;if(b)bounds=bounds?{x:Math.min(bounds.x,b.x),y:Math.min(bounds.y,b.y),w:Math.max(bounds.x+bounds.w,b.x+b.w)-Math.min(bounds.x,b.x),h:Math.max(bounds.y+bounds.h,b.y+b.h)-Math.min(bounds.y,b.y)}:{...b};
+  }
+  if(!layers.length)throw new Error('No supported manufacturing layers were found.');
+  return {format,layers:layers.map(layer=>layer.id),camLayers:layers,bounds,warnings,units:'mm',primitives:[]};
 }

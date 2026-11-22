@@ -15,10 +15,10 @@ import '../engine/pcb-renderer.js';
 import '../engine/owned-canvas.js';
 import '../engine/touch-canvas.js';
 import { viewerOwners as owners } from './viewer-host.mjs';
-import { resolveSource, fetchAsset } from './source-loader.mjs';
+import { resolveSource, fetchAsset, fetchText } from './source-loader.mjs';
 import { readZip } from './archive/zip.mjs';
-import { normalizeFiles, localSource, manufacturingDesign } from './manufacturing-input.mjs';
-import { isKiCadPath, isDrawingPath, isManufacturingPath } from './source-types.mjs';
+import { normalizeFiles, localSource } from './manufacturing-input.mjs';
+import { isKiCadPath, isDrawingPath, isManufacturingPath, isWorksheetPath } from './source-types.mjs';
 import { detectManufacturing } from './manufacturing/index.mjs';
 import { createViewerChrome } from './viewer-chrome.mjs';
 import { buildInspectionModel, createInspector } from './inspector.mjs';
@@ -126,7 +126,7 @@ export class KiCadViewer extends EventTarget {
       }
       if (result.files) return this.showManufacturing(result.files, { ...options, view, path: result.path, project: preservedProject || result.project }, operation);
       if (detectManufacturing(result.source, result.path)) return this.showManufacturing([{ source: result.source, path: result.path }], { ...options, view, path: result.path, project: preservedProject || result.project }, operation);
-      return this.showSource(result.source, { path: result.path, view, project: preservedProject || result.project, credentials: options.credentials, textVariables: options.textVariables, instancePath:options.instancePath }, operation);
+      return this.showSource(result.source, { path: result.path, view, project: preservedProject || result.project, credentials: options.credentials, textVariables: options.textVariables, instancePath:options.instancePath, worksheetSource:options.worksheetSource }, operation);
     });
   }
 
@@ -142,30 +142,36 @@ export class KiCadViewer extends EventTarget {
     });
   }
   async showFileSet(files, options={}, operation) {
-    const drawings=[],ignored=[],settings=[];
+    const drawings=[],ignored=[],settings=[...(options.projectSettings||[])];
     for(const file of files){
       if(/\.kicad_pro$/i.test(file.path)){
         const source=file.source??new TextDecoder('utf-8',{fatal:true}).decode(file.bytes);
         if(source.length>8*1024*1024)throw new Error('Project settings exceed the 8 MiB metadata limit.');
-        const saved=JSON.parse(source);settings.push(saved?.text_variables||{});continue;
+        const saved=JSON.parse(source);settings.push({path:file.path,textVariables:saved?.text_variables,pcb:saved?.pcbnew?.page_layout_descr_file,sch:saved?.schematic?.page_layout_descr_file});continue;
       }
       if(!isDrawingPath(file.path)&&!file.path.toLowerCase().endsWith('.txt')){ignored.push(file.path);continue;}
       if(/\.kicad_pcb$/i.test(file.path)){drawings.push(file);continue;}
       const source=file.source??new TextDecoder('utf-8',{fatal:true}).decode(file.bytes);
-      if(isKiCadPath(file.path)||detectManufacturing(source,file.path))drawings.push({path:file.path,source});else ignored.push(file.path);
+      if(isKiCadPath(file.path)||isWorksheetPath(file.path)||detectManufacturing(source,file.path))drawings.push({path:file.path,source});else ignored.push(file.path);
     }
     if(!drawings.length)throw new Error('No supported KiCad, Gerber or Excellon drawings were found.');
-    const entry=options.file?drawings.find(file=>file.path===options.file):drawings.find(file=>/\.kicad_pcb$/i.test(file.path))||drawings[0];
+    const entry=options.file?drawings.find(file=>file.path===options.file):drawings.find(file=>/\.kicad_pcb$/i.test(file.path))||drawings.find(file=>!isWorksheetPath(file.path))||drawings[0];
     if(!entry)throw new Error('The requested drawing is not in the file set.');
-    const project={files:drawings,entry:entry.path,memory:true,textVariables:settings.length===1?settings[0]:{},notes:ignored.length?['Ignored '+ignored.length+' unsupported bundle entries: '+ignored.slice(0,12).join(', ')]:[]};
+    const project={files:drawings,entry:entry.path,memory:true,settings,textVariables:settings.length===1?settings[0].textVariables||{}:{},notes:ignored.length?['Ignored '+ignored.length+' unsupported bundle entries: '+ignored.slice(0,12).join(', ')]:[]};
     if(settings.length>1)project.notes.push('Multiple project settings files supplied; text variables require an explicit textVariables option.');
-    if(!isKiCadPath(entry.path))return this.showManufacturing(drawings.filter(file=>!isKiCadPath(file.path)),{...options,path:entry.path,project},operation);
+    if (settings.length && isKiCadPath(entry.path)) {
+      const {applySavedWorksheet} = await awaitOperation(import('./custom-worksheet.mjs'), operation.signal);
+      applySavedWorksheet(settings, entry.path, project);
+    }
+    if(!isKiCadPath(entry.path)&&!isWorksheetPath(entry.path))return this.showManufacturing(drawings.filter(file=>isManufacturingPath(file.path)),{...options,path:entry.path,project},operation);
     const source=await localSource(entry,{signal:operation.signal});operation.check();
     return this.showSource(source,{...options,path:entry.path,project},operation);
   }
   async showManufacturing(files,{path=files[0]?.path||'Manufacturing layers',project=null,...options}={},operation) {
     this.assertActive();
     if (options.view && options.view !== 'manufacturing') throw new TypeError('Manufacturing layers support the manufacturing view only.');
+    const {manufacturingDesign} = await awaitOperation(import('./manufacturing-canvas.mjs'), operation.signal);
+    operation.check();
     const design = manufacturingDesign(files, options);
     return this.mountView('manufacturing', { source: 'manufacturing', path, kind: 'manufacturing', design, project,
       credentials: options.credentials || 'omit', sheetLinks: [], inspectionModel: buildInspectionModel(null, { kind: 'manufacturing', path, design }) }, operation);
@@ -179,9 +185,29 @@ export class KiCadViewer extends EventTarget {
     });
   }
 
-  async showSource(source, { path = '', view, project = null, credentials = 'omit', textVariables = project?.textVariables || {}, instancePath } = {}, operation) {
+  async showSource(source, { path = '', view, project = null, credentials = 'omit', textVariables = project?.textVariables || {}, instancePath, worksheetSource } = {}, operation) {
     this.assertActive();
     if (typeof source === 'string' && detectManufacturing(source,path)) return this.showManufacturing([{source,path}],{path,view,project,credentials},operation);
+    const standaloneWorksheet = isWorksheetPath(path);
+    const originalSource = source;
+    const explicitWorksheet = worksheetSource;
+    if (standaloneWorksheet) {
+      worksheetSource = source;
+      source = '(kicad_sch (version 20250114) (generator eeschema) (paper "A4") (lib_symbols))';
+    } else if (worksheetSource === undefined && isKiCadPath(path)) {
+      const listed = project?.files?.filter(item=>isWorksheetPath(item.path)) || [];
+      const worksheet = project?.worksheet ? listed.find(item=>item.path===project.worksheet) :
+        listed.find(item=>item.path.replace(/\.kicad_wks$/i,'')===path.replace(/\.kicad_(pcb|sch)$/i,''));
+      if (worksheet) worksheetSource = worksheet.url
+        ? await fetchText(worksheet.url,{signal:operation.signal,credentials,limit:2*1024*1024})
+        : await localSource(worksheet,{signal:operation.signal});
+    }
+    let worksheet;
+    if (worksheetSource !== undefined) {
+      const {parseWorksheet} = await awaitOperation(import('./custom-worksheet.mjs'), operation.signal);
+      operation.check();
+      worksheet = parseWorksheet(worksheetSource,viewerSourceParser);
+    }
     operation.stage?.('Preparing drawing geometryâ€¦');
     if (!textVariables || typeof textVariables!=='object' || Array.isArray(textVariables) || Object.keys(textVariables).length>256 || Object.entries(textVariables).some(([key,value])=>key.length>200 || typeof value!=='string' || value.length>8192)) throw new TypeError('Supply at most 256 text variables with string values (8192 characters each).');
     textVariables=Object.freeze({...textVariables});
@@ -198,19 +224,19 @@ export class KiCadViewer extends EventTarget {
     view ||= kind; this.validateView(view, kind);
     const loadedSheets=kind==='schematic'&&project?.memory ? project.files.filter(file=>/\.kicad_sch$/i.test(file.path)).map(file=>({path:file.path,content:file.source,...(file.path===path?{ast}:{})})) : [{path,ast}];
     const textContext=kind==='schematic' ? globalThis.KiCadFileCompatibility.textContext(loadedSheets,path,{instancePath,parse:source=>sourceParser.parseMetadata(source)}) : {};
-    const design = kind === 'pcb' ? globalThis.KiCadPCBRenderer.build(ast, path, {textVariables,deferZonePoints:true})
-      : globalThis.KiCadSchematicRenderer.build(ast, path, {...textContext,textVariables});
+    const design = kind === 'pcb' ? globalThis.KiCadPCBRenderer.build(ast, path, {textVariables,worksheet,deferZonePoints:true})
+      : globalThis.KiCadSchematicRenderer.build(ast, path, {...textContext,textVariables,worksheet});
     let connectivity = { nets: [], warnings: [] };
-    try { connectivity = viewerNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]]), sourceSnapshot); }
+    try { if(!standaloneWorksheet) connectivity = viewerNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]]), sourceSnapshot); }
     catch (error) { connectivity.warnings.push('Net selection unavailable: ' + error.message); }
-    if (kind === 'schematic') connectivity.warnings.push('Schematic nets use per-file saved wires, labels and terminals; buses, implicit hidden power pins and repeated-sheet instance connectivity are not a KiCad netlist.');
+    if (kind === 'schematic' && !standaloneWorksheet) connectivity.warnings.push('Schematic nets use per-file saved wires, labels and terminals; buses, implicit hidden power pins and repeated-sheet instance connectivity are not a KiCad netlist.');
     const inspectionModel = buildInspectionModel(ast, { kind, path, design, connectivity });
     const atom = item => item && typeof item === 'object' && !Array.isArray(item) ? item.quoted : item;
     const sheetLinks = kind === 'schematic' ? ast.filter(form => Array.isArray(form) && atom(form[0]) === 'sheet').slice(0, 256).map(form => {
       const property = name => String(atom(form.find(item => Array.isArray(item) && atom(item[0]) === 'property' && String(atom(item[1])).replaceAll(' ', '').toLowerCase() === name.toLowerCase())?.[2]) || '').slice(0, 1000);
       return { uuid: String(atom(form.find(item => Array.isArray(item) && atom(item[0]) === 'uuid')?.[1]) || '').slice(0, 1000), name: property('Sheetname'), file: property('Sheetfile') };
     }) : [];
-    return this.mountView(view, { source, path, kind, design, project, credentials, sheetLinks, inspectionModel, sourceSnapshot, sourceKey, sourceParser, textVariables, textInstancePath:instancePath }, operation);
+    return this.mountView(view, { source:originalSource, path, kind, design, project, credentials, sheetLinks, inspectionModel, sourceSnapshot, sourceKey, sourceParser, textVariables, worksheetSource:explicitWorksheet, textInstancePath:instancePath }, operation);
   }
 
   /** Display imported scalar results; the viewer never runs an engineering solver. */
@@ -253,8 +279,8 @@ export class KiCadViewer extends EventTarget {
   openFile(path, options = {}) {
     this.assertActive();
     if (!this.project?.memory && !isDrawingPath(path) || !this.project?.files.some(file => file.path === path)) return Promise.reject(new Error('Choose a file from the loaded project.'));
-    if(this.project.memory)return this.runOperation(options.signal,operation=>this.showFileSet(this.project.files,{textVariables:this.textVariables,...options,file:path},operation));
-    return this.loadInput({ files: this.project.files, entry: path }, { credentials: this.credentials, textVariables:this.textVariables, ...options }, this.project);
+    if(this.project.memory)return this.runOperation(options.signal,operation=>this.showFileSet(this.project.files,{textVariables:this.textVariables,worksheetSource:this.worksheetSource,projectSettings:this.project.settings,...options,file:path},operation));
+    return this.loadInput({ files: this.project.files, entry: path, worksheet:this.project.worksheet }, { credentials: this.credentials, textVariables:this.textVariables, worksheetSource:this.worksheetSource, ...options }, this.project);
   }
 
   createControls() {
@@ -448,6 +474,15 @@ export class KiCadViewer extends EventTarget {
     else { this.renderer?.zoom_to_board(); this.renderer?.draw(); }
   }
 
+  fitPage() {
+    this.assertActive();
+    if (!this.renderer?.zoom_to_page || !['pcb','schematic'].includes(this.view)) return false;
+    this.renderer.zoom_to_page();
+    this.renderer.draw();
+    this.reportCamera();
+    return true;
+  }
+
   setTheme(theme) {
     this.assertActive();
     if (!['light', 'dark'].includes(theme)) throw new TypeError('Theme must be light or dark.');
@@ -540,6 +575,7 @@ export class KiCadViewer extends EventTarget {
     this.assetController?.abort();
     this.renderer?.dispose();
     this.sourceSnapshot = this.sourceKey = this.sourceParser = null;
+    this.worksheetSource = undefined;
     this.viewMemory.clear();this.renderer = this.source = this.design = this.pending = this.project = null;
     this.inspector.dispose();
     this.chrome.dispose();

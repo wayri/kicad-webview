@@ -62,7 +62,18 @@
 
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
 
-    for(const p of primitives){if(p.hidden||(p.frame&&!includeFrame))continue;const pad=(p.width||0)/2;for(const q of points(p)){minX=Math.min(minX,q.x-pad);minY=Math.min(minY,q.y-pad);maxX=Math.max(maxX,q.x+pad);maxY=Math.max(maxY,q.y+pad);}}
+    for (const p of primitives) {
+      if (p.hidden || p.frame && !includeFrame) continue;
+      const pad=(p.width||0)/2;
+      if (p.zoneBounds) {
+        const {x,y,w,h}=p.zoneBounds;
+        minX=Math.min(minX,x-pad); minY=Math.min(minY,y-pad);
+        maxX=Math.max(maxX,x+w+pad); maxY=Math.max(maxY,y+h+pad);
+      } else for(const q of points(p)){
+        minX=Math.min(minX,q.x-pad);minY=Math.min(minY,q.y-pad);
+        maxX=Math.max(maxX,q.x+pad);maxY=Math.max(maxY,q.y+pad);
+      }
+    }
 
     return minX===Infinity?null:{x:minX,y:minY,w:Math.max(.01,maxX-minX),h:Math.max(.01,maxY-minY)};
 
@@ -72,9 +83,23 @@
 
   function inside(p,poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a.y>p.y)!==(b.y>p.y)&&p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x)hit=!hit;}return hit;}
 
+  function zoneDistance(p, at) {
+    const xy = p.zoneCoordinates;
+    const a = {x:xy[xy.length-2],y:xy[xy.length-1]}, b = {x:0,y:0};
+    let insideZone=false, closest=Infinity;
+    for (let i=0;i<xy.length;i+=2) {
+      b.x=xy[i]; b.y=xy[i+1];
+      if ((a.y>at.y)!==(b.y>at.y) && at.x<(b.x-a.x)*(at.y-a.y)/(b.y-a.y)+a.x) insideZone=!insideZone;
+      closest=Math.min(closest,segmentDistance(at,a,b));
+      a.x=b.x; a.y=b.y;
+    }
+    return p.fill && insideZone ? 0 : Math.max(0,closest-(p.width||.1)/2);
+  }
+
   function hitPrimitive(p,at,tolerance){
 
     if(p.hole||p.frame)return false;
+    if(p.zoneCoordinates)return zoneDistance(p,at)<=tolerance;
 
     if(p.type==='circle'||p.type==='pad'&&p.r){const dist=Math.hypot(at.x-p.x,at.y-p.y);return p.fill?dist<=p.r+tolerance:Math.abs(dist-p.r)<=tolerance+(p.width||.1)/2;}
 
@@ -93,6 +118,7 @@
 
   function primitiveDistance(p,at,tolerance=.01){
     if(!p||p.frame||p.hole)return Infinity;
+    if(p.zoneCoordinates)return zoneDistance(p,at);
     if(p.type==='circle'||p.type==='pad'&&p.r){const distance=Math.hypot(at.x-p.x,at.y-p.y);return Math.max(0,(p.fill?distance-p.r:Math.abs(distance-p.r))-(p.width||.1)/2);}
     const path=points(p);let distance=Infinity;
     if((['pad','text','image'].includes(p.type)||p.type==='bezier'&&p.fill||p.type==='polygon'&&(p.fill||['symbol','footprint','footprint-hit','sheet','global_label','hierarchical_label','sheet-pin'].includes(p.kind)))&&inside(at,path))return 0;
@@ -106,6 +132,7 @@
   // them across thousands of cells. Text remains conservative for font metrics.
   function spatialBounds(p){
     if(p.type==='text')return null;
+    if(p.zoneBounds){const {x,y,w,h}=p.zoneBounds,pad=(p.width||.15)/2;return{x:x-pad,y:y-pad,w:w+pad*2,h:h+pad*2};}
     if(p.type==='arc'){const a=arcThrough(p.start,p.mid,p.end);if(a){const r=a.r+(p.width||.15)/2;return {x:a.x-r,y:a.y-r,w:2*r,h:2*r};}}
     const b=bounds([{...p,hidden:false,width:p.width||.15}],true);
     return b&&[b.x,b.y,b.w,b.h].every(Number.isFinite)?b:null;
@@ -126,11 +153,33 @@
     }
     range(b){const grid=(value,origin,size)=>Math.max(0,Math.min(63,Math.floor((value-origin)/size*64)));return {x0:grid(b.x,this.box.x,this.box.w),x1:grid(b.x+b.w,this.box.x,this.box.w),y0:grid(b.y,this.box.y,this.box.h),y1:grid(b.y+b.h,this.box.y,this.box.h)};}
     query(b){
-      const indices=new Set(this.overflow),range=this.range(b);
+      const range=this.range(b);
       if(range.x0===0&&range.y0===0&&range.x1===63&&range.y1===63)return this.primitives;
-      if(b.x+b.w>=this.box.x&&b.x<=this.box.x+this.box.w&&b.y+b.h>=this.box.y&&b.y<=this.box.y+this.box.h)
-        for(let y=range.y0;y<=range.y1;y++)for(let x=range.x0;x<=range.x1;x++)for(const i of this.cells.get(y*64+x)||[])indices.add(i);
-      return [...indices].sort((a,b)=>a-b).map(i=>this.primitives[i]);
+      // Reuse workspace for partial camera queries instead of allocating and
+      // sorting a Set of boxed entries for each gesture frame.
+      const marks = this.queryMarks ??= new Uint8Array(this.length);
+      const indices = this.queryIndices ??= new Uint32Array(this.length);
+      let count = 0;
+      const append = index => {
+        if (marks[index]) return;
+        marks[index] = 1;
+        indices[count++] = index;
+      };
+      for (const index of this.overflow) append(index);
+      if(b.x+b.w>=this.box.x&&b.x<=this.box.x+this.box.w&&b.y+b.h>=this.box.y&&b.y<=this.box.y+this.box.h){
+        for(let y=range.y0;y<=range.y1;y++)for(let x=range.x0;x<=range.x1;x++){
+          const cell = this.cells.get(y*64+x);
+          if (cell) for (const index of cell) append(index);
+        }
+      }
+      const ordered = indices.subarray(0,count).sort();
+      const result = new Array(count);
+      for (let offset=0; offset<count; offset++) {
+        const index = ordered[offset];
+        marks[index] = 0;
+        result[offset] = this.primitives[index];
+      }
+      return result;
     }
   }
 
@@ -270,7 +319,18 @@
 
     }
 
-    resize(){if(this.disposed)return;const r=this.host.getBoundingClientRect(),c=this.viewport.camera;c.width=Math.max(1,r.width);c.height=Math.max(1,r.height);const view=canvasViewport(c.width,c.height,globalThis.devicePixelRatio);this.pixelRatio=view.ratio;if(this.canvas.width!==view.width)this.canvas.width=view.width;if(this.canvas.height!==view.height)this.canvas.height=view.height;this.canvas.style.width=c.width+'px';this.canvas.style.height=c.height+'px';}
+    resize(){
+      if(this.disposed)return;
+      const r=this.host.getBoundingClientRect(),c=this.viewport.camera;
+      this.hasSize=Number.isFinite(r.width)&&Number.isFinite(r.height)&&r.width>0&&r.height>0;
+      if(!this.hasSize){this.hideMotion();return;}
+      c.width=r.width;c.height=r.height;
+      const view=canvasViewport(c.width,c.height,globalThis.devicePixelRatio);
+      this.pixelRatio=view.ratio;
+      if(this.canvas.width!==view.width)this.canvas.width=view.width;
+      if(this.canvas.height!==view.height)this.canvas.height=view.height;
+      this.canvas.style.width=c.width+'px';this.canvas.style.height=c.height+'px';
+    }
 
     setDocument(design,path){this.resize();this.design=design;this.document={filename:path};this.primitives=design.primitives;this.visibleLayers=new Set((design.layers||[]).filter(layer=>!this.pcb||['F.Cu','B.Cu','F.SilkS','B.SilkS','Edge.Cuts'].includes(layer)));this.selected=null;this.focusedLayer=null;this.layerSnapshot=null;this.layerPresetName=null;this.setNetHighlight(null);this.zoom_to_board();this.draw();}
 
@@ -317,10 +377,38 @@
       return primitiveDistance(p,at,.25/c.zoom)*c.zoom;
     }
     query(at,pixels=5){
-      const zoom=this.viewport.camera.zoom,tolerance=pixels/zoom,priority=p=>['pad','pin','via'].includes(p.kind)?0:['wire','track','arc','junction','label','global_label','hierarchical_label','sheet-pin','pin-number','pin-name'].includes(p.electricalKind||p.kind)?1:['footprint','symbol','footprint-hit','sheet'].includes(p.kind)?2:p.type==='image'?12:p.kind==='zone'?10:3;
-      return this.candidates({x:at.x-tolerance,y:at.y-tolerance,w:2*tolerance,h:2*tolerance}).filter(p=>this.geometryVisible(p)&&p.pick!==false&&(!this.netHighlight||!this.isolateNet||this.netPrimitives.has(p))&&(this.selectionMode!=='pin'||['pad','pin','pin-marker','pin-name','pin-number'].includes(p.kind))&&(p.uuid||p.reference)&&(!p.layer||this.visibleLayers.has(p.layer))&&(!this.focusedLayer||this.layerFocusMode!=='isolate'||p.layer===this.focusedLayer)&&(p.type==='text'?this.pickDistance(p,at)<=pixels:hitPrimitive(p,at,tolerance)))
-        .map(p=>({p,score:this.pickDistance(p,at)+priority(p)*.35+(this.focusedLayer&&p.layer!==this.focusedLayer ? .1 : 0)}))
-        .sort((a,b)=>a.score-b.score).slice(0,40).map(row=>row.p);
+      const camera = this.viewport.camera;
+      const tolerance = pixels / camera.zoom;
+      const preferred = this.focusedLayer || (camera.flipped ? 'B.Cu' : 'F.Cu');
+      const ranked = this.primitives.slice(0,0);
+      const compare = (a,b) => a.score-b.score;
+      let cutoff = Infinity;
+      for (const p of this.candidates({x:at.x-tolerance,y:at.y-tolerance,w:2*tolerance,h:2*tolerance})) {
+        if (p.pick === false || p.hole || p.frame || !(p.uuid || p.reference) || !this.geometryVisible(p)) continue;
+        if (this.isolateNet && this.netHighlight && !this.netPrimitives.has(p)) continue;
+        if (this.selectionMode === 'pin' && !['pad','pin','pin-marker','pin-name','pin-number'].includes(p.kind)) continue;
+        if (p.layer && !this.visibleLayers.has(p.layer)) continue;
+        if (this.focusedLayer && this.layerFocusMode === 'isolate' && p.layer !== this.focusedLayer) continue;
+        const useDistance = p.type === 'text' || p.zoneCoordinates;
+        if (!useDistance && !hitPrimitive(p,at,tolerance)) continue;
+        const distance = this.pickDistance(p,at);
+        if (useDistance && distance > pixels) continue;
+        const kind = p.electricalKind || p.kind;
+        const rank = ['pad','pin','via'].includes(kind) ? 0 :
+          ['wire','track','arc','junction','label','global_label','hierarchical_label','sheet-pin','pin-number','pin-name'].includes(kind) ? 1 :
+          ['footprint','symbol','footprint-hit','sheet'].includes(kind) ? 2 : p.type === 'image' ? 12 : 3;
+        const bias = this.pcb && p.layer && p.layer !== preferred ? .25 : 0;
+        const zone = p.kind === 'zone' || p.kind === 'zone-outline';
+        const score = distance + rank * .35 + bias + (zone ? pixels + 1 : 0);
+        if (score >= cutoff) continue;
+        ranked.push({p,score});
+        if (ranked.length === 80) {
+          ranked.sort(compare);
+          ranked.length = 40;
+          cutoff = ranked[39].score;
+        }
+      }
+      return ranked.sort(compare).slice(0,40).map(row=>row.p);
     }
 
     select(hit,options={}){this.selected=hit?.primitive||null;this.draw();this.dispatchEvent(new CustomEvent('kicad:select',{detail:{item:hit?.context||null,multi:Boolean(options.multi)}}));}
@@ -346,7 +434,7 @@
 
     layerPreset(preset){
 
-      const all=this.design?.layers||[];if(!['all','none','front','back','copper','overview'].includes(preset))return false;
+      const all=this.design?.layers||[];if(!['all','none','front','back','copper','overview','outline'].includes(preset))return false;
 
       if(!this.layerSnapshot)this.layerSnapshot=new Set(this.visibleLayers);
 
@@ -365,7 +453,7 @@
     paperColor(){return this.dark?'#1c2029':'#fdfdff';}
 
     cameraState(){const c=this.viewport.camera;return {x:c.center.x,y:c.center.y,zoom:c.zoom,width:c.width,height:c.height,flipped:c.flipped};}
-    canUseMotionTexture(){return !this.disposed&&this.acceleration!=='off'&&!this.motionFailed&&this.primitives.length>=MOTION_MIN_PRIMITIVES&&this.primitives.length<DENSE_PREVIEW_MIN_PRIMITIVES&&!this.renderPrimitives&&Boolean(root.KiCadMotionWebGL);}
+    canUseMotionTexture(){return this.hasSize&&!this.disposed&&this.acceleration!=='off'&&!this.motionFailed&&this.primitives.length>=MOTION_MIN_PRIMITIVES&&this.primitives.length<DENSE_PREVIEW_MIN_PRIMITIVES&&!this.renderPrimitives&&Boolean(root.KiCadMotionWebGL);}
     prepareMotion(){
       if(!this.canUseMotionTexture())return false;
       try{
@@ -465,7 +553,7 @@
     }
     drawGeometry(preview=false,dpr=this.pixelRatio||1){
 
-      if(this.disposed)return;
+      if(this.disposed||!this.hasSize)return;
       const c=this.viewport.camera,ctx=this.ctx;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=this.background();ctx.fillRect(0,0,this.canvas.width,this.canvas.height);ctx.setTransform(dpr,0,0,dpr,0,0);
 
       if(this.grid&&c.zoom>2){let step=Number.isFinite(this.gridPitch)&&this.gridPitch>=.001&&this.gridPitch<=100?this.gridPitch:(c.zoom>12?1:5);while(step*c.zoom<5)step*=10;const b=c.bbox;ctx.fillStyle=this.dark?'#2b3b46':'#d3d3c7';let count=0;for(let x=Math.ceil(b.x/step)*step;x<b.x+b.w&&count<20000;x+=step)for(let y=Math.ceil(b.y/step)*step;y<b.y+b.h&&count++<20000;y+=step){const s=c.world_to_screen({x,y});ctx.fillRect(s.x,s.y,1,1);}}
@@ -478,6 +566,33 @@
       const densePreview=preview&&this.primitives.length>=DENSE_PREVIEW_MIN_PRIMITIVES&&candidates.length>DENSE_PREVIEW_PAINT_LIMIT;
       const step=densePreview?Math.ceil(candidates.length/DENSE_PREVIEW_PAINT_LIMIT):1;
       const selectedOwner=densePreview&&this.selected?.kind==='footprint-hit'?(this.selected.ownerUuid||this.selected.uuid):null;
+      // Coalesce consecutive opaque straight copper strokes. Preserve painter
+      // order across style changes, fills, and selected geometry.
+      let pending = 0, strokeColor, strokeWidth;
+      const flushTracks = () => {
+        if (!pending) return;
+        ctx.stroke();
+        ctx.restore();
+        pending = 0;
+      };
+      const batchTrack = (p, color) => {
+        const width = Math.max(.65,(p.width||.15)*c.zoom);
+        if (pending && (strokeColor !== color || strokeWidth !== width || pending === 256)) flushTracks();
+        if (!pending) {
+          ctx.save();
+          ctx.strokeStyle = strokeColor = color;
+          ctx.lineWidth = strokeWidth = width;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.globalAlpha = 1;
+          ctx.setLineDash?.([]);
+          ctx.beginPath();
+        }
+        const start = c.world_to_screen(p.points[0]), end = c.world_to_screen(p.points[1]);
+        ctx.moveTo(start.x,start.y);
+        ctx.lineTo(end.x,end.y);
+        pending++;
+      };
       if(this.renderPrimitives)this.renderPrimitives(ctx,c,this);else for(let i=0;i<candidates.length;i++){
         const p=candidates[i],matches=this.netPrimitives.has(p);
         if(densePreview&&!matches&&p!==this.selected&&!(selectedOwner&&p.ownerUuid===selectedOwner)&&!p.frame&&p.layer!=='Edge.Cuts'){
@@ -498,12 +613,21 @@
         if(dim&&this.isolateNet&&!p.hole&&p.layer!=='Edge.Cuts')continue;
 
         const style={color:dim&&this.highlightMode!=='bright'&&!p.hole?(this.dark?'#87919d':'#8b919a'):p.kind==='via'?'#c5aa6c':matches&&!p.hole&&this.selectionColor!=='source'?(this.pcb?'#ffe18b':this.dark?'#78d5ff':'#006ca8'):this.netClassColors?.get(p)||null,opacity:Math.min(dim&&!p.hole&&this.highlightMode!=='bright'&&p.layer!=='Edge.Cuts'?(this.pcb?.045:.38):1,layerDim&&!p.hole?.18:1)};
+        if (this.pcb && !this.netHighlight && !layerDim && !p.frame && !p.hole &&
+            p.kind === 'track' && p.type === 'line' && p.points?.length === 2 &&
+            !p.fill && !p.lineStyle && p.stroke !== false &&
+            (p.opacity === undefined || p.opacity === 1) && this.paint === Viewport.prototype.paint) {
+          batchTrack(p,this.strokeColor(p,style.color));
+          continue;
+        }
+        flushTracks();
         if(this.pcb&&this.netHighlight&&this.highlightMode!=='bright'){
           if(p.hole)drillPaint.push({p,style});else if(matches)selectedPaint.push({p,style});else this.paint(p,style);
         }else this.paint(p,style);
 
       }
 
+      flushTracks();
       // Keep saved net copper above faint context, with physical drill cutouts last.
       for(const {p,style}of selectedPaint)this.paint(p,style);
       for(const {p,style}of drillPaint)this.paint(p,style);
@@ -525,9 +649,17 @@
       }
       if(path)ctx.fill(path);else ctx.fill();
     }
+    strokeColor(p,override){
+      const color=override||p.color||'#819baa';
+      if(p.hole)return this.paperVisible?this.paperColor():this.background();
+      if(override)return color;
+      if(!this.pcb&&!p.sourceColor)return schematicColor(color,this.dark);
+      if(p.layer&&root.KiCadLayerColors?.reviewColorFor)return root.KiCadLayerColors.reviewColorFor(p.layer,this.dark);
+      return color;
+    }
     paint(p,style={}){
-
-      const ctx=this.ctx,c=this.viewport.camera;ctx.save();let color=style.color||p.color||'#819baa';if(p.hole)color=this.paperVisible?this.paperColor():this.background();else if(!style.color){if(!this.pcb&&!p.sourceColor)color=schematicColor(color,this.dark);else if(p.layer&&root.KiCadLayerColors?.reviewColorFor)color=root.KiCadLayerColors.reviewColorFor(p.layer,this.dark);}
+      const ctx=this.ctx,c=this.viewport.camera;ctx.save();
+      const color=this.strokeColor(p,style.color);
 
       ctx.strokeStyle=color;ctx.fillStyle=style.color?color:['color','hatch','reverse_hatch','cross_hatch'].includes(p.fill)&&p.fillColor?p.fillColor:p.fill==='background'?(this.dark?'#32322a':'#ffffc2'):color;ctx.globalAlpha=Math.max(0,Math.min(1,(this.netPrimitives.has(p)&&!p.hole?1:Number.isFinite(p.opacity)?p.opacity:1)*(style.opacity??1)));ctx.lineWidth=Math.max(.65,(p.width||.15)*c.zoom);if(this.netPrimitives.has(p)&&!p.hole)ctx.lineWidth+=1.5;ctx.lineCap='round';ctx.lineJoin='round';const dashUnit=Math.max(1,ctx.lineWidth),dash={dash:[11,4],dot:[.2,4],dash_dot:[11,4,.2,4],dash_dot_dot:[11,4,.2,4,.2,4]}[p.lineStyle];ctx.setLineDash?.(dash?dash.map(n=>n*dashUnit):[]);
 
@@ -540,6 +672,14 @@
 
       else if(p.type==='circle'||p.type==='pad'&&p.r){const q=c.world_to_screen(p);ctx.arc(q.x,q.y,p.r*c.zoom,0,2*Math.PI);}
 
+      else if(p.zoneCoordinates){
+        const xy=p.zoneCoordinates,origin=c.world_to_screen({x:0,y:0}),
+          x=c.worldDeltaToScreen({x:1,y:0}),y=c.worldDeltaToScreen({x:0,y:1});
+        ctx.moveTo(origin.x+xy[0]*x.x+xy[1]*y.x,origin.y+xy[0]*x.y+xy[1]*y.y);
+        for(let i=2;i<xy.length;i+=2)
+          ctx.lineTo(origin.x+xy[i]*x.x+xy[i+1]*y.x,origin.y+xy[i]*x.y+xy[i+1]*y.y);
+        ctx.closePath();
+      }
       else{const ps=points(p);if(ps.length){const q=c.world_to_screen(ps[0]);ctx.moveTo(q.x,q.y);for(const t of ps.slice(1)){const s=c.world_to_screen(t);ctx.lineTo(s.x,s.y);}if(p.type==='polygon'||p.type==='pad')ctx.closePath();}}
 
       if(p.fill)this.fillGraphic(p,null,false);if(!p.hole&&p.stroke!==false)ctx.stroke();ctx.restore();

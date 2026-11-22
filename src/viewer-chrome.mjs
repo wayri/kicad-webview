@@ -103,6 +103,7 @@ export function createViewerChrome(viewer) {
   const threeButton = button('cube', '3D view', () => viewer.setView('3d'), '3D');
   views.append(layoutButton, threeButton);
   const fitButton = button('fit', 'Fit drawing', () => viewer.fit()); fitButton.className='viewer-fit';
+  const fitPageButton = button('fit','Fit page',()=>{moreMenu.open=false;viewer.fitPage();},'Page');
   const themeButton = button('moon', 'Switch to dark theme', () => viewer.setTheme(viewer.theme === 'light' ? 'dark' : 'light'));
   const layerControls=createLayerControls(viewer,make,icon,fail),highlightControls=createHighlightControls(viewer,make,icon,fail);
   const layersMenu=layerControls.menu,layerList=layerControls.list,layerFilter=layerControls.filter,layersSummary=layerControls.summary;
@@ -114,7 +115,7 @@ export function createViewerChrome(viewer) {
   inspectorButton.setAttribute('aria-expanded', 'false');
   const moreMenu=make('details','viewer-more'),moreSummary=make('summary'),morePanel=make('div','viewer-more-panel');
   moreSummary.textContent='More';moreSummary.title='More viewer tools';moreSummary.setAttribute('aria-label','More viewer tools');
-  morePanel.append(measureButton,inspectorButton,themeButton,highlightControls.menu,layersMenu,notesButton);moreMenu.append(moreSummary,morePanel);
+  morePanel.append(fitPageButton,measureButton,inspectorButton,themeButton,highlightControls.menu,layersMenu,notesButton);moreMenu.append(moreSummary,morePanel);
   actions.append(fitButton,moreMenu);
   toolbar.append(picker, views, actions);
   const ToolbarObserver=doc.defaultView?.ResizeObserver||globalThis.ResizeObserver;
@@ -166,6 +167,7 @@ export function createViewerChrome(viewer) {
     layoutButton.setAttribute('aria-pressed', String(viewer.view === 'pcb'));
     threeButton.setAttribute('aria-pressed', String(viewer.view === '3d'));
     fitButton.disabled = !viewer.renderer;
+    fitPageButton.hidden = !viewer.renderer || !['pcb','schematic'].includes(viewer.view);
     measureButton.hidden=viewer.view!=='manufacturing';measureButton.setAttribute('aria-pressed',String(Boolean(viewer.renderer?.measuring)));
     layerControls.update();highlightControls.update();
     setTheme(viewer.theme);
@@ -183,7 +185,7 @@ export function createViewerChrome(viewer) {
       layerControls.menu.ontoggle=highlightControls.menu.ontoggle=null;layerControls.dispose();highlightControls.dispose();
       toolbarObserver?.disconnect();
       viewer.surface.removeEventListener?.('keydown', escape);
-      for (const node of [layoutButton, threeButton, fitButton, themeButton, notesButton, measureButton, inspectorButton]) node.onclick = null;
+      for (const node of [layoutButton, threeButton, fitButton, fitPageButton, themeButton, notesButton, measureButton, inspectorButton]) node.onclick = null;
       fileSelect.onchange = layerFilter.oninput = null;
     },
   };

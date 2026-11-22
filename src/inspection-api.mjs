@@ -40,8 +40,8 @@ export function setLayers(viewer,layers){
   return changed(viewer);
 }
 export function setLayerPreset(viewer,preset){
-  ready(viewer);if(!['all','none','front','back','copper','overview'].includes(preset))throw new TypeError('Choose all, overview, none, front, back or copper layers.');
-  if(preset==='overview'&&viewer.view!=='pcb')throw new Error('Overview requires the 2D PCB view.');
+  ready(viewer);if(!['all','none','front','back','copper','overview','outline'].includes(preset))throw new TypeError('Choose all, overview, outline, none, front, back or copper layers.');
+  if(['overview','outline'].includes(preset)&&viewer.view!=='pcb')throw new Error('This layer preset requires the 2D PCB view.');
   remember(viewer);if(viewer.view==='pcb'&&viewer.renderer.layerPreset)viewer.renderer.layerPreset(preset);
   else {const layers=getLayerState(viewer).layers,visible=layers.filter(layer=>preset==='all'||preset!=='none'&&(layer==='Edge.Cuts'||preset==='copper'&&/^(?:F|B|In\d+)\.Cu$/.test(layer)||preset==='front'&&layer.startsWith('F.')||preset==='back'&&layer.startsWith('B.')||preset==='overview'&&['F.Cu','B.Cu','F.SilkS','B.SilkS'].includes(layer)));
     if(viewer.view==='3d')viewer.renderer.setVisibleCopperLayers(visible);else{viewer.renderer.visibleLayers=new Set(visible);viewer.renderer.focusedLayer=null;}layerMemory(viewer).preset=preset;}

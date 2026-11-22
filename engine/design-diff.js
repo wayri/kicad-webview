@@ -63,23 +63,6 @@
   }
   const METADATA_FIELDS=new Set(["version","generator","generator_version","uuid","paper","title_block","property","sheet","symbol","footprint","module","sheet_instances","legacy_source","legacy_diagnostic"]);
   const METADATA_OBJECT_FIELDS=new Set(["property","uuid","path","instances"]);
-  // Only prepared viewer trees use this representation. Keep ordinary
-  // parse and comparison trees compatible with existing consumers.
-  function packSavedFill(form) {
-    if (form.length < 4) return;
-    for (let i = 1; i < form.length; i++) {
-      const point = form[i];
-      if (!Array.isArray(point) || point.length !== 3 || point[0] !== 'xy' ||
-          !Number.isFinite(point[1]) || !Number.isFinite(point[2])) return;
-    }
-    const coordinates = new Float64Array((form.length - 1) * 2);
-    for (let i = 1; i < form.length; i++) {
-      coordinates[(i - 1) * 2] = form[i][1];
-      coordinates[(i - 1) * 2 + 1] = form[i][2];
-    }
-    form.length = 1;
-    form.push(coordinates);
-  }
   function parse(source, options = {}) {
     if (typeof source !== "string") throw new TypeError("KiCad source must be a string.");
     if (/^\s*PCBNEW-BOARD/.test(source))throw Error('Legacy .brd boards are detected but this drawing format is not yet rendered. Open and save a separate .kicad_pcb copy in KiCad.');
@@ -97,6 +80,40 @@
     // to the general parser.
     const coordinate = /\(xy[ \t]+([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)[ \t]+([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)[ \t]*\)/y;
     let i = 0, nodes = 0, skippedDepth=0;
+    const isFilledZone = () => stack.length === 3 && stack[0][0] === 'kicad_pcb' &&
+      stack[1][0] === 'zone' && stack[2][0] === 'filled_polygon';
+
+    // Scan ordinary KiCad fills directly into a numeric buffer. If an unfamiliar
+    // form occurs, leave the cursor unchanged and let the ordinary reader handle it.
+    function packedContour(start) {
+      let cursor = start + 4, length = 0;
+      let coordinates = new Float64Array(128);
+      while (cursor < source.length) {
+        while (spaceCode(source.charCodeAt(cursor))) cursor++;
+        if (source.charCodeAt(cursor) === 41) {
+          if (length < 6) return null;
+          nodes += 1 + length * 2; // pts name and four nodes per vertex.
+          append(['pts', length === coordinates.length ? coordinates : coordinates.slice(0, length)]);
+          return cursor + 1;
+        }
+        coordinate.lastIndex = cursor;
+        const match = coordinate.exec(source);
+        if (!match) return null;
+        const x = Number(match[1]), y = Number(match[2]);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error("Invalid numeric KiCad value.");
+        if (nodes + 6 + length * 2 > MAX_NODES) throw new Error("KiCad file has too many S-expression nodes.");
+        if (length === coordinates.length) {
+          const larger = new Float64Array(coordinates.length * 2);
+          larger.set(coordinates);
+          coordinates = larger;
+        }
+        coordinates[length++] = x;
+        coordinates[length++] = y;
+        cursor = coordinate.lastIndex;
+      }
+      return null;
+    }
+
     const append = (item) => {
       if (++nodes > MAX_NODES) throw new Error("KiCad file has too many S-expression nodes.");
       if(!skippedDepth)(stack.at(-1) || roots).push(item);
@@ -108,6 +125,11 @@
       if (ch === ";") { while (i < source.length && source[i] !== "\n") i++; continue; }
       if (ch === "(") {
         if (stack.length >= MAX_DEPTH) throw new Error("KiCad S-expression is too deep.");
+        if (options.compactCopper && !options.metadataOnly && source.startsWith('(pts', i) &&
+            spaceCode(source.charCodeAt(i + 4)) && isFilledZone()) {
+          const next = packedContour(i);
+          if (next !== null) { i = next; continue; }
+        }
         if (!options.metadataOnly && stack.length && source.startsWith('(xy', i)) {
           coordinate.lastIndex = i;
           const match = coordinate.exec(source);
@@ -135,9 +157,6 @@
         // Fixed-size small forms avoid retaining the spare capacity of millions
         // of growable coordinate/attribute arrays. The public tree shape stays
         // identical; replace only a completed child, never a live stack frame.
-        if (options.compactCopper && node[0] === 'pts' && stack.length === 3 &&
-            stack[0][0] === 'kicad_pcb' && stack[1][0] === 'zone' &&
-            stack[2][0] === 'filled_polygon') packSavedFill(node);
         if(!skippedDepth&&node.length>0&&node.length<=4){
           const compact = node.slice();
           const parent=stack.at(-1)||roots;parent[parent.length-1]=compact;

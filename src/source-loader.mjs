@@ -1,6 +1,6 @@
 /* Copyright (c) 2026 wayri. SPDX-License-Identifier: MPL-2.0 */
 /* Public, browser-only source resolution. No service credentials or filesystem access. */
-import { isDrawingPath, isManufacturingPath, isArchivePath } from './source-types.mjs';
+import { isDrawingPath, isManufacturingPath, isArchivePath, isWorksheetPath } from './source-types.mjs';
 import { detectManufacturing } from './manufacturing/index.mjs';
 import { MAX_SOURCE_BYTES } from './project-bounds.mjs';
 const MAX_SOURCE = MAX_SOURCE_BYTES;
@@ -112,7 +112,9 @@ function normalizeManifest(manifest, baseURL) {
   if (!files.some(item => drawing(item.path))) throw new TypeError('A project must contain a supported KiCad, manufacturing or ZIP drawing.');
   if (manifest.entry !== undefined && (!safePath(manifest.entry) || !files.some(item => item.path === manifest.entry && drawing(item.path))))
     throw new TypeError('The project entry must name a listed supported drawing.');
-  return { files: Object.freeze(files), ...(manifest.entry !== undefined ? { entry: manifest.entry } : {}) };
+  if (manifest.worksheet !== undefined && !files.some(item=>item.path===manifest.worksheet&&isWorksheetPath(item.path)))
+    throw new TypeError('The manifest worksheet must name a listed .kicad_wks file.');
+  return { files: Object.freeze(files), ...(manifest.worksheet!==undefined?{worksheet:manifest.worksheet}:{}), ...(manifest.entry !== undefined ? { entry: manifest.entry } : {}) };
 }
 
 async function loadProject(project, options) {
@@ -120,7 +122,7 @@ async function loadProject(project, options) {
   const entry = requested ? project.files.find(item => item.path === requested && drawing(item.path))
     : [...project.files].filter(item => drawing(item.path)).sort((a, b) => {
       const pcbFirst = Number(/\.kicad_pcb$/i.test(b.path)) - Number(/\.kicad_pcb$/i.test(a.path));
-      return pcbFirst || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+      return pcbFirst || Number(isWorksheetPath(a.path))-Number(isWorksheetPath(b.path)) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
     })[0];
   if (!entry) throw new Error('The requested project drawing is not listed.');
   const retained = Object.freeze({ ...project, entry: entry.path });
@@ -138,7 +140,7 @@ async function loadProject(project, options) {
     const recognized=new Set(files.map(file=>file.path));
     return {files,path:chosen.path,project:Object.freeze({...retained,entry:chosen.path,files:Object.freeze(project.files.filter(file=>!file.path.toLowerCase().endsWith('.txt')||recognized.has(file.path)))})};
   }
-  const source = await fetchText(entry.url, options);
+  const source = await fetchText(entry.url, isWorksheetPath(entry.path)?{...options,limit:2*1024*1024}:options);
   return { source, path: entry.path, project: retained };
 }
 
@@ -203,7 +205,7 @@ async function loadGithub(url, options) {
     const address=rawURL(location.repository, revision, location.path);
     if(isArchivePath(location.path)) return {archive:await fetchBytes(address,options),path:location.path,project:null};
     if(options.metadataOnly) return {path:location.path,project:{entry:location.path,files:[{path:location.path,url:address}]}};
-    return { source: await fetchText(address, options), path: location.path, project: null };
+    return { source: await fetchText(address, isWorksheetPath(location.path)?{...options,limit:2*1024*1024}:options), path: location.path, project: null };
   }
   const tree = await json(`${api}/git/trees/${commit.commit.tree.sha}?recursive=1`);
   if (tree.truncated === true) throw new Error('GitHub returned a truncated tree. Use a hosted project manifest for this repository.');
@@ -249,7 +251,7 @@ export async function resolveSource(input, { baseURL, signal, ref, file, credent
     const project=normalizeManifest({entry:path,files:[{path,url:url.href}]},url.href);
     return {path,project};
   }
-  const result = await readResponse(url, { ...options, limit: /\.json$/i.test(url.pathname) ? MAX_METADATA : MAX_SOURCE });
+  const result = await readResponse(url, { ...options, limit: /\.json$/i.test(url.pathname) ? MAX_METADATA : isWorksheetPath(url.pathname) ? 2*1024*1024 : MAX_SOURCE });
   if (/\.json$/i.test(url.pathname) || /\bapplication\/(?:[a-z\d.+-]+\+)?json\b/i.test(result.type)) {
     if (result.size > MAX_METADATA) throw new Error('Project manifest exceeds 8 MiB.');
     return loadProject(normalizeManifest(parseJSON(result.source), result.url), options);

@@ -70,6 +70,7 @@ for (const [source, target] of [
   ['docs/API-STABILITY.md','API-STABILITY.md'],
   ['docs/RELEASE-1.0.0.md','RELEASE-1.0.0.md'],
   ['docs/RELEASE-1.1.0.md','RELEASE-1.1.0.md'],
+  ['docs/RELEASE-1.2.0.md','RELEASE-1.2.0.md'],
   ['docs/RELEASE-1.1.1.md','RELEASE-1.1.1.md'],
   ['docs/QA-1.1.0.md','QA-1.1.0.md'],
   ['docs/QA-1.0.0.md','QA-1.0.0.md'],

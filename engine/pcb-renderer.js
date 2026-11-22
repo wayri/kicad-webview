@@ -130,8 +130,21 @@
       const form = child(polygon, "pts");
       const positions = zonePointCache ? null : pointsFromForm(form);
       if (zonePointCache ? !hasPolygonPoints(form) : positions.length < 3) return;
+      const coordinates = zonePointCache && form[1] instanceof Float64Array ? form[1] : null;
+      let zoneBounds;
+      if (coordinates) {
+        let x=Infinity, y=Infinity, right=-Infinity, bottom=-Infinity;
+        for (let i=0;i<coordinates.length;i+=2) {
+          x=Math.min(x,coordinates[i]); y=Math.min(y,coordinates[i+1]);
+          right=Math.max(right,coordinates[i]); bottom=Math.max(bottom,coordinates[i+1]);
+        }
+        zoneBounds={x,y,w:right-x,h:bottom-y};
+      }
       for (const layer of layers) {
         const primitive = { type:"polygon", points:positions, layer, color:colorFor(layer), ...style };
+        if (coordinates) Object.defineProperties(primitive,{
+          zoneCoordinates:{value:coordinates},zoneBounds:{value:zoneBounds},
+        });
         if (zonePointCache) Object.defineProperty(primitive, "points", {
           get: () => zonePointCache.get(form), enumerable:true, configurable:true,
         });
@@ -145,10 +158,9 @@
       warnings.push(`${label}${uuid(node) ? ` (example ${uuid(node)})` : ""} is not drawn exactly.`);
     };
     if(!options.silkscreenOnly){
-      if(Worksheet){for(const primitive of Worksheet.build(page,path))push({...primitive,layer:"Worksheet"});}
+      if(Worksheet){for(const primitive of (options.worksheet ? options.worksheet(page,path,options,text=>variableText?.resolve(text)??text,message=>{if(warnings.length<1000&&!warnings.includes(message))warnings.push(message);}) : Worksheet.build(page,path)))push({...primitive,layer:"Worksheet"});}
       else warnings.push("Default worksheet module is unavailable.");
     }
-    warnings.push("Custom .kicad_wks templates are not resolved; the standard KiCad drawing sheet is shown.");
     function base(node, layer, owner = {}) {
       const lineStyle=field(child(node,"stroke"),"type");
       return { layer, color: colorFor(layer), ...(["dash","dot","dash_dot","dash_dot_dot"].includes(lineStyle)?{lineStyle}:{}), uuid: uuid(node) || owner.uuid || undefined,
@@ -222,7 +234,7 @@
       if (width <= 0 || height <= 0) { warn("Pad with invalid size",node); return; }
       const rawLayers = (child(node,"layers") || []).slice(1).map((part) => String(value(part)));
       const selected = [...new Set(rawLayers.flatMap((item) => item.startsWith("*.")
-        ? layerNames.filter((layer) => layer.endsWith(item.slice(1))) : [item]))];
+        ? layerNames.filter((layer) => layer.endsWith(item.slice(1))) : item === "F&B.Cu" ? ["F.Cu","B.Cu"] : [item]))];
       if (!selected.length) { warn("Pad without renderable layers",node); return; }
       // KiCad serializes the pad angle in board coordinates, even though its
       // position is footprint-local. An omitted angle is therefore zero.

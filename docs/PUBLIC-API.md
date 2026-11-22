@@ -82,3 +82,23 @@ Version 0.4.0 adds registered native 3D PCB fields, `WayriCADResultsViewer.getRe
 `LoadOptions` accepts `textVariables: Record<string, string>` and `instancePath` for a saved repeated-sheet instance. Supply at most 256 variables; keys are bounded to 200 characters and values to 8,192 characters. `loadFiles` and `loadArchive` accept one supplied `.kicad_pro` for its `text_variables`; explicit variables override project values and the context is retained through `openFile`. No project file or ancestor is fetched automatically. Hierarchical context is limited to loaded local bundles, so standalone drawings may show unresolved text.
 
 Numeric `@{...}` expressions use a bounded deterministic subset with `abs`, `sqrt`, `floor`, `ceil`, `pow`, `min`, `max`, `sum` and `avg`; arbitrary code, units and arbitrary LaTeX are unsupported. Rendering is a diagnostic preview and does not alter the raw AST. The accessible host-local loading overlay shows stages and indeterminate progress, offers Stop and respects reduced motion; stale completions cannot replace newer loads.
+
+## Worksheets and PCB outlines
+
+Open a hosted template by itself to preview it on A4 paper, or include it in a local file set. For a named schematic or PCB, a matching basename is discovered within the same project directory. Local bundles also honor the schematic and PCB worksheet filenames saved in their included `.kicad_pro` settings when the referenced template is present in the bundle. Hosted manifests can name a listed template explicitly with `worksheet`.
+
+```js
+await viewer.load({
+  entry: 'board.kicad_pcb',
+  worksheet: 'drawing.kicad_wks',
+  files: [
+    { path: 'board.kicad_pcb', url: './board.kicad_pcb' },
+    { path: 'drawing.kicad_wks', url: './drawing.kicad_wks' },
+  ],
+});
+viewer.fitPage(); // Show the saved paper and worksheet in the 2D viewer.
+viewer.setLayerPreset('outline'); // Show only the PCB's saved Edge.Cuts.
+viewer.fit(); // Fit the board outline.
+```
+
+Pass `worksheetSource` in the load options when template text is already available. Custom worksheets support text, lines, rectangles, polygons, corner anchors, margins and repeats. Text uses the saved title block and available project variables. Worksheet bitmaps are reported in Rendering notes. The Outline preset uses the saved board geometry, including internal cutouts, and is available in the 2D PCB view.

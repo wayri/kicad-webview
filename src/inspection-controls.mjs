@@ -26,7 +26,7 @@ export function createHighlightControls(viewer,make,icon,fail){
 export function createLayerControls(viewer,make,icon,fail){
   const ui=tools(viewer,make,icon,fail,'Layers'),filter=make('input'),list=make('div'),presets=make('div','inspection-presets'),rows=new Map(),presetButtons=new Map();let signature=null,lastDesign=null;
   filter.type='search';filter.placeholder='Find a layer';filter.setAttribute('aria-label','Find a layer');ui.popup.append(filter,presets);
-  for(const [preset,label]of [['all','All'],['overview','Overview'],['none','None'],['front','Front'],['back','Back'],['copper','Copper']]){const button=ui.button(label,()=>viewer.setLayerPreset(preset));button.setAttribute('aria-pressed','false');presetButtons.set(preset,button);presets.append(button);}
+  for(const [preset,label]of [['all','All'],['overview','Overview'],['outline','Outline'],['none','None'],['front','Front'],['back','Back'],['copper','Copper']]){const button=ui.button(label,()=>viewer.setLayerPreset(preset));button.setAttribute('aria-pressed','false');presetButtons.set(preset,button);presets.append(button);}
   const restore=ui.button('Restore view',()=>viewer.restoreLayerView());presets.append(restore);
   const mode=ui.select('Layer focus mode',[['dim','Dim other layers'],['isolate','Isolate focused layer']],value=>{const state=viewer.getLayerState();if(state.focused)viewer.focusLayer(state.focused,{mode:value});});
   const focusActions=make('div','inspection-presets'),fit=ui.button('Fit focused layer',()=>viewer.fitFocusedLayer()),clear=ui.button('Clear layer focus',()=>viewer.clearLayerFocus());focusActions.append(fit,clear);ui.popup.append(focusActions);
@@ -41,7 +41,7 @@ export function createLayerControls(viewer,make,icon,fail){
       input.onchange=()=>{try{const visible=new Set(viewer.getLayerState().visible);input.checked?visible.add(layer):visible.delete(layer);viewer.setLayers([...visible]);}catch(error){fail(error);}};
       const focus=ui.button('Focus',()=>viewer.focusLayer(layer,{mode:mode.value}));focus.setAttribute('aria-label','Focus layer '+layer);const count=make('small');count.textContent=String(counts.get(layer)||0);count.title='Saved drawing primitives on this layer';label.append(input,swatch,text,count);node.append(label,focus);list.append(node);rows.set(layer,{node,input,focus});
     }}
-    for(const [preset,button]of presetButtons){button.setAttribute('aria-pressed',String(state.preset===preset));button.hidden=preset==='overview'&&viewer.view!=='pcb';}
+    for(const [preset,button]of presetButtons){button.setAttribute('aria-pressed',String(state.preset===preset));button.hidden=['overview','outline'].includes(preset)&&viewer.view!=='pcb';}
     const visible=new Set(state.visible);
     for(const [layer,row]of rows){row.input.checked=visible.has(layer);row.focus.hidden=!state.canFocus;row.focus.setAttribute('aria-pressed',String(state.focused===layer));row.node.setAttribute('data-focused',String(state.focused===layer));}
     mode.parentNode&&(mode.parentNode.hidden=!state.canFocus);focusActions.hidden=!state.canFocus;fit.disabled=clear.disabled=!state.focused;restore.disabled=!state.canRestore;mode.value=state.focused?state.focusMode:mode.value||'dim';

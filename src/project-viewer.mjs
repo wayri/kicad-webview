@@ -143,10 +143,10 @@ export class AdvancedKiCadViewer extends EventTarget {
     finally{options.signal?.removeEventListener('abort',abort);if(ticket===this.ticket)this.loading=false;}
   }
   async loadPaneFromProject(index,path,options={}){
-    options={textVariables:this.viewers[0].textVariables,...options};
+    options={textVariables:this.viewers[0].textVariables,worksheetSource:this.viewers[0].worksheetSource,...options};
       const viewer=this.viewers[index],project=this.source;
-    if(project?.memory)return viewer.loadFiles(project.files,{...options,file:path});
-    if(project?.files)return viewer.load({files:project.files,entry:path},{...options,credentials:this.viewers[0].credentials});
+    if(project?.memory)return viewer.loadFiles(project.files,{projectSettings:project.settings,...options,file:path});
+    if(project?.files)return viewer.load({files:project.files,entry:path,worksheet:project.worksheet},{...options,credentials:this.viewers[0].credentials});
     if(path===this.viewers[0].path)return viewer.loadSource(this.viewers[0].source,{...options,path});
     throw new Error('Choose a drawing from the loaded project.');
   }

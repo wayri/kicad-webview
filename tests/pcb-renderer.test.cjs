@@ -36,9 +36,7 @@ test('extracts transformed front/back pads, native UUIDs, copper, drill and fill
   assert.ok(result.primitives.some((p) => p.uuid === 'track' && p.width === .5 && p.type === 'line'));
   assert.equal(result.primitives.filter((p) => p.uuid === 'via' && p.hole).length, 2);
   assert.ok(result.primitives.some((p) => p.uuid === 'zone' && p.fill === true && p.points.length === 4));
-  assert.deepEqual(result.warnings, [
-    'Custom .kicad_wks templates are not resolved; the standard KiCad drawing sheet is shown.'
-  ]);
+  assert.deepEqual(result.warnings, []);
   assert.ok(result.primitives.findIndex((p) => p.uuid === 'zone') < result.primitives.findIndex((p) => p.uuid === 'track'));
   assert.ok(result.primitives.findIndex((p) => p.uuid === 'track') < result.primitives.findIndex((p) => p.uuid === 'p1'));
   assert.ok(result.primitives.some((p) => p.kind === 'footprint-hit' && p.uuid === 'front' && p.pick));
