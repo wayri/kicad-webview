@@ -39,6 +39,7 @@ import {appearanceName,createTranslucentAppearance,inspectionTarget} from "./tra
 import {copperLayerPlan} from "./copperLayers.mjs";
 import {createUpdateBatch} from "./updateBatch.mjs";
 import {createRenderActivity,observeRenderActivity} from "./renderActivity.mjs";
+import {createGraphicsHealth} from './graphicsHealth.mjs';
 import {selectionNetNames,pureNetSelection,countNetSelection} from "./selectionWorkload.mjs";
 import { hasSavedSelection, selectionMatcher, selectableRecord, holdGesture } from "./selectionState.mjs";
 import { sphereFitDistance,boxFitDistance } from "./fitPolicy.mjs";
@@ -228,7 +229,8 @@ export function mountBoard3D(container, source, options = {}) {
     .reduce((sum, layer) => sum + layer.thickness, 0) || 1.6;
   const top = thickness / 2, bottom = -top;
   const scene = new THREE.Scene(); scene.background = new THREE.Color(initialDark ? 0x151820 : 0xe7ebf1);
-  const resources=createSceneResources();
+  let graphicsHealth=null;
+  const resources=createSceneResources({onChange:()=>graphicsHealth?.invalidate()});
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, Math.max(3000, extent * 30));
   // OrbitControls captures its up basis at construction. Use the board's
   // thickness axis consistently for orbiting and all fitted camera presets.
@@ -237,6 +239,7 @@ export function mountBoard3D(container, source, options = {}) {
   // overlapping copper edges on ANGLE. Smooth resolved color with SMAA instead.
   const renderer = new THREE.WebGLRenderer({ antialias: false, logarithmicDepthBuffer: true, alpha: false, powerPreference: "high-performance" });
   const gl=renderer.getContext(),graphics=graphicsProfile({maxTextureSize:renderer.capabilities.maxTextureSize,maxRenderbufferSize:gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),deviceMemory:globalThis.navigator?.deviceMemory,hardwareConcurrency:globalThis.navigator?.hardwareConcurrency,floatTargets:renderer.extensions.has('EXT_color_buffer_float'),android:/Android/i.test(globalThis.navigator?.userAgent||'')});
+  graphicsHealth=createGraphicsHealth(gl);
   const modelGeometryBudget=(graphics.constrained?32:graphics.premium?96:64)*1024*1024;
   const zoneGeometryBudget=(graphics.constrained?32:64)*1024*1024;
   const zoneGeometryStats={budgetBytes:zoneGeometryBudget,retainedBytes:0,renderedContours:0,vertices:0,rejected:0};
@@ -255,7 +258,7 @@ export function mountBoard3D(container, source, options = {}) {
   }
   function disposePipeline(){if(!pipeline)return;for(const pass of pipeline.passes){pass.dispose?.();if(pass instanceof GTAOPass){pass.gtaoMaterial.dispose();pass.blendMaterial.dispose();pass.depthTexture?.dispose();}}pipeline.composer.dispose();pipeline=null;}
   function createPipeline(){
-    disposePipeline();if(quality==='low')return;
+    disposePipeline();graphicsHealth.invalidate();if(quality==='low')return;
     const enhanced=['high','presentation'].includes(quality)&&appearance!=='translucent'&&explode.get()===0;
     const floatTargets=renderer.extensions.has('EXT_color_buffer_float');
     if(enhanced&&!floatTargets)throw Error('Floating-point render targets are unavailable.');
@@ -270,7 +273,7 @@ export function mountBoard3D(container, source, options = {}) {
     const inheritedVisibility=ao.overrideVisibility.bind(ao);ao.overrideVisibility=()=>{inheritedVisibility();scene.traverse(object=>{const materials=Array.isArray(object.material)?object.material:[object.material];if(materials.some(material=>material&&(material.transparent||material.depthTest===false)))object.visible=false;});};
     passes.push(ao);}
     const output=new OutputPass(),smaa=new SMAAPass(1,1);
-    for(const texture of [smaa.areaTexture,smaa.searchTexture])texture.image?.addEventListener?.('load',invalidate,{once:true});
+    for(const texture of [smaa.areaTexture,smaa.searchTexture])texture.image?.addEventListener?.('load',()=>{graphicsHealth.invalidate();invalidate();},{once:true});
     passes.push(output,smaa);for(const pass of passes)composer.addPass(pass);
   }
   function fallbackQuality(message){disposePipeline();quality='balanced';qualitySelect.value=quality;host.dataset.quality=quality;shaderFailure=false;renderer.setRenderTarget(null);presentation.apply(false);updateBackground();graphicsNotice(message);sizeViewport();}
@@ -297,9 +300,11 @@ export function mountBoard3D(container, source, options = {}) {
   scene.environment = environment?.texture||null; scene.environmentIntensity = .65;
   canvasHost.append(renderer.domElement);
   const controls = new BoardOrbitControls(camera, renderer.domElement);
-  let userAdjustedCamera = false;
-  const cameraInteraction = () => { userAdjustedCamera = true; };
+  let userAdjustedCamera = false,cameraMoving=false,cameraSettleTimer=null;
+  const cameraInteraction = () => { userAdjustedCamera=true;cameraMoving=true;if(cameraSettleTimer!==null)clearTimeout(cameraSettleTimer);cameraSettleTimer=null; };
+  const cameraInteractionEnd = () => { if(cameraSettleTimer!==null)clearTimeout(cameraSettleTimer);cameraSettleTimer=setTimeout(()=>{cameraSettleTimer=null;cameraMoving=false;invalidate();},100); };
   controls.addEventListener("start", cameraInteraction);
+  controls.addEventListener("end", cameraInteractionEnd);
   controls.addEventListener('change',invalidate);
   controls.enableDamping = false; controls.dampingFactor = 0.1; controls.screenSpacePanning = true;
   controls.minDistance = .1; controls.maxDistance = extent * 8;
@@ -492,7 +497,9 @@ export function mountBoard3D(container, source, options = {}) {
   function ensureInternalCopper(){
     const layers=copperPlan.filter(layer=>layer.internal&&!renderedCopperLayers.has(layer.name));if(!layers.length)return;
     const diagnosticStart=geometryDiagnostics.length;
-    for(const layer of layers)buildCopperLayer(layer.name);resources.retain(boardGroup);
+    // Existing board/model materials may currently be temporary selection clones.
+    // Only register newly built source copper, never the whole selected scene.
+    for(const layer of layers){buildCopperLayer(layer.name);resources.retain(copperGroups.get(layer.name));}
     modelDiagnostics.push(...geometryDiagnostics.slice(diagnosticStart));
     if(layers.some(layer=>layer.basis==='illustrative'))modelDiagnostics.push('Internal copper has saved XY coordinates and layer order; elevations are illustrative because a complete saved stackup is unavailable.');
     showModelDiagnostics();
@@ -534,7 +541,7 @@ export function mountBoard3D(container, source, options = {}) {
   modelDiagnostics.push(...geometryDiagnostics);
   showModelDiagnostics();
   let modelUpdateCPUms=0;
-  const modelUpdates=createUpdateBatch(()=>{if(!active)return;const start=performance.now();try{updateComponentVisibility();refreshClippingBounds();setSelection(externalSelection);showModelDiagnostics();}finally{modelUpdateCPUms+=performance.now()-start;}},invalidate);
+  const modelUpdates=createUpdateBatch(()=>{if(!active)return;graphicsHealth.invalidate();const start=performance.now();try{updateComponentVisibility();refreshClippingBounds();setSelection(externalSelection);showModelDiagnostics();}finally{modelUpdateCPUms+=performance.now()-start;}},invalidate);
   function showModelDiagnostics() {
     const resolved = loadedModelIndexes.size;
     const problems = modelDiagnostics.length;
@@ -667,6 +674,7 @@ export function mountBoard3D(container, source, options = {}) {
     const hasSize=hasViewportSize();renderActivity.setState({hasSize});if(!hasSize){invalidate();return;}
     const viewportWidth = Math.max(1, canvasHost.clientWidth), viewportHeight = Math.max(1, canvasHost.clientHeight);
     const plan=qualityViewport(viewportWidth,viewportHeight,globalThis.devicePixelRatio,graphics.maxDimension,expansionMotion.running()?'low':quality,graphics),ratio=plan.ratio;
+    if(renderer.domElement.width!==Math.floor(viewportWidth*ratio)||renderer.domElement.height!==Math.floor(viewportHeight*ratio))graphicsHealth.invalidate();
     if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
     renderer.setSize(viewportWidth, viewportHeight, false); camera.aspect = viewportWidth / viewportHeight;
     if(pipeline){pipeline.composer.setPixelRatio(ratio);pipeline.composer.setSize(viewportWidth,viewportHeight);}
@@ -907,7 +915,7 @@ export function mountBoard3D(container, source, options = {}) {
   const selectionWorkload={netOnlyUpdates:0,netRecordsScanned:0,netBoundsAvoided:0,boundsEvaluations:0,outlineVerticesWritten:0};
   const selectionNotice = document.createElement('div'); selectionNotice.className = 'hint'; selectionNotice.style.bottom = '42px'; selectionNotice.hidden = true; stage.append(selectionNotice);
   function setSelection(selection = {}) {
-    invalidate();
+    graphicsHealth.invalidate();invalidate();
     externalSelection = selection || {};
     if(!hasSavedSelection(externalSelection)){netGlow.clear();groupGeometry.setDrawRange(0,0);selectionNotice.hidden=true;selectionNotice.style.display='none';highlight.visible=false;groupHighlight.visible=false;selectionAppearance.restore();syncExpansionFade();return{highlighted:0,matched:0,limited:false};}
     const netNames=selectionNetNames(externalSelection,board);if(netNames.size)ensureInternalCopper();const matches=selectionMatcher(externalSelection,board);
@@ -1101,9 +1109,9 @@ export function mountBoard3D(container, source, options = {}) {
   function notifyAnchor(){if(!activeAnchor)return;const point=projectAnchor(activeAnchor),signature=JSON.stringify(point);if(signature!==anchorSignature){anchorSignature=signature;options.onAnchor?.({anchor:activeAnchor,point});}}
   function notifyView(){const rect=renderer.domElement.getBoundingClientRect(),signature=JSON.stringify([camera.matrixWorld.elements,camera.projectionMatrix.elements,rect.left,rect.top,rect.width,rect.height]);if(signature!==viewSignature){viewSignature=signature;options.onViewChange?.();}notifyAnchor();}
   function drawFrame(){
-    expansionMotion.resume();if(!active||contextLost||document.hidden)return;modelUpdates.flush();controls.update();silkDetail.sync();demoSurfaces.sync();if(demoPointerId!==null&&!demoSurfaces.hasActivePointer)cancelDemoPointer();updateMeasurementGraphics();updateTerminalLabels();
+    expansionMotion.resume();if(!active||contextLost||document.hidden)return;modelUpdates.flush();controls.update();silkDetail.sync({moving:cameraMoving||expansionMotion.running()});demoSurfaces.sync();if(demoPointerId!==null&&!demoSurfaces.hasActivePointer)cancelDemoPointer();updateMeasurementGraphics();updateTerminalLabels();
     let rendered=false;shaderFailure=false;try{
-      if(pipeline){pipeline.composer.render();if(shaderFailure||renderer.getContext().getError()!==renderer.getContext().NO_ERROR)throw Error('Enhanced rendering failed.');}
+      if(pipeline){pipeline.composer.render();if(shaderFailure||!graphicsHealth.check())throw Error('Enhanced rendering failed.');}
       else {renderer.render(scene,camera);if(shaderFailure)throw Error('Board rendering shader failed.');}
       renderCount++;rendered=true;
     }catch{
@@ -1128,7 +1136,7 @@ export function mountBoard3D(container, source, options = {}) {
   void loadRepositoryModels(options.boardPath ? globalThis.KiCadRepoModels.modelSource(sourceAST) : null);
   return { host, board,
     pickDemoFace,
-    createDemoSurface(id,input){if(!active)throw new Error('The 3D view is closed.');return demoSurfaces.createSurface(id,input);},
+    createDemoSurface(id,input){graphicsHealth.invalidate();if(!active)throw new Error('The 3D view is closed.');return demoSurfaces.createSurface(id,input);},
     setDemoInputHandler(handler){if(handler===null)cancelDemoPointer();demoSurfaces.setInputHandler(handler);},
     objectVisibilityCapabilities(){return {supportedTypes:[...objectVisibility.supportedTypes],unsupportedTypes:['graphics','texts','regions','dimensions','rooms','footprints']};},
     setObjectVisibility(input={}) {
@@ -1148,9 +1156,9 @@ export function mountBoard3D(container, source, options = {}) {
     getCopperLayers(){return copperPlan.map(layer=>layer.name);},
     getVisibleCopperLayers(){return visibleCopperLayers();},
     setVisibleCopperLayers,
-    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),zones:{...savedZones.stats(),...zoneGeometryStats},modelGraph:{...modelGraph.stats(),decodeConcurrency,imagePreflight:'png-jpeg'},padGeometryCache:sharedPadGeometry.stats(),selectionMaterials:selectionAppearance.stats(),appearance,netGlow:netGlow.stats(),effectiveLayerColors:Boolean(inspectedLayer)||explode.get()>0||appearance!=='realistic',renderedPixels:renderer.domElement.width*renderer.domElement.height,expansion:{amount:explode.get(),target:expansionMotion.target(),running:expansionMotion.running(),...explode.phases(),frames:expansionFrames,cpuMilliseconds:expansionCPUms,maxFrameMilliseconds:expansionMaxMs,frontComponentOffset:explode.componentOffset('F.Cu'),backComponentOffset:explode.componentOffset('B.Cu'),layerOffsets:copperPlan.map(layer=>({name:layer.name,offset:explode.offset(layer.name)}))},renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline?.occlusion),antialiasMethod:pipeline?'smaa':'none',renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
+    getRenderStats(){const plan=qualityViewport(canvasHost.clientWidth,canvasHost.clientHeight,globalThis.devicePixelRatio,graphics.maxDimension,quality,graphics);return{...plan,...resources.stats(),zones:{...savedZones.stats(),...zoneGeometryStats},modelGraph:{...modelGraph.stats(),decodeConcurrency,imagePreflight:'png-jpeg'},padGeometryCache:sharedPadGeometry.stats(),selectionMaterials:selectionAppearance.stats(),appearance,netGlow:netGlow.stats(),effectiveLayerColors:Boolean(inspectedLayer)||explode.get()>0||appearance!=='realistic',renderedPixels:renderer.domElement.width*renderer.domElement.height,expansion:{amount:explode.get(),target:expansionMotion.target(),running:expansionMotion.running(),...explode.phases(),frames:expansionFrames,cpuMilliseconds:expansionCPUms,maxFrameMilliseconds:expansionMaxMs,frontComponentOffset:explode.componentOffset('F.Cu'),backComponentOffset:explode.componentOffset('B.Cu'),layerOffsets:copperPlan.map(layer=>({name:layer.name,offset:explode.offset(layer.name)}))},renderActivity:{...renderActivity.stats(),observesIntersection:Boolean(intersectionObserver)},selectionWorkload:{...selectionWorkload},modelUpdates:{...modelUpdates.stats(),cpuMilliseconds:modelUpdateCPUms},copperLayers:[...renderedCopperLayers],translucency:translucency.stats(),graphicsTier:graphics.tier,defaultQuality:graphics.defaultQuality,maxDimension:graphics.maxDimension,antialias:gl.getContextAttributes()?.antialias===true,logarithmicDepth:renderer.capabilities.logarithmicDepthBuffer,floatTargets:graphics.premium||renderer.extensions.has('EXT_color_buffer_float'),presentationStage:presentation.enabled,environmentLighting:Boolean(scene.environment),ambientOcclusion:Boolean(pipeline?.occlusion),graphicsHealth:graphicsHealth.stats(),silkscreenDetail:silkDetail.stats(),antialiasMethod:pipeline?'smaa':'none',renderCount,contextLost,gpuTextures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,loadedModelCount:loadedModelIndexes.size,componentCount:board.components.length};},
     restoreExpand:value=>setExplode(value,true),setExplode,getExplode:()=>explode.get(),setExpand:setExplode,getExpand:()=>explode.get(),
-    setAnalysisOverlay(surface,options){const state=analysisController.setAnalysisOverlay(surface,options);syncExplodeAnalysis();return analysisState(state);},
+    setAnalysisOverlay(surface,options){graphicsHealth.invalidate();const state=analysisController.setAnalysisOverlay(surface,options);syncExplodeAnalysis();return analysisState(state);},
     getAnalysisOverlayState:()=>analysisState(),
     setAnalysisProbes:analysisController.setAnalysisProbes,
     setAnalysisOpacity:analysisController.setAnalysisOpacity,
@@ -1224,6 +1232,6 @@ export function mountBoard3D(container, source, options = {}) {
         if (index != null && !population[index]) clearSelection();
       }
     },
-    dispose() { silkDetail.dispose();cancelDemoPointer();finishDemoFace(new DOMException('The 3D view was closed.','AbortError'));demoSurfaces.dispose();for(const [name,handler]of [['pointerdown',demoPointerDown],['pointermove',demoPointerMove],['pointerup',demoPointerUp],['pointercancel',demoPointerCancel],['lostpointercapture',demoPointerCancel]])renderer.domElement.removeEventListener(name,handler,true);shadow.removeEventListener('keydown',demoKey,true);document.defaultView?.removeEventListener('blur',cancelDemoPointer);if(measuring)options.onMeasurementMode?.(false);active = false;expansionMotion.dispose();explodeSlider.oninput=null; modelUpdates.dispose(); analysisController.dispose(); stepClient?.dispose(); renderActivity.dispose(); cancelAnimationFrame(layoutFrame); observer.disconnect();intersectionObserver?.disconnect();controls.removeEventListener('change',invalidate); controls.removeEventListener("change", updateClipping); controls.removeEventListener("start", cameraInteraction); controls.dispose();disposePipeline();environment?.dispose();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);document.removeEventListener('pointerdown',closeVisibility);shadow.removeEventListener('keydown',escapeVisibility,true);shadow.removeEventListener('keydown',escapeMeasurement);
+    dispose() { silkDetail.dispose();cancelDemoPointer();finishDemoFace(new DOMException('The 3D view was closed.','AbortError'));demoSurfaces.dispose();for(const [name,handler]of [['pointerdown',demoPointerDown],['pointermove',demoPointerMove],['pointerup',demoPointerUp],['pointercancel',demoPointerCancel],['lostpointercapture',demoPointerCancel]])renderer.domElement.removeEventListener(name,handler,true);shadow.removeEventListener('keydown',demoKey,true);document.defaultView?.removeEventListener('blur',cancelDemoPointer);if(measuring)options.onMeasurementMode?.(false);active = false;expansionMotion.dispose();explodeSlider.oninput=null; modelUpdates.dispose(); analysisController.dispose(); stepClient?.dispose(); renderActivity.dispose(); cancelAnimationFrame(layoutFrame); observer.disconnect();intersectionObserver?.disconnect();controls.removeEventListener('change',invalidate); controls.removeEventListener("change", updateClipping); controls.removeEventListener("start", cameraInteraction);controls.removeEventListener("end",cameraInteractionEnd);if(cameraSettleTimer!==null)clearTimeout(cameraSettleTimer);cameraSettleTimer=null; controls.dispose();disposePipeline();environment?.dispose();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);document.removeEventListener('pointerdown',closeVisibility);shadow.removeEventListener('keydown',escapeVisibility,true);shadow.removeEventListener('keydown',escapeMeasurement);
     renderer.domElement.removeEventListener('pointerdown',measurementTouchCapture,true);document.removeEventListener('visibilitychange',onDocumentVisibility);netGlow.dispose();selectionAppearance.dispose();translucency.dispose();scene.traverse(object=>object.shadow?.dispose?.());resources.retain(scene);terminalLabelCache.forEach(texture=>resources.track(texture));resources.track(labelGeometry);resources.dispose();scene.clear();boardGroup.clear();parts.clear();silkGroup.clear();copperGroups.clear();pickables.length=0;visibilityRecords.length=0;appearanceRecords.length=0;componentMatrices.length=0;modelGroups.clear();terminalLabelCache.clear();sharedPadGeometry.clear();hold.dispose(); renderer.dispose();renderer.domElement.width=1;renderer.domElement.height=1; host.remove(); } };
 }

@@ -28,3 +28,31 @@ test('detail refresh replaces the coarse map after settling, reuses textures and
 test('extreme close-up text uses the available texture resolution instead of a fixed pixels-per-mm ceiling',()=>{
  const close=silkscreenDetailPlan(1,.5,4096,false);assert.equal(close.width,2048);assert.equal(close.height,1024);assert.ok(close.scale>=2048);assert.ok(close.pixels<=close.maxPixels);
 });
+
+
+test('camera movement defers expensive silk uploads and repaints once at rest',()=>{
+ const c=camera(),jobs=new Map(),tracked=[];let id=0,invalidations=0;
+ const ctx=new Proxy({}, {get:()=>()=>{}}),doc={hidden:false,createElement:()=>({width:0,height:0,getContext:()=>ctx})};
+ const group=new THREE.Group(),base=new THREE.Texture(),mesh=new THREE.Mesh(new THREE.PlaneGeometry(250,240),new THREE.MeshBasicMaterial({map:base}));group.add(mesh);
+ const detail=createSilkscreenDetail(THREE,{camera:c,document:doc,bounds,centerX:125,centerY:120,graphics:{maxDimension:4096,constrained:false},resources:{track:texture=>{tracked.push(texture);return texture;}},invalidate:()=>invalidations++,setTimer:fn=>{jobs.set(++id,fn);return id;},clearTimer:key=>jobs.delete(key)});
+ const flush=()=>{const entries=[...jobs.values()];jobs.clear();for(const fn of entries)fn();};
+ try{
+  detail.add(mesh,[],[],true);detail.sync();assert.equal(jobs.size,1);
+  for(let frame=0;frame<200;frame++){c.position.x=frame*.1;c.updateMatrixWorld();detail.sync({moving:true});}
+  assert.equal(jobs.size,0);assert.equal(detail.stats().repaints,0);assert.equal(tracked.length,0);assert.equal(mesh.material.map,base);
+  detail.sync();assert.equal(jobs.size,1);flush();assert.equal(detail.stats().repaints,1);assert.equal(tracked.length,1);assert.equal(invalidations,1);
+  c.position.x+=.001;c.updateMatrixWorld();detail.sync({moving:true});assert.equal(mesh.material.map,tracked[0],'small motion retains already-sharp guarded detail without upload');assert.equal(jobs.size,0);
+  c.position.x=80;c.updateMatrixWorld();mesh.position.z=3;detail.sync({moving:true});assert.equal(mesh.position.z,3,'coarse detail must retain the expanded layer plane');assert.equal(mesh.material.map,base);
+  detail.sync();flush();assert.equal(detail.stats().repaints,2);assert.equal(tracked.length,1,'the upload texture remains reused');assert.equal(mesh.position.z,3);
+ }finally{detail.dispose();for(const texture of tracked)texture.dispose();mesh.geometry.dispose();mesh.material.dispose();base.dispose();}
+});
+
+
+test('stationary camera rechecks detail resolution after a layer moves closer',()=>{
+ const c=camera(),tracked=[],jobs=new Map();let id=0;const ctx=new Proxy({}, {get:()=>()=>{}}),doc={hidden:false,createElement:()=>({width:0,height:0,getContext:()=>ctx})};
+ const base=new THREE.Texture(),mesh=new THREE.Mesh(new THREE.PlaneGeometry(250,240),new THREE.MeshBasicMaterial({map:base})),parent=new THREE.Group();parent.add(mesh);
+ const detail=createSilkscreenDetail(THREE,{camera:c,document:doc,bounds,centerX:125,centerY:120,graphics:{maxDimension:4096,constrained:false},resources:{track:t=>{tracked.push(t);return t;}},invalidate:()=>{},setTimer:fn=>{jobs.set(++id,fn);return id;},clearTimer:key=>jobs.delete(key)});
+ try{detail.add(mesh,[],[],true);detail.sync();for(const fn of jobs.values())fn();jobs.clear();assert.equal(detail.stats().repaints,1);
+  mesh.position.z=15;detail.sync();assert.equal(jobs.size,1,'new plane requires sharper crop despite unchanged camera');for(const fn of jobs.values())fn();jobs.clear();assert.equal(detail.stats().repaints,2);assert.equal(mesh.position.z,15);
+ }finally{detail.dispose();tracked.forEach(t=>t.dispose());base.dispose();mesh.material.dispose();mesh.geometry.dispose();}
+});

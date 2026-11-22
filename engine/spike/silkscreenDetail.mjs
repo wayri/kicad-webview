@@ -26,9 +26,9 @@ export function silkscreenDetailPlan(width,height,maxDimension=4096,constrained=
  * retained while its guarded crop covers the view; refreshes are throttled,
  * never repeatedly switched to the blurry whole-board map during damping. */
 export function createSilkscreenDetail(THREE,{camera,document,bounds,centerX,centerY,graphics,resources,invalidate,arcThrough,setTimer=setTimeout,clearTimer=clearTimeout,onError=()=>{}}){
- const faces=[];let closed=false,timer=null,signature=null;
+ const faces=[];let closed=false,timer=null,signature=null,moving=false,repaints=0;
  function coarse(face){face.crop=null;face.scale=null;face.mesh.material.map=face.base;face.mesh.position.set(0,0,face.z);face.mesh.scale.set(1,1,1);}
- function repaint(){timer=null;if(closed)return;if(document.hidden){signature=null;return;}
+ function repaint(){timer=null;if(closed||moving)return;if(document.hidden){signature=null;return;}
   for(const face of faces){
    if(!face.mesh.visible||!face.mesh.parent?.visible||(face.front?camera.position.z<=face.z:camera.position.z>=face.z))continue;
    const crop=silkscreenViewBounds(THREE,camera,face.z,bounds,centerX,centerY);if(!crop)continue;
@@ -38,7 +38,7 @@ export function createSilkscreenDetail(THREE,{camera,document,bounds,centerX,cen
     // only the sampled subrectangle changes with the visible crop/aspect.
     if(!face.texture)face.canvas.width=face.canvas.height=dimension;
     const ctx=face.canvas.getContext('2d');if(!ctx)continue;ctx.clearRect(0,0,dimension,dimension);
-    paintSilkscreen(ctx,face.primitives,crop,plan,face.clips,arcThrough);
+    paintSilkscreen(ctx,face.primitives,crop,plan,face.clips,arcThrough);repaints++;
     if(!face.texture){face.texture=resources.track(new THREE.CanvasTexture(face.canvas));face.texture.colorSpace=THREE.SRGBColorSpace;face.texture.anisotropy=face.base.anisotropy;}
     face.texture.repeat.set(plan.width/dimension,plan.height/dimension);face.texture.offset.set(0,1-plan.height/dimension);
     face.texture.needsUpdate=true;face.mesh.material.map=face.texture;face.crop=crop;face.scale=plan.scale;
@@ -51,18 +51,34 @@ export function createSilkscreenDetail(THREE,{camera,document,bounds,centerX,cen
  return {
   add(mesh,primitives,clips,front){faces.push({mesh,primitives,clips,front,z:mesh.position.z,base:mesh.material.map,canvas:document.createElement('canvas'),texture:null});},
   // Ignore subpixel damping residue: exact matrix equality creates a repaint/invalidate loop.
-  sync(){if(closed)return;
+  sync({moving:nextMoving=false}={}){if(closed)return;
+   // Keep guarded detail sharp while it still covers a gesture/expansion. Retiling a
+   // large board during every drag adds CPU stalls and alternates sharp/blurred
+   // maps. Refresh once after movement settles, without an idle render loop.
+   for(const face of faces)face.z=face.mesh.position.z;
+   if(nextMoving){
+    if(timer!==null)clearTimer(timer);timer=null;
+    for(const face of faces){
+     if(face.crop){const view=silkscreenViewBounds(THREE,camera,face.z,bounds,centerX,centerY,0),crop=face.crop;
+      if(!view||view.minX<crop.minX||view.maxX>crop.maxX||view.minY<crop.minY||view.maxY>crop.maxY)coarse(face);
+     }
+     face.mesh.material.map=face.crop?face.texture:face.base;
+    }
+    moving=true;signature=null;return;
+   }
+   moving=false;
    // Selection swaps/restores material clones. Texture/crop state belongs to
    // this face, so repair the active material even when the camera is still.
    for(const face of faces){const map=face.crop?face.texture:face.base;if(face.mesh.material.map!==map)face.mesh.material.map=map;}
-   camera.updateMatrixWorld();const next=[...camera.matrixWorld.elements,...camera.projectionMatrix.elements,...faces.map(f=>f.mesh.visible&&f.mesh.parent?.visible?1:0)];if(signature&&next.every((n,i)=>Math.abs(n-signature[i])<=1e-5*Math.max(1,Math.abs(n),Math.abs(signature[i]))))return;signature=next;let refresh=false;for(const face of faces){
-   if(!face.mesh.visible||!face.mesh.parent?.visible)continue;
+   camera.updateMatrixWorld();const next=[...camera.matrixWorld.elements,...camera.projectionMatrix.elements,...faces.flatMap(f=>[f.mesh.visible&&f.mesh.parent?.visible?1:0,f.z])];if(signature&&next.every((n,i)=>Math.abs(n-signature[i])<=1e-5*Math.max(1,Math.abs(n),Math.abs(signature[i]))))return;signature=next;let refresh=false;for(const face of faces){
+   if(!face.mesh.visible||!face.mesh.parent?.visible||(face.front?camera.position.z<=face.z:camera.position.z>=face.z))continue;
    const view=silkscreenViewBounds(THREE,camera,face.z,bounds,centerX,centerY,0),crop=face.crop;
    const covered=view&&crop&&view.minX>=crop.minX&&view.maxX<=crop.maxX&&view.minY>=crop.minY&&view.maxY<=crop.maxY;
    if(!covered){coarse(face);refresh=true;continue;}
    const plan=silkscreenDetailPlan(view.maxX-view.minX,view.maxY-view.minY,graphics.maxDimension,graphics.constrained);
    if(plan&&plan.scale>face.scale*1.5)refresh=true;
   }if(refresh&&timer===null)timer=setTimer(repaint,100);},
+  stats:()=>({repaints,moving,pending:timer!==null,detailTextures:faces.filter(face=>face.texture).length}),
   dispose(){if(closed)return;closed=true;if(timer!==null)clearTimer(timer);timer=null;for(const face of faces){coarse(face);face.canvas.width=face.canvas.height=1;}faces.length=0;}
  };
 }

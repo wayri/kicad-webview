@@ -10,14 +10,20 @@ export function selectionStyle(value={}) {
 
 /** Reversible selection display. Source geometry, visibility and materials are retained. */
 export function createSelectionAppearance(THREE, objects) {
-  const saved=new Map(),sharedDim=new Map(),sharedState={owned:[]};let currentStyle='';
+  const saved=new Map(),sharedDim=new Map(),sharedHidden=new Map(),sharedAccent=new Map(),sharedState={owned:[]};let currentStyle='';
   const list=value=>Array.isArray(value)?value:[value];
-  function restore(){for(const [object,state]of saved){object.material=state.material;if(object.isInstancedMesh){if(object.instanceColor!==state.instanceColor)object.dispose?.();object.instanceColor=state.instanceColor;object.customDepthMaterial=state.depth;object.customDistanceMaterial=state.distance;}for(const material of state.owned)material.dispose();}for(const material of sharedState.owned)material.dispose();sharedState.owned.length=0;sharedDim.clear();saved.clear();currentStyle='';}
+  function restore(){for(const [object,state]of saved){object.material=state.material;if(object.isInstancedMesh){if(object.instanceColor!==state.instanceColor)object.dispose?.();object.instanceColor=state.instanceColor;object.customDepthMaterial=state.depth;object.customDistanceMaterial=state.distance;}for(const material of state.owned)material.dispose();}for(const material of sharedState.owned)material.dispose();sharedState.owned.length=0;sharedDim.clear();sharedHidden.clear();sharedAccent.clear();saved.clear();currentStyle='';}
   function capture(object){
     if(saved.has(object))return saved.get(object);
     const state={material:object.material,instanceColor:object.instanceColor,depth:object.customDepthMaterial,distance:object.customDistanceMaterial,owned:[]};saved.set(object,state);return state;
   }
   function own(source,state){const material=source.clone();material.onBeforeCompile=source.onBeforeCompile;material.customProgramCacheKey=()=>source.customProgramCacheKey();state.owned.push(material);return material;}
+  // Occurrences share source-only display variants; instance/shadow variants
+  // remain owned by their object. Pools last only for this selection style.
+  function sharedMaterial(pool,source,configure){
+    if(pool.has(source))return pool.get(source);
+    const material=own(source,sharedState);configure(material);pool.set(source,material);return material;
+  }
   function dimMaterial(source,state,shared=false){
     if(shared&&sharedDim.has(source))return sharedDim.get(source);
     const material=own(source,shared?sharedState:state),originalCompile=source.onBeforeCompile;
@@ -27,7 +33,7 @@ export function createSelectionAppearance(THREE, objects) {
     material.customProgramCacheKey=()=>source.customProgramCacheKey()+':selection-grey';if(shared)sharedDim.set(source,material);return material;
   }
   function accentMaterials(state){
-    if(!state.accent)state.accent=list(state.material).map(source=>{const material=own(source,state);material.color?.setHex(0x63e6ee);material.emissive?.setHex(0x12565c);material.metalness=0;material.roughness=.55;return material;});
+    if(!state.accent)state.accent=list(state.material).map(source=>sharedMaterial(sharedAccent,source,material=>{material.color?.setHex(0x63e6ee);material.emissive?.setHex(0x12565c);material.metalness=0;material.roughness=.55;}));
     return Array.isArray(state.material)?state.accent:state.accent[0];
   }
   // Only the owned instance-color buffer carries selection flags. No shared
@@ -101,7 +107,7 @@ vec3 selectionDecodedColor = instanceColor.r < -1.0e15 ? vec3(1.0) : instanceCol
         }
         if(object.instanceColor)object.instanceColor.needsUpdate=true;
       }else if(style.mode==='isolate'&&object.userData.record&&object.userData.record.type!=='Board'&&!matches(object.userData.record)){
-        if(!state.hidden)state.hidden=list(state.material).map(source=>{const material=own(source,state);material.visible=false;return material;});
+        if(!state.hidden)state.hidden=list(state.material).map(source=>sharedMaterial(sharedHidden,source,material=>{material.visible=false;}));
         object.material=Array.isArray(state.material)?state.hidden:state.hidden[0];
       }else if(!via&&style.color==='accent'&&accentMatches?.(object.userData.record))object.material=accentMaterials(state);
       else if(displayMatches(object.userData.record)||style.mode!=='dim')object.material=state.material;

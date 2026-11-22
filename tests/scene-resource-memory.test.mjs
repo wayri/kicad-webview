@@ -56,3 +56,10 @@ test('discarding a rejected decoded graph releases only resources not already ow
  for(const resource of [extra,texture,newMaterial])resource.addEventListener('dispose',()=>freed++);geometry.addEventListener('dispose',()=>kept++);
  owner.discard(rejected);owner.discard(rejected);assert.equal(freed,3);assert.equal(kept,0);assert.equal(owner.stats().retainedResources,2);owner.dispose();assert.equal(kept,1);
 });
+
+
+test('new source resources invalidate allocation health while repeated retention stays quiet',()=>{
+ let changes=0;const owner=createSceneResources({onChange:()=>changes++}),geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial(),mesh=new THREE.Mesh(geometry,material);
+ owner.retain(mesh);assert.equal(changes,2);owner.retain(mesh);assert.equal(changes,2);
+ owner.track(new THREE.Texture());assert.equal(changes,3,'deferred texture allocation is observable');owner.dispose();
+});
