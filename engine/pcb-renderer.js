@@ -220,6 +220,7 @@
           size:num(fontSize?.[2],1), angle:-rotation(node), width:.15,
           property:type==="property"?String(value(node[1])):type==="fp_text"&&value(node[1])==="reference"?"Reference":type==="fp_text"&&value(node[1])==="value"?"Value":undefined,
           ...(justification.includes("mirror")?{mirror:true}:{}),
+          fontFace:field(font,"face"),
           bold:hasAtom(font,"bold") || !!child(font,"bold"),
           italic:hasAtom(font,"italic") || !!child(font,"italic"),
           mirrored:justification.includes("mirror"),
@@ -379,7 +380,7 @@
       item.kind === "track" ? 0 : item.kind === "via" ? 1 : item.kind === "pad" ? 2 :
       item.kind === "drill" ? 3 : 0;
     primitives.sort((a,b) => priority(a)-priority(b));
-    const design = { primitives, page, warnings, compatibility, layers:layerNames.length ? layerNames : [...new Set(primitives.map((item) => item.layer))], path };
+    const design = { primitives, page, warnings, compatibility, embeddedFonts:Compatibility?.embeddedFonts?.(ast), layers:layerNames.length ? layerNames : [...new Set(primitives.map((item) => item.layer))], path };
     if (zonePointCache) Object.defineProperties(design, {
       releaseZonePoints: { value:zonePointCache.release },
       zonePointStats: { value:zonePointCache.stats },

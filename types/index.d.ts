@@ -30,8 +30,9 @@ export interface LoadOptions {
   instancePath?: string;
 }
 export interface ViewerOptions { theme?: Theme; appearance?: BoardAppearance; highlightStyle?: HighlightMode; highlightColor?: HighlightColor; inspectOnSelect?: boolean; assetPaths?: string[]; loadAsset?: (path: string) => unknown | Promise<unknown>; }
-export interface Part { id: string; uuid: string; reference: string; value: string; footprint: string; layer: string; schematicUuid?: string; }
-export interface SavedNet { id: string; name: string; layers: string[]; count: number; }
+export interface SavedClassAssignment { readonly name:string; readonly type:"net"|"component"; readonly directiveId:string; readonly directiveUuid?:string; readonly ruleAreaId?:string; readonly ruleAreaUuid?:string; }
+export interface Part { id: string; uuid: string; reference: string; value: string; footprint: string; layer: string; schematicUuid?: string; savedComponentClasses?: string[]; classAssignments?: SavedClassAssignment[]; }
+export interface SavedNet { id: string; name: string; layers: string[]; count: number; classAssignments?: SavedClassAssignment[]; }
 export interface SheetLink { uuid: string; name: string; file: string; path: string | null; }
 /** Saved world coordinates in mm; zoom is CSS pixels per mm. PCB/schematic only. */
 export interface Camera3D { position: [number,number,number]; target: [number,number,number]; up: [number,number,number]; }
@@ -82,6 +83,7 @@ export declare class KiCadViewer extends EventTarget {
   setInspectorWidth(width:number):PanelState; getPanelState():PanelState;
   openInset(options?:Omit<ViewerInsetOptions,'parent'> & {target?:string|HTMLElement}):Promise<ViewerInset|null>;
   getSelection(): ViewSelection | null; getSelectionPosition(): {x:number;y:number;layer:string|null}|null; selectObject(id: string, options?: {locate?: boolean; pinNumber?: string | number}): boolean;
+  selectClass(type: "net" | "component", name: string): boolean;
   getNets(): SavedNet[]; selectNet(idOrUniqueName: string, options?: { locate?: boolean }): boolean;
   getSheets(): SheetLink[]; clearSelection(): void; setInspectorOpen(open: boolean): void;
   setView(view: DrawingView, options?: {signal?: AbortSignal}): Promise<boolean>; fit(): void; fitPage(): boolean;

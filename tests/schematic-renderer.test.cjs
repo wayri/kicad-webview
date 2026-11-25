@@ -348,3 +348,22 @@ test('native sheet fills, text-box font colors and invalid color fallback remain
  const result=render(`(kicad_sch (sheet (at 10 10) (size 20 15) (stroke (width .4) (color 8 9 10 1)) (fill (color 40 50 60 .3)) (uuid "sheet")) (text_box "Hello" (at 40 10) (size 20 10) (stroke (width .2) (color 200 10 20 1)) (fill (type background)) (effects (font (size 1 1) (color 10 200 20 1))) (uuid "box")) (rectangle (start 0 0) (end 5 5) (stroke (color 999 1 2 1)) (fill (type none)) (uuid "bad")))`);
  const sheet=result.primitives.find(p=>p.uuid==='sheet'&&p.type==='polygon'),border=result.primitives.find(p=>p.uuid==='box'&&p.type==='polygon'),text=result.primitives.find(p=>p.uuid==='box'&&p.type==='text'),bad=result.primitives.find(p=>p.uuid==='bad');assert.equal(sheet.fill,'color');assert.equal(sheet.fillColor,'rgba(40,50,60,0.3)');assert.equal(sheet.width,.4);assert.equal(border.fill,'background');assert.equal(border.sourceColor,'rgba(200,10,20,1)');assert.equal(text.sourceColor,'rgba(10,200,20,1)');assert.equal(bad.sourceColor,undefined);assert.equal(bad.fill,undefined);
 });
+
+test("saved rule area and directive markers agree with KiCad 10.0.6 native SVG landmarks", () => {
+  const source = require("node:fs").readFileSync(require("node:path").join(__dirname, "fixtures/schematic-rule-areas.kicad_sch"), "utf8");
+  const drawing = render(source);
+  const area = drawing.primitives.find(p => p.kind === "rule_area");
+  assert.equal(area.uuid, "7785290c-7d47-47b9-ac4b-d408c6ad807a");
+  assert.equal(area.type, "polygon");
+  assert.equal(area.lineStyle, "dash");
+  assert.equal(area.width, 0.25);
+  assert.deepEqual(area.points, [{x:50,y:50},{x:70,y:50},{x:70,y:70},{x:50,y:70}]);
+  const markers = drawing.primitives.filter(p => p.kind === "netclass_flag");
+  const stems = markers.filter(p => p.type === "line");
+  assert.deepEqual(stems.map(p => p.points.flatMap(({x,y}) => [x,y])), [
+    [60,50,60,47.968], [80,60,77.968,60], [85,75,85,72.8156], [80,85,77.8664,85]
+  ]);
+  assert.deepEqual(markers.filter(p => p.type === "circle").map(p => [p.x,p.y,p.r]),
+    [[77.46,60,.508],[85,72.46,.3556]]);
+  assert.deepEqual(markers.filter(p => p.type === "text").map(p => p.text), ["Plane","Direct","Unattached"]);
+});

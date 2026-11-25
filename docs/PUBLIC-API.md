@@ -102,3 +102,11 @@ viewer.fit(); // Fit the board outline.
 ```
 
 Pass `worksheetSource` in the load options when template text is already available. Custom worksheets support text, lines, rectangles, polygons, corner anchors, margins and repeats. Text uses the saved title block and available project variables. Worksheet bitmaps are reported in Rendering notes. The Outline preset uses the saved board geometry, including internal cutouts, and is available in the 2D PCB view.
+
+## Saved rule areas, classes and embedded assets
+
+WebView draws saved schematic rule areas and directive markers. Inspection exposes saved component classes and sheet-local rule assignments with their directive and rule-area UUIDs. On the open drawing, call `selectClass('net', name)` or `selectClass('component', name)` to highlight matching geometry. PCB component classes are read from saved footprints. Dynamic assignment rules, custom DRC expressions, bus expansion and cross-sheet class evaluation require native KiCad.
+
+For 2D drawings, supported embedded TrueType and OpenType fonts are verified before registration. A loaded local schematic group can inherit fonts from its unambiguous root sheet. Opening an individual remote sheet does not trigger an ancestor fetch. The canvas falls back to a browser font until the saved face is available. Unsupported, corrupt or oversized payloads are skipped. In 3D, embedded models are decoded only for referenced model forms.
+
+In a source-matched 2D BoM pair, hovering a drawing part marks its visible BoM row. Hovering a row or part marks the drawing in amber without changing selection.

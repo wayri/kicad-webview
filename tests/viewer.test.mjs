@@ -28,7 +28,7 @@ function fixture(Viewer = KiCadViewer) {
 // Only the graphics surface is stubbed here; browser/WebGL coverage is separate.
 const originalMount = globalThis.KiCadOwnedCanvas.mount;
 globalThis.KiCadOwnedCanvas.mount = (host, options) => Object.assign(new EventTarget(), {
-  options, disposed: false, setDocument(design, path) { this.design = design; this.path = path; this.visibleLayers = new Set(design.layers || []); },
+  options, disposed: false, setDocument(design, path, inheritedFonts) { this.inheritedFonts = inheritedFonts; this.design = design; this.path = path; this.visibleLayers = new Set(design.layers || []); },
   draw() {}, zoom_to_board() { this.fitted = true; }, dispose() { this.disposed = true; },
 });
 test.after(() => { globalThis.KiCadOwnedCanvas.mount = originalMount; delete globalThis.SpikeBoard3D; });
@@ -395,4 +395,34 @@ test('worksheet loads standalone and follows saved project settings across drawi
     await assert.rejects(viewer.loadSource('(garbage)',{path:'invalid.kicad_wks'}),/worksheet template/);
     assert.equal(viewer.path,'pcb.kicad_wks');
   } finally { viewer.dispose(); }
+});
+
+test('native rule-area metadata reaches the inspector and class selection preserves the drawing', async () => {
+  const {readFile} = await import('node:fs/promises');
+  const source = await readFile(new URL('./fixtures/schematic-rule-areas.kicad_sch', import.meta.url), 'utf8');
+  const {viewer} = fixture();
+  await viewer.loadSource(source, {path:'schematic-rule-areas.kicad_sch'});
+  const area=viewer.design.primitives.find(p=>p.kind==='rule_area');
+  assert.equal(viewer.inspector.partIdentity(area),null);
+  assert.deepEqual(viewer.getNets().find(net=>net.name==='SIGNAL').classAssignments.map(entry=>entry.name).sort(),['Direct','Plane']);
+  assert.deepEqual(viewer.getParts().find(part=>part.uuid==='44fb66e2-b53b-4167-ad16-c88035a566af').classAssignments.map(entry=>entry.name),['Drive']);
+  let highlighted;
+  viewer.renderer.setNetHighlight = value => {highlighted=value;};
+  assert.equal(viewer.selectClass('net','Plane'),true);
+  assert.ok(highlighted.primitives.some(primitive=>primitive.kind==='wire'));
+  assert.equal(viewer.selectClass('component','Drive'),true);
+  assert.ok(highlighted.primitives.length);
+  assert.equal(viewer.selectClass('component','Unknown'),false);
+  viewer.dispose();
+});
+
+test('nested drawings inherit only the proven loaded root font metadata', async () => {
+  const {viewer} = fixture();
+  const parent='(kicad_sch (uuid "root") (sheet (uuid "sheet-link") (at 20 25) (size 20 20) (property "Sheetname" "Child") (property "Sheetfile" "sub.kicad_sch")) (embedded_files (file (name "Review.ttf") (type font) (data |QUJD|) (checksum "test"))))';
+  const nested='(kicad_sch (uuid "sub") (text "Inherited" (at 10 12 0) (effects (font (face "Review Sans") (size 1 1)))))';
+  await viewer.loadFiles([{path:'root.kicad_sch',source:parent},{path:'sub.kicad_sch',source:nested}],{file:'sub.kicad_sch'});
+  assert.deepEqual(viewer.renderer.inheritedFonts,[{name:'Review.ttf',base64:'QUJD',checksum:'test'}]);
+  await viewer.loadSource(nested,{path:'standalone.kicad_sch'});
+  assert.equal(viewer.renderer.inheritedFonts,undefined);
+  viewer.dispose();
 });

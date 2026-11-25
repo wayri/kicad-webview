@@ -11,7 +11,7 @@
   const MAX_RENDER_PRIMITIVES = 1500000;
   const SCHEMATIC = new Set(["symbol", "sheet", "wire", "bus", "bus_entry", "label",
     "global_label", "hierarchical_label", "junction", "no_connect", "text", "text_box",
-    "polyline", "rectangle", "circle", "arc", "image"]);
+    "polyline", "rectangle", "circle", "arc", "image", "rule_area", "netclass_flag", "directive_label"]);
   const BOARD = new Set(["footprint", "segment", "arc", "via", "zone", "gr_line",
     "gr_rect", "gr_circle", "gr_arc", "gr_poly", "gr_curve", "gr_text", "gr_text_box",
     "gr_bitmap", "dimension", "target"]);
@@ -62,6 +62,7 @@
     return result;
   }
   const METADATA_FIELDS=new Set(["version","generator","generator_version","uuid","paper","title_block","property","sheet","symbol","footprint","module","sheet_instances","legacy_source","legacy_diagnostic"]);
+  const FONT_METADATA_FIELDS=new Set([...METADATA_FIELDS,"embedded_files"]);
   const METADATA_OBJECT_FIELDS=new Set(["property","uuid","path","instances"]);
   function parse(source, options = {}) {
     if (typeof source !== "string") throw new TypeError("KiCad source must be a string.");
@@ -143,7 +144,7 @@
           }
         }
         if(options.metadataOnly&&!skippedDepth){let allowed=null;
-          if(stack.length===1)allowed=METADATA_FIELDS;
+          if(stack.length===1)allowed=options.includeEmbeddedFonts?FONT_METADATA_FIELDS:METADATA_FIELDS;
           else if(stack.length===2&&['symbol','footprint','module'].includes(stack.at(-1)?.[0]))allowed=METADATA_OBJECT_FIELDS;
           else if(stack.at(-1)?.[0]==='property')allowed=new Set();
           if(allowed){let start=i+1;while(start<source.length&&spaceCode(source.charCodeAt(start)))start++;let end=start;while(end<source.length&&!spaceCode(source.charCodeAt(end))&&!['(',')',';'].includes(source[end]))end++;if(!allowed.has(source.slice(start,end)))skippedDepth=stack.length+1;}
@@ -207,6 +208,27 @@
   const children = (form, kind) => form.filter((item) => Array.isArray(item) && kindOf(item) === kind);
   const child = (form, kind) => form.find(item => Array.isArray(item) && kindOf(item) === kind);
   const second = (form, kind) => value(child(form, kind)?.[1]);
+  function ruleAreaPoints(form) {
+    const polygon = child(form, "polyline");
+    const coordinates = polygon && child(polygon, "pts");
+    if (!coordinates || coordinates.length < 4 || coordinates.length > 4097) return null;
+    const points = [];
+    for (const item of coordinates.slice(1)) {
+      const x = value(item?.[1]), y = value(item?.[2]);
+      if (!Array.isArray(item) || kindOf(item) !== "xy" || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+      const last = points.at(-1);
+      if (last?.x !== x || last.y !== y) points.push({ x, y });
+    }
+    if (points[0].x === points.at(-1).x && points[0].y === points.at(-1).y) points.pop();
+    if (points.length < 3) return null;
+    const origin = points[0];
+    let area = 0;
+    for (let i = 1; i < points.length - 1; i++) {
+      const a = points[i], b = points[i + 1];
+      area += (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+    }
+    return Number.isFinite(area) && area !== 0 ? points : null;
+  }
   function point(form) {
     for (const name of ["at", "start", "center", "end", "xy"]) {
       const item = child(form, name);
@@ -262,7 +284,8 @@
     return (h >>> 0).toString(16).padStart(8, "0");
   }
   function identity(form, kind, props, signature) {
-    const uuid = second(form, "uuid") ?? second(form, "tstamp");
+    const uuid = second(form, "uuid") ?? second(form, "tstamp") ??
+      (kind === "rule_area" && child(form, "polyline") ? second(child(form, "polyline"), "uuid") : undefined);
     if (uuid !== undefined && uuid !== null && String(uuid)) return { key: `uuid:${uuid}`, uuid: String(uuid) };
     const anchor = kind === "pad" ? props.Number :
       kind === "sheet" ? props.Sheetfile :
@@ -273,7 +296,9 @@
     if (kind === "pad") return `${parentLabel || "Footprint"} pad ${props.Number || ""}`.trim();
     return props.Reference || props.Sheetname || props['Sheet name'] || props.Text ||
       (kind === "footprint" ? String(value(form[1] ?? "Footprint")) :
-        kind === "symbol" ? props.lib_id || "symbol" : kind.replace(/_/g, " "));
+        kind === "symbol" ? props.lib_id || "symbol" :
+        kind === "netclass_flag" || kind === "directive_label" ? "Directive label" :
+        kind === "rule_area" ? "Rule area" : kind.replace(/_/g, " "));
   }
   function padPosition(local, placement) {
     if (!local || !placement?.position) return null;
@@ -288,7 +313,7 @@
   function objectRecord(path, form, parent = null, librarySignature = null, forConnectivity = false) {
     const kind = kindOf(form);
     const props = properties(form, kind);
-    const local = point(form);
+    const local = point(kind === "rule_area" ? child(form, "polyline") || form : form);
     const position = kind === "pad" ? padPosition(local, parent) : local;
     let retainedSignature;
     const signature=()=>retainedSignature??=JSON.stringify([structural(form),position,typeof librarySignature==='function'?librarySignature():librarySignature]);
@@ -331,7 +356,7 @@
   }
   function parseMetadata(source,options={}){
     const ast=parse(source,{...options,metadataOnly:true});
-    return ast.filter((item,index)=>index===0||Array.isArray(item)&&METADATA_FIELDS.has(item[0])).map(item=>Array.isArray(item)&&['symbol','footprint','module'].includes(item[0])?item.filter((field,index)=>index===0||Array.isArray(field)&&METADATA_OBJECT_FIELDS.has(field[0])):item);
+    return ast.filter((item,index)=>index===0||Array.isArray(item)&&(options.includeEmbeddedFonts?FONT_METADATA_FIELDS:METADATA_FIELDS).has(item[0])).map(item=>Array.isArray(item)&&['symbol','footprint','module'].includes(item[0])?item.filter((field,index)=>index===0||Array.isArray(field)&&METADATA_OBJECT_FIELDS.has(field[0])):item);
   }
   // Job-scoped snapshots reuse validated source without retaining projects globally.
   const preparedProjects = new WeakMap();
@@ -414,6 +439,6 @@
     changes.sort((a, b) => a.path.localeCompare(b.path) || a.id.localeCompare(b.id) || a.status.localeCompare(b.status));
     return { changes, counts };
   }
-  root.KiCadDesignDiff = { compareProjects, projectObjects, parse, parseMetadata, sourceByteLimit, sourceByteLength, prepareProject, preparedFile, cubicBezierPoints, MAX_FILES, MAX_FILE_BYTES: MAX_FILE, MAX_PROJECT_BYTES: MAX_PROJECT, MAX_RENDER_PRIMITIVES };
+  root.KiCadDesignDiff = { compareProjects, projectObjects, parse, parseMetadata, sourceByteLimit, sourceByteLength, prepareProject, preparedFile, cubicBezierPoints, MAX_FILES, MAX_FILE_BYTES: MAX_FILE, MAX_PROJECT_BYTES: MAX_PROJECT, MAX_RENDER_PRIMITIVES, ruleAreaPoints };
   if (typeof module === "object" && module.exports) module.exports = root.KiCadDesignDiff;
 })(typeof globalThis === "object" ? globalThis : this);

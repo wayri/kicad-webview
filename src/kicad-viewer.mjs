@@ -10,8 +10,8 @@ import '../engine/net-model.js';
 import '../engine/file-compatibility.js';
 import '../engine/worksheet.js';
 import '../engine/layer-colors.js';
-import '../engine/schematic-renderer.js';
 import '../engine/pcb-renderer.js';
+import '../engine/embedded-models.js';
 import '../engine/owned-canvas.js';
 import '../engine/touch-canvas.js';
 import { viewerOwners as owners } from './viewer-host.mjs';
@@ -224,8 +224,24 @@ export class KiCadViewer extends EventTarget {
     view ||= kind; this.validateView(view, kind);
     const loadedSheets=kind==='schematic'&&project?.memory ? project.files.filter(file=>/\.kicad_sch$/i.test(file.path)).map(file=>({path:file.path,content:file.source,...(file.path===path?{ast}:{})})) : [{path,ast}];
     const textContext=kind==='schematic' ? globalThis.KiCadFileCompatibility.textContext(loadedSheets,path,{instancePath,parse:source=>sourceParser.parseMetadata(source)}) : {};
+    if (kind === 'schematic') {
+      await awaitOperation(import('../engine/schematic-renderer.js'), operation.signal);
+      operation.check();
+    }
     const design = kind === 'pcb' ? globalThis.KiCadPCBRenderer.build(ast, path, {textVariables,worksheet,deferZonePoints:true})
       : globalThis.KiCadSchematicRenderer.build(ast, path, {...textContext,textVariables,worksheet});
+    let inheritedFonts;
+    if(textContext.rootPath && textContext.rootPath!==path && design.primitives.some(primitive=>primitive.fontFace)){
+      const rootSource=loadedSheets.find(file=>file.path===textContext.rootPath)?.content;
+      if(rootSource){
+        try {
+          const rootMetadata=sourceParser.parseMetadata(rootSource,{includeEmbeddedFonts:true});
+          inheritedFonts=globalThis.KiCadFileCompatibility.embeddedFonts(rootMetadata);
+        } catch {
+          design.warnings.push('Embedded fonts from the loaded root sheet could not be read.');
+        }
+      }
+    }
     let connectivity = { nets: [], warnings: [] };
     try { if(!standaloneWorksheet) connectivity = viewerNetModel.build([{ path: path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), content: source }], new Map([[path || ('drawing.kicad_' + (kind === 'pcb' ? 'pcb' : 'sch')), design]]), sourceSnapshot); }
     catch (error) { connectivity.warnings.push('Net selection unavailable: ' + error.message); }
@@ -236,7 +252,7 @@ export class KiCadViewer extends EventTarget {
       const property = name => String(atom(form.find(item => Array.isArray(item) && atom(item[0]) === 'property' && String(atom(item[1])).replaceAll(' ', '').toLowerCase() === name.toLowerCase())?.[2]) || '').slice(0, 1000);
       return { uuid: String(atom(form.find(item => Array.isArray(item) && atom(item[0]) === 'uuid')?.[1]) || '').slice(0, 1000), name: property('Sheetname'), file: property('Sheetfile') };
     }) : [];
-    return this.mountView(view, { source:originalSource, path, kind, design, project, credentials, sheetLinks, inspectionModel, sourceSnapshot, sourceKey, sourceParser, textVariables, worksheetSource:explicitWorksheet, textInstancePath:instancePath }, operation);
+    return this.mountView(view, { source:originalSource, path, kind, design, project, credentials, sheetLinks, inspectionModel, inheritedFonts, sourceSnapshot, sourceKey, sourceParser, textVariables, worksheetSource:explicitWorksheet, textInstancePath:instancePath }, operation);
   }
 
   /** Display imported scalar results; the viewer never runs an engineering solver. */
@@ -298,6 +314,19 @@ export class KiCadViewer extends EventTarget {
   selectObject(id, options) { this.assertActive(); return this.inspector.selectObject(id, options); }
   getParts() { this.assertActive(); return this.inspector.getParts(); }
   selectPart(id, options) { this.assertActive(); return this.inspector.selectPart(id, options); }
+  selectClass(type, name) { this.assertActive(); if (!['net', 'component'].includes(type) || typeof name !== 'string') throw new TypeError('Choose a saved net or component class.'); return this.inspector.selectClass(type,name); }
+  subscribePartHover(listener) {
+    this.partHoverListeners ??= new Set();
+    this.partHoverListeners.add(listener);
+    if(this.renderer) this.renderer.partHoverEnabled=true;
+    return () => {
+      this.partHoverListeners.delete(listener);
+      if(this.renderer) this.renderer.partHoverEnabled=this.partHoverListeners.size>0;
+    };
+  }
+  hoverBomParts(uuids) {
+    this.renderer?.setPartHover?.(uuids.slice(0,50).flatMap(uuid=>this.inspector.partGeometry(uuid)));
+  }
   getNets() { this.assertActive(); return this.inspector.getNets(); }
   selectNet(id, options) { this.assertActive(); return this.inspector.selectNet(id, options); }
   handleSelection(detail, view = this.view) {
@@ -367,8 +396,17 @@ export class KiCadViewer extends EventTarget {
         renderer.addEventListener('kicad:select', event => { if (mounted()) this.handleSelection(event.detail, view); });
         renderer.addEventListener('measure', event => { if (mounted()) this.emit('measure', event.detail); });
       } else {
-        renderer = globalThis.KiCadOwnedCanvas.mount(mount, { pcb: view === 'pcb', dark: this.theme === 'dark' });
-        renderer.setDocument(state.design, state.path);
+        renderer = globalThis.KiCadOwnedCanvas.mount(mount, { pcb: view === 'pcb', dark: this.theme === 'dark',
+          loadFontDecoder: () => import('../engine/vendor/fzstd/fzstd.js').then(module=>module.default.decompress),
+          onFontWarning: () => { if (mounted()) this.updateStatus(); },
+        });
+        renderer.setDocument(state.design, state.path, state.inheritedFonts);
+        renderer.partHoverEnabled=Boolean(this.partHoverListeners?.size);
+        renderer.addEventListener('kicad:parthover', event => {
+          if(!mounted())return;
+          const uuid=this.inspector.partIdentity(event.detail);
+          for(const listener of this.partHoverListeners || [])listener(uuid);
+        });
         renderer.addEventListener('kicad:select', event => { if (mounted()) this.handleSelection(event.detail, view); });
       }
       if (!operation.current()) { renderer.dispose(); assetController.abort(); mount.remove(); return false; }
@@ -575,6 +613,8 @@ export class KiCadViewer extends EventTarget {
     this.assetController?.abort();
     this.renderer?.dispose();
     this.sourceSnapshot = this.sourceKey = this.sourceParser = null;
+    this.partHoverListeners?.clear();
+    this.inheritedFonts = undefined;
     this.worksheetSource = undefined;
     this.viewMemory.clear();this.renderer = this.source = this.design = this.pending = this.project = null;
     this.inspector.dispose();

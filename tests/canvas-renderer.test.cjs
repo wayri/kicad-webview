@@ -450,3 +450,30 @@ test('consecutive straight copper strokes share paths and picks still use saved 
  assert.ok(canvas.query({x:2,y:2}).includes(tracks[20]));
  canvas.dispose();
 });
+
+test('bitmap motion reuses one bounded frame while the camera moves, then paints exact geometry',()=>{
+ let frame;
+ const {canvas,listeners,element}=runtime(3,{requestAnimationFrame:fn=>(frame=fn,1),cancelAnimationFrame(){}});
+ const primitives=Array.from({length:500},(_,i)=>({type:'circle',x:i%50,y:Math.floor(i/50),r:.3,layer:'F.Cu'}));
+ canvas.setDocument({primitives,layers:['F.Cu']},'motion.kicad_pcb');
+ const paint=canvas.drawGeometry.bind(canvas),frames=[];
+ canvas.drawGeometry=(...args)=>{frames.push(args[0]===true);paint(...args);};
+ listeners.get('pointerdown')({button:2,clientX:400,clientY:300,pointerId:1,preventDefault(){}});
+ for(const x of [408,416,424]){
+  listeners.get('pointermove')({clientX:x,clientY:300,pointerId:1});
+  frame();
+ }
+ assert.deepEqual(frames,[]);
+ near(Number(canvas.bitmapMotion.style.transform.split('(')[1].split('px')[0]),24);
+ assert.equal(element.style.opacity,'0');
+ assert(canvas.bitmapMotion.width*canvas.bitmapMotion.height<=1600000);
+ listeners.get('pointermove')({clientX:640,clientY:300,pointerId:1});frame();
+ assert.deepEqual(frames,[true]);
+ const camera=canvas.cameraState();
+ listeners.get('pointerup')({pointerId:1});frame();
+ assert.deepEqual(frames,[true,false]);
+ assert.equal(canvas.bitmapMotion.width*canvas.bitmapMotion.height,1);
+ assert.equal(element.style.opacity,'');
+ assert.deepEqual(canvas.cameraState(),camera);
+ canvas.dispose();
+});

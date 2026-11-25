@@ -300,7 +300,7 @@ export function mountBoard3D(container, source, options = {}) {
   scene.environment = environment?.texture||null; scene.environmentIntensity = .65;
   canvasHost.append(renderer.domElement);
   const controls = new BoardOrbitControls(camera, renderer.domElement);
-  let userAdjustedCamera = false,cameraMoving=false,cameraSettleTimer=null;
+  let userAdjustedCamera = false,cameraMoving=false,cameraSettleTimer=null,viewportPlan=null;
   const cameraInteraction = () => { userAdjustedCamera=true;cameraMoving=true;if(cameraSettleTimer!==null)clearTimeout(cameraSettleTimer);cameraSettleTimer=null; };
   const cameraInteractionEnd = () => { if(cameraSettleTimer!==null)clearTimeout(cameraSettleTimer);cameraSettleTimer=setTimeout(()=>{cameraSettleTimer=null;cameraMoving=false;invalidate();},100); };
   controls.addEventListener("start", cameraInteraction);
@@ -670,13 +670,21 @@ export function mountBoard3D(container, source, options = {}) {
   }
   function refreshClippingBounds(){fittedBounds.setFromObject(boardGroup);const sphere=fittedBounds.getBoundingSphere(new THREE.Sphere());if(Number.isFinite(sphere.radius)&&sphere.radius>0){fittedRadius=sphere.radius;fittedCenter.copy(sphere.center);}updateClipping();}
   controls.addEventListener("change", updateClipping);
+  function applyDrawingBuffer(moving){
+    if(!viewportPlan)return;
+    const {width,height,ratio}=viewportPlan;
+    const movingRatio=moving?Math.min(ratio,Math.sqrt(600000/width/height),ratio*.78):ratio;
+    if(renderer.domElement.width!==Math.floor(width*movingRatio)||renderer.domElement.height!==Math.floor(height*movingRatio)||
+       renderer.getPixelRatio()!==movingRatio)renderer.setDrawingBufferSize(width,height,movingRatio);
+  }
   function sizeViewport() {
     const hasSize=hasViewportSize();renderActivity.setState({hasSize});if(!hasSize){invalidate();return;}
     const viewportWidth = Math.max(1, canvasHost.clientWidth), viewportHeight = Math.max(1, canvasHost.clientHeight);
     const plan=qualityViewport(viewportWidth,viewportHeight,globalThis.devicePixelRatio,graphics.maxDimension,expansionMotion.running()?'low':quality,graphics),ratio=plan.ratio;
     if(renderer.domElement.width!==Math.floor(viewportWidth*ratio)||renderer.domElement.height!==Math.floor(viewportHeight*ratio))graphicsHealth.invalidate();
-    if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
-    renderer.setSize(viewportWidth, viewportHeight, false); camera.aspect = viewportWidth / viewportHeight;
+    viewportPlan={width:viewportWidth,height:viewportHeight,ratio};
+    applyDrawingBuffer(cameraMoving);
+    camera.aspect = viewportWidth / viewportHeight;
     if(pipeline){pipeline.composer.setPixelRatio(ratio);pipeline.composer.setSize(viewportWidth,viewportHeight);}
     camera.updateProjectionMatrix();
     invalidate();
@@ -1110,14 +1118,20 @@ export function mountBoard3D(container, source, options = {}) {
   function notifyAnchor(){if(!activeAnchor)return;const point=projectAnchor(activeAnchor),signature=JSON.stringify(point);if(signature!==anchorSignature){anchorSignature=signature;options.onAnchor?.({anchor:activeAnchor,point});}}
   function notifyView(){const rect=renderer.domElement.getBoundingClientRect(),signature=JSON.stringify([camera.matrixWorld.elements,camera.projectionMatrix.elements,rect.left,rect.top,rect.width,rect.height]);if(signature!==viewSignature){viewSignature=signature;options.onViewChange?.();}notifyAnchor();}
   function drawFrame(){
-    expansionMotion.resume();if(!active||contextLost||document.hidden)return;modelUpdates.flush();controls.update();silkDetail.sync({moving:cameraMoving||expansionMotion.running()});demoSurfaces.sync();if(demoPointerId!==null&&!demoSurfaces.hasActivePointer)cancelDemoPointer();updateMeasurementGraphics();updateTerminalLabels();
+    expansionMotion.resume();if(!active||contextLost||document.hidden)return;
+    const interactive=cameraMoving&&!measuring;
+    if(!interactive)modelUpdates.flush();
+    controls.update();
+    applyDrawingBuffer(interactive);
+    silkDetail.sync({moving:cameraMoving||expansionMotion.running()});demoSurfaces.sync();if(demoPointerId!==null&&!demoSurfaces.hasActivePointer)cancelDemoPointer();updateMeasurementGraphics();
+    if(interactive)terminalLabels.visible=false;else updateTerminalLabels();
     let rendered=false;shaderFailure=false;try{
-      if(pipeline){pipeline.composer.render();if(shaderFailure||!graphicsHealth.check())throw Error('Enhanced rendering failed.');}
+      if(pipeline&&!interactive){pipeline.composer.render();if(shaderFailure||!graphicsHealth.check())throw Error('Enhanced rendering failed.');}
       else {renderer.render(scene,camera);if(shaderFailure)throw Error('Board rendering shader failed.');}
       renderCount++;rendered=true;
     }catch{
       if(shaderFailure&&analysisController.useColorFallback()){shaderFailure=false;invalidate();}
-      else if(pipeline){fallbackQuality('Enhanced rendering could not complete. Balanced rendering is active.');invalidate();}
+      else if(pipeline&&!interactive){fallbackQuality('Enhanced rendering could not complete. Balanced rendering is active.');invalidate();}
       else graphicsNotice('The graphics device could not draw this view. Try Low quality or reopen 3D.');
     }
     if(rendered){drawMeasurementLens();notifyView();}
@@ -1192,7 +1206,7 @@ export function mountBoard3D(container, source, options = {}) {
     setSelectionMode(mode){selectionMode=['all','part','net','pin'].includes(mode)?mode:'all';},
     fit(topView=false){if(active)fit(topView);},
     getCameraState(){return {position:camera.position.toArray(),target:controls.target.toArray(),up:camera.up.toArray()};},
-    setCameraState(input){if(!active)return false;const state=cameraState3D(input),damping=controls.enableDamping;controls.enableDamping=false;controls.update();camera.position.fromArray(state.position);controls.target.fromArray(state.target);camera.up.fromArray(state.up);const distance=camera.position.distanceTo(controls.target);controls.minDistance=Math.min(controls.minDistance,distance);controls.maxDistance=Math.max(controls.maxDistance,distance);controls.update();controls.enableDamping=damping;userAdjustedCamera=true;updateClipping();invalidate();return true;},
+    setCameraState(input){if(!active)return false;const state=cameraState3D(input),damping=controls.enableDamping;cameraInteraction();cameraInteractionEnd();controls.enableDamping=false;controls.update();camera.position.fromArray(state.position);controls.target.fromArray(state.target);camera.up.fromArray(state.up);const distance=camera.position.distanceTo(controls.target);controls.minDistance=Math.min(controls.minDistance,distance);controls.maxDistance=Math.max(controls.maxDistance,distance);controls.update();controls.enableDamping=damping;userAdjustedCamera=true;updateClipping();invalidate();return true;},
     setView(view){if(!active||!boardViewPresets.some(preset=>preset.id===view))return false;userAdjustedCamera=true;fit(view);return true;},
     zoom(factor){if(!active||!Number.isFinite(factor)||factor<=0)return;const offset=camera.position.clone().sub(controls.target);const distance=Math.max(controls.minDistance,Math.min(controls.maxDistance,offset.length()/factor));if(offset.length()>0)camera.position.copy(controls.target).add(offset.setLength(distance));controls.update();},
     setTheme(dark) {

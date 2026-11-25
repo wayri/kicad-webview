@@ -18,6 +18,15 @@ const legacy = (node, name) => text(value(children(node, 'fp_text').find(item =>
 const dimensions = node => { const entry = child(node, 'size'); return entry ? { x: numeric(entry[1]), y: numeric(entry[2]) } : null; };
 const unique = values => [...new Set(values.filter(Boolean))];
 
+const ruleKinds = ['rule_area', 'netclass_flag', 'directive_label'];
+const classNames = (entries, type) => unique((entries || []).filter(entry => entry.type === type).map(entry => entry.name));
+function savedClasses(node, documentKind) {
+  const entries = documentKind === 'pcb'
+    ? children(node, 'component_classes').flatMap(group => children(group, 'class').map(item => item[1]))
+    : children(node, 'property').filter(item => value(item[1]) === 'Component Class').map(item => item[2]);
+  return unique(entries.slice(0, 64).map(item => value(item)).filter(name => typeof name === 'string' && name.length <= 4096));
+}
+
 /** Build bounded lookup tables from saved identities, retaining actual rendered members. */
 export function buildInspectionModel(ast, { kind: documentKind, path = '', design, connectivity } = {}) {
   const parts = [], byId = new Map(), byUuid = new Map(), primitiveByUuid = new Map(), primitiveByOwner = new Map(), warnings = [];
@@ -77,6 +86,9 @@ export function buildInspectionModel(ast, { kind: documentKind, path = '', desig
   }
   const netNames = new Map(children(ast, 'net').map(node => [value(node[1]), text(value(node[2]))]));
   const net = node => { const form = child(node, 'net'); if (!form) return ''; return text(value(form[2]) ?? (typeof value(form[1]) === 'string' ? value(form[1]) : netNames.get(value(form[1])))); };
+  const evidence = (uuid, kind) => uuid && !ambiguous.has(uuid)
+    ? connectivity?.objectClasses?.get((path || 'drawing.kicad_sch') + '/' + kind + ':uuid:' + uuid)
+    : undefined;
   const members = uuid => uuid && !ambiguous.has(uuid) ? boundedMembers([primitiveByUuid.get(uuid) || [], primitiveByOwner.get(uuid) || []]) : [];
   if (documentKind === 'pcb' || documentKind === 'schematic') {
     const nodes = partNodes;
@@ -90,6 +102,10 @@ export function buildInspectionModel(ast, { kind: documentKind, path = '', desig
         schematicUuid: documentKind === 'pcb' ? text(field(node, 'path')).split('/').filter(Boolean).at(-1) || '' : '',
         symbol: documentKind === 'schematic' ? text(field(node, 'lib_id')) : '', layer: text(field(node, 'layer')), position: at,
         rotation: numeric(child(node, 'at')?.[3]), fields, primitives, pads: [], layers: unique(primitives.map(p => p.layer)), path });
+      const savedComponentClasses = savedClasses(node, documentKind);
+      const classAssignments = evidence(uuid, 'symbol');
+      if (savedComponentClasses.length) part.savedComponentClasses = savedComponentClasses;
+      if (classAssignments?.length) part.classAssignments = classAssignments;
       if (children(node, 'property').length > MAX_FIELDS) part.note = 'Only the first 64 saved fields are shown.';
       if (ambiguous.has(uuid)) part.note = 'Saved UUID is duplicated; part-group highlighting is disabled.';
       parts.push(part);
@@ -110,6 +126,16 @@ export function buildInspectionModel(ast, { kind: documentKind, path = '', desig
       }
     }
     for (const node of ast || []) {
+      const type = kind(node);
+      if (ruleKinds.includes(type)) {
+        const polygon = child(node, 'polyline');
+        const uuid = identity(node) || (type === 'rule_area' && polygon ? identity(polygon) : '');
+        if (uuid && !ambiguous.has(uuid)) add({ id: path + '#' + uuid, uuid, type,
+          reference: type === 'rule_area' ? 'Rule area' : 'Directive label', classAssignments: evidence(uuid,type),
+          position: point(node), primitives: members(uuid), fields: savedFields(node), layers: [], path });
+        if (records >= MAX_RECORDS) break;
+        continue;
+      }
       if (!['segment', 'arc', 'via', 'zone'].includes(kind(node))) continue;
       const uuid = identity(node); if (!uuid) continue;
       add({ id: `${path}#${uuid}`, uuid, type: kind(node), net: net(node), layer: text(field(node, 'layer')), layers: unique((primitiveByUuid.get(uuid) || []).map(p => p.layer)),
@@ -180,6 +206,13 @@ export function inspectionFields(record) {
     add(record.type === 'pad' ? 'Pad number' : 'Pin number', record.number); add('Pin name', record.name); add('Pin type', record.pinType);
     add('Pad type', record.padType); add('Shape', record.shape); add('Size', sizeText(record.size)); add('Drill size', sizeText(record.drill));
   }
+  add('Saved component classes', part?.savedComponentClasses?.join(', '));
+  const assignments = record.classAssignments || part?.classAssignments;
+  add('Sheet-local net classes', classNames(assignments, 'net').join(', '));
+  add('Component classes from rule areas', classNames(assignments, 'component').join(', '));
+  add('Directive UUIDs', unique((assignments || []).map(row => row.directiveUuid)).join(', '));
+  add('Rule area UUIDs', unique((assignments || []).map(row => row.ruleAreaUuid)).join(', '));
+  if (ruleKinds.includes(record.type) && record.type !== 'rule_area') rows.push(...(record.fields || []));
   add('Net', record.net); if (record.type === 'net') add('Objects', record.primitives.length); add('Layer', record.layer); add('Position', pointText(record.position)); add('End position', pointText(record.end));
   if (record.rotation !== undefined) add(record.type === 'pad' ? 'Saved pad angle' : 'Rotation', `${numberText(record.rotation)}°`);
   if (typeof record.width === 'number') add('Width', `${numberText(record.width)} mm`);
@@ -214,7 +247,7 @@ export function createInspector(viewer) {
   const propertiesTab = button('Properties', () => setTab('properties')), partsTab = button('Parts', () => setTab('parts'));
   propertiesTab.setAttribute('role', 'tab'); partsTab.setAttribute('role', 'tab'); const netsTab = button('Nets', () => setTab('nets')); netsTab.setAttribute('role', 'tab'); tabs.append(propertiesTab, partsTab, netsTab);
   const properties = make('section', 'inspector-body'), partsPanel = make('section', 'inspector-body');
-  const search = make('input', 'inspector-search'); search.type = 'search'; search.placeholder = 'Find reference, value or footprint'; search.setAttribute('aria-label', 'Find a part');
+  const search = make('input', 'inspector-search'); search.type = 'search'; search.placeholder = 'Find reference, value, footprint or class'; search.setAttribute('aria-label', 'Find a part');
   const resultCount = make('p', 'inspector-help'), results = make('div', 'inspector-results'); resultCount.setAttribute('role', 'status'); partsPanel.append(search, resultCount, results);
   const netsPanel = make('section', 'inspector-body'), netSearch = make('input', 'inspector-search'), netCount = make('p', 'inspector-help'), netResults = make('div', 'inspector-results');
   netSearch.type = 'search'; netSearch.placeholder = 'Find net name'; netSearch.setAttribute('aria-label', 'Find a net'); netsPanel.append(netSearch, netCount, netResults);
@@ -251,6 +284,14 @@ export function createInspector(viewer) {
     renderFields(inspectionFields(selected));
     if (['pcb','schematic'].includes(viewer.kind) && typeof viewer.openInset === 'function') properties.append(button('Open contextual preview', () => { viewer.openInset().catch(error => { if (!viewer.disposed) viewer.chrome.setStatus(error.message, true); }); }));
     if (selectedNet && selected.type !== 'net') properties.append(button('Highlight net ' + selectedNet.name, () => selectNet(selectedNet.id, { locate: false })));
+    const selectedPart = selected.type === 'part' ? selected : selected.part;
+    const evidence = selected.classAssignments || selectedPart?.classAssignments;
+    const classButtons = [
+      ...classNames(evidence || selectedNet?.classAssignments, 'net').map(name => ['net',name]),
+      ...unique([...(selectedPart?.savedComponentClasses || []), ...classNames(evidence, 'component')]).map(name => ['component',name]),
+    ];
+    for (const [type,name] of classButtons.slice(0,24))
+      properties.append(button('Highlight ' + type + ' class ' + name, () => selectClass(type, name)));
     const part = selected.type === 'part' ? selected : selected.part;
     if (part) {
       if (selected.type !== 'part') properties.append(button(viewer.view === '3d' ? 'Highlight part and pads' : 'Locate part and pads', () => selectRecord(part, true)));
@@ -284,7 +325,7 @@ export function createInspector(viewer) {
     area.append(label, list); properties.append(area); api.layerSection = area;
   }
   function updateResults() {
-    const query = search.value?.trim().toLowerCase().slice(0, 200) || '', matches = model.parts.filter(part => `${part.reference}\n${part.value}\n${part.footprint}`.toLowerCase().includes(query));
+    const query = search.value?.trim().toLowerCase().slice(0, 200) || '', matches = model.parts.filter(part => [part.reference,part.value,part.footprint,...(part.savedComponentClasses||[]),...classNames(part.classAssignments,'component')].join(' ').toLowerCase().includes(query));
     resultCount.textContent = `${matches.length} ${matches.length === 1 ? 'part' : 'parts'}${matches.length > MAX_RESULTS ? ' · showing first 100' : ''}${model.warnings.length ? ' · bounded source index' : ''}`;
     results.replaceChildren(...matches.slice(0, MAX_RESULTS).map(part => {
       const node = button(`Select ${part.reference || part.uuid || 'part'}`, () => selectRecord(part, true)); node.replaceChildren(make('strong', '', part.reference || 'Unreferenced part'), make('small', '', [part.value, part.footprint].filter(Boolean).join(' · ')));
@@ -296,6 +337,7 @@ export function createInspector(viewer) {
     const owner = record?.part || record;
     const net = record?.type === 'net' ? record : netToggle.checked && record?.type !== 'part' ? model.netFor(record) : null;
     const primitives = net?.primitives || (record?.type === 'pad' || record?.type === 'pin' ? record.primitives : owner?.primitives) || [];
+    if (viewer.view === '3d' && record?.type === 'class') { viewer.renderer?.setSelection?.({uuids: unique(record.records.map(part => part.uuid))}); return; }
     if (viewer.view === '3d') { if(viewer.renderer?.setSelectionStyle)viewer.renderer.setSelectionStyle({mode:viewer.highlightMode||'dim',color:viewer.highlightColor||'source'});else viewer.renderer?.setSelectionDim?.(viewer.highlightMode!=='bright'); viewer.renderer?.setSelection?.(net ? { netNames: [net.name] } : record ? { uuids: unique([model.find(owner.uuid) === owner ? owner.uuid : '', ...(owner.pads || []).filter(pad => model.find(pad.uuid) === pad).map(pad => pad.uuid), model.find(record.uuid) === record ? record.uuid : '']) } : {}); if (locate && !net && owner?.type === 'part' && model.find(owner.uuid) === owner) viewer.renderer?.focusPart?.(owner.uuid); return; }
     if (viewer.view === 'manufacturing') return;
     viewer.renderer?.setNetHighlight?.(record && primitives.length ? { primitives } : null, { mode: viewer.highlightMode||'dim', selectionColor: viewer.highlightColor||'source' });
@@ -303,6 +345,18 @@ export function createInspector(viewer) {
       const bounds = globalThis.KiCadOwnedCanvas?.bounds(record.primitives); if (bounds) { const margin = Math.max(1, Math.max(bounds.w, bounds.h) * 0.15); viewer.renderer.viewport.camera.bbox = { x: bounds.x - margin, y: bounds.y - margin, w: Math.max(bounds.w, 1) + margin * 2, h: Math.max(bounds.h, 1) + margin * 2 }; }
     }
     viewer.renderer?.draw?.();
+  }
+  function selectClass(type, name) {
+    const records = type === 'net'
+      ? model.nets.filter(net => net.classAssignments?.some(entry => entry.name === name))
+      : model.parts.filter(part => part.savedComponentClasses?.includes(name) || part.classAssignments?.some(entry => entry.type === 'component' && entry.name === name));
+    const primitives = [...new Set(records.flatMap(record => record.primitives))];
+    if (!primitives.length) return false;
+    selected = { type: 'class', reference: name, records, primitives, path: viewer.path };
+    if (viewer.renderer) viewer.renderer.selected = null;
+    highlight(selected);
+    renderProperties();
+    return true;
   }
   function selectRecord(record, locate = false) {
     if (!record) return false;
@@ -321,7 +375,7 @@ export function createInspector(viewer) {
     viewer.emit('select', { item: { kind: 'net', id: net.id, netName: net.name }, path: viewer.path, view: viewer.view }); return true;
   }
   function updateNetResults() {
-    const query = netSearch.value?.trim().toLowerCase().slice(0, 200) || '', found = model.nets.filter(net => net.name.toLowerCase().includes(query));
+    const query = netSearch.value?.trim().toLowerCase().slice(0, 200) || '', found = model.nets.filter(net => (net.name+' '+classNames(net.classAssignments,'net').join(' ')).toLowerCase().includes(query));
     netCount.textContent = found.length + ' nets' + (found.length > MAX_RESULTS ? ' · showing first 100' : '') + (viewer.kind === 'schematic' ? ' · per-file saved connectivity' : '');
     netResults.replaceChildren(...found.slice(0, MAX_RESULTS).map(net => { const node = button('Select net ' + net.name, () => selectNet(net.id, { locate: true })); node.disabled = !net.primitives.length; return node; }));
   }
@@ -345,10 +399,13 @@ export function createInspector(viewer) {
     getSelectionPosition() {const p=selected?.position;if(!p||![p.x,p.y].every(Number.isFinite))return null;const q=selected.type==='segment'?selected.end:null;return {x:q&&Number.isFinite(q.x)?(p.x+q.x)/2:p.x,y:q&&Number.isFinite(q.y)?(p.y+q.y)/2:p.y,layer:selected.layer||selected.layers?.find(l=>/^(F|B|In\d+)\.Cu$/.test(l))||null};},
     getSelection() {if(!selected)return null;const net=selected.type==='net'?selected:model.netFor(selected);return {kind:selected.type,...(selected.uuid?{uuid:selected.uuid}:{}),...(selected.id?{id:selected.id}:{}),...(selected.part?.uuid?{ownerUuid:selected.part.uuid}:{}),...(net?.name||selected.net?{netName:net?.name||selected.net}:{}),...(['pad','pin'].includes(selected.type)?{pinNumber:selected.number}:{})};},
     selectObject(id,{locate=false,pinNumber}={}){let record=model.find(id);if(record?.type==='part'&&pinNumber!==undefined)record=model.resolve({uuid:record.uuid,ownerUuid:record.uuid,kind:'pin',pinNumber});return record?selectRecord(record,locate):false;},
-    getParts() { return model.parts.map(part => ({ id: part.id, uuid: part.uuid, reference: part.reference, value: part.value, footprint: part.footprint, layer: part.layer, schematicUuid: part.schematicUuid })); },
+    getParts() { return model.parts.map(part => ({ id: part.id, uuid: part.uuid, reference: part.reference, value: part.value, footprint: part.footprint, layer: part.layer, schematicUuid: part.schematicUuid, ...(part.savedComponentClasses?.length ? {savedComponentClasses:[...part.savedComponentClasses]} : {}), ...(part.classAssignments?.length ? {classAssignments:[...part.classAssignments]} : {}) })); },
     selectPart(id, { locate = true } = {}) { const part = model.find(id); return part?.type === 'part' && part.uuid && model.find(part.uuid) === part ? selectRecord(part, locate) : false; },
-    getNets() { return model.nets.map(net => ({ id: net.id, name: net.name, layers: [...net.layers], count: net.primitives.length })); },
+    getNets() { return model.nets.map(net => ({ id: net.id, name: net.name, layers: [...net.layers], count: net.primitives.length, ...(net.classAssignments?.length ? {classAssignments:[...net.classAssignments]} : {}) })); },
     selectNet,
+    selectClass,
+    partGeometry(uuid) { const part = model.find(uuid); return part?.type === 'part' && part.uuid === uuid ? part.primitives : []; },
+    partIdentity(item) { const record = model.resolve(item); const part = record?.type === 'part' ? record : record?.part; return part?.uuid && model.find(part.uuid) === part ? part.uuid : null; },
     isOpen() { return open; },
     getWarnings() { return [...(model?.warnings || [])]; },
     dispose() { sizing.dispose(); viewer.surface.removeEventListener?.('keydown', escape); search.oninput = netSearch.oninput = netToggle.onchange = labelToggle.onchange = autoInspect.onchange = null; for (const node of [clearButton, closeButton, propertiesTab, partsTab, netsTab]) node.onclick = null; model = null; selected = null; panel.remove(); },

@@ -43,6 +43,7 @@ test('KERO tours and virtual controls resolve real sheet, net and component iden
  const pcb=inspect(manifest.entry,'pcb',globalThis.KiCadPCBRenderer);
  for(const ref of ['U1','D1','R1','R2'])assert.equal(pcb.parts.filter(part=>part.reference===ref&&part.uuid).length,1);
  assert.ok(pcb.nets.find(net=>net.name==='/VBAT')?.primitives.length>0);
+ await import('../engine/schematic-renderer.js');
  const sheet=inspect('decoder.kicad_sch','schematic',globalThis.KiCadSchematicRenderer);
  assert.equal(sheet.parts.find(part=>part.reference==='D1').uuid,pcb.parts.find(part=>part.reference==='D1').schematicUuid);
 });
